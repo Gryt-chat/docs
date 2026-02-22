@@ -131,6 +131,11 @@ Browse available tags at [github.com/orgs/gryt-chat/packages](https://github.com
 | `SERVER_NAME` | `My Gryt Server` | Display name in the server browser |
 | `SERVER_DESCRIPTION` | `A Gryt voice chat server` | Server description |
 | `SERVER_PASSWORD` | *(empty)* | Password to join (leave empty for open) |
+| `SERVER_PASSWORD_MAX_RETRIES` | `5` | Password attempts before lockout (per IP+user) |
+| `SERVER_PASSWORD_RETRY_WINDOW_MS` | `300000` | Sliding window for attempt counting (5 min) |
+| `SERVER_PASSWORD_RETRY_COOLDOWN_MS` | `60000` | Base cooldown after lockout (1 min) |
+| `SERVER_PASSWORD_MAX_COOLDOWN_MS` | `3600000` | Cooldown escalation cap (1 hour) |
+| `SERVER_PASSWORD_IP_MAX_RETRIES` | `15` | Per-IP attempts before lockout (across all users) |
 | `SERVER_INVITE_ONLY` | `false` | Require invites to join |
 | `JWT_SECRET` | `change-me-in-production` | Session token secret |
 | `CORS_ORIGIN` | `http://localhost:3666` | Allowed origins for the API |
