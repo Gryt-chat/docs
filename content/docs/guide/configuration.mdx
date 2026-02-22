@@ -157,6 +157,38 @@ curl http://localhost:5000/health   # server
 curl http://localhost:5005/health   # SFU
 ```
 
+## Access control with CORS
+
+The `CORS_ORIGIN` environment variable controls which web origins can talk to your server.
+This acts as a simple access gate: only clients loaded from a listed origin will be able to connect.
+
+```bash
+# Only allow the hosted client and your custom domain
+CORS_ORIGIN="https://app.gryt.chat,https://gryt.example.com"
+```
+
+Because the Electron desktop app defaults to a specific local port (e.g. `http://localhost:3666`),
+you can separate dev and production environments by listing different ports:
+
+```bash
+# Production server — only accepts the production client
+CORS_ORIGIN="https://app.gryt.chat"
+
+# Dev server — only accepts the local dev client
+CORS_ORIGIN="http://localhost:3777"
+```
+
+A dev client on `localhost:3777` cannot connect to a production server that only allows
+`https://app.gryt.chat`, and vice versa. This gives you environment isolation without
+any extra infrastructure.
+
+<Callout type="info">
+CORS is enforced by the browser and by the server's Socket.IO and REST middleware.
+It is not a security boundary against non-browser clients — someone could still connect
+with `curl` or a modified client. For real authentication, enable
+[Gryt Auth](/docs/guide/configuration#authentication) or set a `SERVER_PASSWORD`.
+</Callout>
+
 ## Security best practices
 
 - Never commit `.env` files to version control
