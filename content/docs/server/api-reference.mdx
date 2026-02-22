@@ -188,19 +188,35 @@ List all custom server emojis. No authentication required.
 
 **GET** `/api/emojis/img/:name`
 
-Serve a custom emoji image by name (128x128 PNG). Long-lived cache headers.
+Serve a custom emoji image by name. GIFs are preserved as animated GIFs; all other formats are served as 128x128 PNG. Long-lived cache headers (`Cache-Control: public, max-age=604800, immutable`).
 
 **POST** `/api/emojis`
 
 Upload a custom emoji. Requires `admin` or `owner` role.
 
 **Request:** `multipart/form-data`
-- `file`: Image file (any format; resized to 128x128 PNG server-side)
+- `file`: Image file (PNG, JPEG, WebP, GIF, or SVG; GIFs are resized and kept as animated GIF, all others are converted to 128x128 PNG)
 - `name`: Emoji shortcode name (2-32 lowercase alphanumeric/underscore chars)
+
+Batch upload is also supported by sending multiple files under the `files` field with a JSON `names` array.
 
 **Response:**
 ```json
 { "name": "pepehappy", "file_id": "abc-123" }
+```
+
+**PATCH** `/api/emojis/:name`
+
+Rename a custom emoji. Requires `admin` or `owner` role.
+
+**Request Body:**
+```json
+{ "name": "new_shortcode" }
+```
+
+**Response:**
+```json
+{ "ok": true, "name": "new_shortcode" }
 ```
 
 **DELETE** `/api/emojis/:name`

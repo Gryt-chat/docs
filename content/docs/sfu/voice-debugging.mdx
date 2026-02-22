@@ -117,6 +117,20 @@ console.log("WebRTC configuration test passed");
 pc.close();
 ```
 
+## Client-side voice debug overlay
+
+The Gryt client includes a built-in debug overlay for voice connections. Enable it via **Settings > Voice > Show peer latency**.
+
+The overlay displays:
+
+- **SFU endpoint** — the WebSocket URL the client connected to (useful for verifying LAN vs. WAN path selection)
+- **ICE remote** — the remote IP:port where WebRTC media is actually sent
+- **ICE local** — the local IP:port used by the client
+- **Candidate type** — the ICE candidate type and transport (e.g. `srflx (udp)`, `host (udp)`)
+- **Self-latency** — your own round-trip time to the SFU, shown alongside peer latencies
+
+This is the fastest way to verify that a multi-network setup is working correctly. For example, if you're on the same LAN as the SFU and see a remote IP of `192.168.x.x` with ~0ms latency, the LAN path is being used. If you see the public IP with ~20ms, traffic is going out to the internet.
+
 ## What to report
 
 When asking for help, include:
@@ -124,4 +138,5 @@ When asking for help, include:
 - server logs (last ~50 lines)
 - browser console errors
 - STUN config and SFU UDP port range
+- voice debug overlay screenshot (SFU endpoint, ICE remote/local, candidate type)
 - steps to reproduce
