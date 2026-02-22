@@ -237,6 +237,27 @@ CLIENT_PORT=8080  # Caddy takes over port 80/443
 # SFU_ADVERTISE_IP=203.0.113.10,192.168.1.100
 ```
 
+## LAN optimization
+
+<Callout type="info" title="Hosting for a LAN party or local network?">
+Add your server's LAN IP to `SFU_ADVERTISE_IP` and `SFU_PUBLIC_HOST` so clients on the same
+network connect directly — skipping external STUN entirely for near-zero-latency voice.
+</Callout>
+
+```bash
+# Your server's LAN IP (find it with: hostname -I | awk '{print $1}')
+SFU_ADVERTISE_IP=192.168.1.100
+SFU_PUBLIC_HOST=ws://192.168.1.100:5005
+```
+
+For mixed setups where some users are on the LAN and others connect over the internet, use
+comma-separated values. The client automatically pings each SFU endpoint and picks the fastest:
+
+```bash
+SFU_ADVERTISE_IP=203.0.113.10,192.168.1.100
+SFU_PUBLIC_HOST=wss://sfu.example.com,ws://192.168.1.100:5005
+```
+
 ## Managing the stack
 
 ```bash

@@ -99,11 +99,28 @@ LOG_LEVEL=info
 MAX_CONNECTIONS=1000
 ```
 
-For production, also consider setting `ICE_ADVERTISE_IP` if the SFU host is behind NAT.
-For multi-network setups (e.g. LAN party + public), both variables accept comma-separated values:
+For production, also set `ICE_ADVERTISE_IP` if the SFU host is behind NAT.
+
+### LAN / local network
+
+If the SFU is on the same network as your users (e.g. a LAN party, office, or home server),
+add the machine's local IP to `ICE_ADVERTISE_IP`. This lets the SFU advertise a direct LAN
+candidate so clients connect instantly over the local network instead of routing through an
+external STUN server:
 
 ```bash
+ICE_ADVERTISE_IP=192.168.1.100
+```
+
+For mixed setups (LAN + internet), use comma-separated values for both the SFU
+and the signaling server — the client pings each endpoint and picks the fastest:
+
+```bash
+# SFU (packages/sfu/.env)
 ICE_ADVERTISE_IP=203.0.113.10,192.168.1.100
+
+# Signaling server (packages/server/.env or docker .env)
+SFU_PUBLIC_HOST=wss://sfu.example.com,ws://192.168.1.100:5005
 ```
 
 ## Authentication
