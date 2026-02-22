@@ -4,15 +4,50 @@ description: Documentation for the Gryt WebRTC voice chat platform
 icon: Zap
 ---
 
-Gryt is an open-source WebRTC voice chat platform built with React, TypeScript, Go, and Keycloak. It provides low-latency voice communication with noise suppression, real-time audio visualization, and multi-server support. Our goal is to be a **100% accessible** platform — from the [Atkinson Hyperlegible](/docs/guide/accessibility) typeface designed by the Braille Institute to full keyboard navigation and screen reader support.
+Gryt is a self-hosted, open-source platform for voice, text, and video chat. You run it on your own hardware — no cloud dependency, no data mining, no paywalls. Every feature is available to every user.
 
-## Explore the docs
+## Why Gryt?
+
+- **Private by default** — Conversations stay on your server. No ads, no third-party access.
+- **HD voice & video** — WebRTC-powered with noise suppression, echo cancellation, and screen sharing without artificial quality limits.
+- **Multi-server** — Connect to multiple self-hosted Gryt servers at the same time.
+- **100% accessible** — From the [Atkinson Hyperlegible](/docs/guide/accessibility) typeface to full keyboard navigation and screen reader support.
+- **Fully open source** — Every line of code is open. Audit it, fork it, contribute to it.
+
+## Get started
 
 <Cards>
   <Card
-    title="Guide"
-    description="Quick start, configuration, architecture, and troubleshooting"
-    href="/docs/guide"
+    title="Host your own server"
+    description="Get Gryt running with Docker Compose in a few minutes"
+    href="/docs/deployment/docker-compose"
+  />
+  <Card
+    title="How Gryt works"
+    description="Architecture overview — how the pieces fit together"
+    href="/docs/guide/architecture"
+  />
+  <Card
+    title="Configuration"
+    description="Environment variables, authentication, and server settings"
+    href="/docs/guide/configuration"
+  />
+  <Card
+    title="Troubleshooting"
+    description="Common issues and how to fix them"
+    href="/docs/guide/troubleshooting"
+  />
+</Cards>
+
+## For developers
+
+Building on Gryt or contributing to the project? These docs cover the internals.
+
+<Cards>
+  <Card
+    title="Contributing"
+    description="Set up a dev environment and start hacking"
+    href="/docs/guide/contributing"
   />
   <Card
     title="Client"
@@ -29,19 +64,4 @@ Gryt is an open-source WebRTC voice chat platform built with React, TypeScript, 
     description="Go media server — WebRTC forwarding and track management"
     href="/docs/sfu"
   />
-  <Card
-    title="Deployment"
-    description="Docker Compose, Kubernetes, and Cloudflare Tunnel"
-    href="/docs/deployment"
-  />
 </Cards>
-
-## Quick start
-
-```bash
-git clone --recurse-submodules https://github.com/Gryt-chat/gryt.git
-cd gryt
-ops/start_dev.sh
-```
-
-Then open `http://localhost:3666`.
