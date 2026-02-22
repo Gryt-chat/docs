@@ -23,6 +23,10 @@ src/app/docs/      Documentation layout and pages
 src/lib/source.ts  Fumadocs content source adapter
 ```
 
+## Issues
+
+Please report bugs and request features in the [main Gryt repository](https://github.com/Gryt-chat/gryt/issues).
+
 ## License
 
 [AGPL-3.0](https://github.com/Gryt-chat/gryt/blob/main/LICENSE) — Part of [Gryt](https://github.com/Gryt-chat/gryt)
