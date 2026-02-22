@@ -22,7 +22,6 @@ mkdir gryt && cd gryt
 curl -LO https://raw.githubusercontent.com/Gryt-chat/gryt/main/docker-compose.yml
 curl -LO https://raw.githubusercontent.com/Gryt-chat/gryt/main/.env.example
 cp .env.example .env
-docker compose up -d
 ```
 </Tab>
 <Tab value="wget">
@@ -31,15 +30,57 @@ mkdir gryt && cd gryt
 wget https://raw.githubusercontent.com/Gryt-chat/gryt/main/docker-compose.yml
 wget https://raw.githubusercontent.com/Gryt-chat/gryt/main/.env.example
 cp .env.example .env
-docker compose up -d
 ```
 </Tab>
 </Tabs>
 
-Wait ~30 seconds for the database to start, then open [http://localhost:3666](http://localhost:3666).
+Open `.env` in your editor and review the key settings:
+
+```bash
+SERVER_NAME=My Gryt Server       # display name shown to users
+SERVER_PASSWORD=                  # leave empty for open access, or set a password
+JWT_SECRET=change-me-in-production  # IMPORTANT: run `openssl rand -base64 48` for a real secret
+```
+
+For remote/production deployments you'll also need to set `SFU_PUBLIC_HOST`, `CORS_ORIGIN`, and
+`SFU_ADVERTISE_IP` — see the [Configuration](/docs/guide/configuration) page for details.
+
+Then start the server:
+
+```bash
+docker compose up -d
+```
+
+This starts the core backend: **signaling server**, **SFU media server**, **ScyllaDB**, and **MinIO**.
+Wait ~30 seconds for the database to initialize.
+
+### Connecting
+
+Connect to your server using the [Gryt desktop app](https://github.com/Gryt-chat/gryt/releases) or
+[app.gryt.chat](https://app.gryt.chat) — both work with local and remote servers.
+Enter your server address (e.g. `localhost` for local, or your public IP/domain for remote).
+
+To also self-host the web client:
+
+```bash
+docker compose --profile web up -d
+```
+
+The web client will be available at [http://localhost:3666](http://localhost:3666).
+
+### Ports
+
+Make sure the following ports are accessible (forwarded in your router / open in your firewall if hosting remotely):
+
+| Port | Protocol | Service |
+|------|----------|---------|
+| `5000` | TCP | Signaling server (API + WebSocket) |
+| `5005` | TCP | SFU WebSocket |
+| `10000–10019` | UDP | WebRTC media (voice traffic) |
+
+These are configurable via `SERVER_PORT`, `SFU_PORT`, `SFU_UDP_MIN`, and `SFU_UDP_MAX` in `.env`.
 
 <Callout type="info">
-This spins up everything: the web client, signaling server, SFU media server, ScyllaDB, and MinIO.
 See the full [Docker Compose guide](/docs/deployment/docker-compose) for all configuration options,
 production hardening, and TLS setup.
 </Callout>
