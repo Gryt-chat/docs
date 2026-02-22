@@ -16,14 +16,12 @@ The rate limiting system uses a **score-based approach**:
 
 ## Architecture
 
-```text
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Client        │    │  Rate Limiter   │    │   Server        │
-│                 │    │                 │    │                 │
-│ • User Actions  │───►│ • Score Tracking│───►│ • Action         │
-│ • Error Display │◄───│ • Decay Logic   │◄───│ • Enforcement    │
-│ • Wait Times    │    │ • Thresholds    │    │ • Feedback       │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
+```mermaid
+flowchart LR
+  Client["Client\nUser Actions\nError Display\nWait Times"] -->|requests| RL["Rate Limiter\nScore Tracking\nDecay Logic\nThresholds"]
+  RL -->|allowed| Server["Server\nEnforcement\nFeedback"]
+  Server -->|result| RL
+  RL -->|response| Client
 ```
 
 ## Score-based algorithm

@@ -82,22 +82,14 @@ Wait about 30–60 seconds for ScyllaDB to initialize, then open [http://localho
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                     Docker Network                       │
-│                                                         │
-│  ┌──────────┐    ┌──────────┐    ┌──────────┐          │
-│  │  Client   │    │  Server   │    │   SFU    │          │
-│  │  :3666    │───▶│  :5000    │───▶│  :5005   │          │
-│  └──────────┘    └────┬─────┘    └──────────┘          │
-│                       │                                  │
-│              ┌────────┴────────┐                        │
-│              │                 │                        │
-│        ┌─────┴─────┐   ┌──────┴─────┐                  │
-│        │  ScyllaDB  │   │   MinIO    │                  │
-│        │  :9042     │   │   :9000    │                  │
-│        └───────────┘   └────────────┘                  │
-└─────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+  subgraph Docker Network
+    Client["Client :3666"] --> Server["Server :5000"]
+    Server --> SFU["SFU :5005"]
+    Server --> Scylla["ScyllaDB :9042"]
+    Server --> MinIO["MinIO :9000"]
+  end
 ```
 
 ## Configuration reference

@@ -36,26 +36,12 @@ Gryt supports connecting to multiple servers simultaneously with seamless switch
 
 The multi-server architecture consists of several key components:
 
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Server A      │    │   Server B      │    │   Server C      │
-│                 │    │                 │    │                 │
-│ • Room: tech_1  │    │ • Room: game_1  │    │ • Room: music_1 │
-│ • Users: 5      │    │ • Users: 12     │    │ • Users: 3      │
-│ • Status: ✅    │    │ • Status: ✅    │    │ • Status: ⚠️    │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                       │                       │
-         └───────────────────────┼───────────────────────┘
-                                 │
-                    ┌─────────────────┐
-                    │   Web Client    │
-                    │                 │
-                    │ • Multi-Server  │
-                    │   Management    │
-                    │ • State Sync    │
-                    │ • Connection    │
-                    │   Pool          │
-                    └─────────────────┘
+```mermaid
+graph TD
+  A["Server A\nRoom: tech_1 · Users: 5"] --> Client
+  B["Server B\nRoom: game_1 · Users: 12"] --> Client
+  C["Server C\nRoom: music_1 · Users: 3"] --> Client
+  Client["Web Client\nMulti-Server Management\nState Sync · Connection Pool"]
 ```
 
 ## Server Management

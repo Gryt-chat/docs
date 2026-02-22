@@ -31,28 +31,19 @@ The client implements a multi-stage audio processing pipeline built entirely on 
 
 The client chains native Web Audio nodes in a single `AudioContext`:
 
-```
-┌────────────┐   ┌────────────┐   ┌─────────────┐   ┌────────────────┐
-│ Microphone │──►│  Volume    │──►│  Raw Analyser│──►│   RNNoise      │
-│   Input    │   │  Control   │   │  + Raw Out   │   │  AudioWorklet  │
-└────────────┘   └────────────┘   └─────────────┘   └────────────────┘
-                                                              │
-┌────────────┐   ┌────────────┐   ┌─────────────┐           │
-│   Mute     │◄──│Noise Gate  │◄──│eSports LPF  │◄──────────┤
-│  Control   │   │  (gain)    │   │  (optional)  │           │
-└────────────┘   └────────────┘   └─────────────┘    ┌──────┴───────┐
-       │                                              │  Compressor  │
-       ▼                                              │  (optional)  │
-┌────────────┐   ┌────────────┐                       └──────┬───────┘
-│   Final    │──►│   Visual   │                              │
-│  Analyser  │   │  Feedback  │                       ┌──────┴───────┐
-└────────────┘   └────────────┘                       │   Auto Gain  │
-       │                                              │  (RMS-based) │
-       ▼                                              └──────────────┘
-┌────────────┐
-│    SFU     │
-│Transmission│
-└────────────┘
+```mermaid
+graph TD
+  Mic["Microphone Input"] --> Vol["Volume Control"]
+  Vol --> Raw["Raw Analyser + Raw Out"]
+  Raw --> RNN["RNNoise AudioWorklet"]
+  RNN --> AGC["Auto Gain (RMS-based)"]
+  AGC --> Comp["Compressor (optional)"]
+  Comp --> LPF["eSports LPF (optional)"]
+  LPF --> Gate["Noise Gate"]
+  Gate --> Mute["Mute Control"]
+  Mute --> Final["Final Analyser"]
+  Final --> Vis["Visual Feedback"]
+  Final --> SFU["SFU Transmission"]
 ```
 
 ### Stage 1: Volume Control
@@ -65,12 +56,11 @@ When enabled, audio is routed through an `AudioWorkletNode` running RNNoise comp
 
 Audio frames flow directly between the AudioWorklet and the RNNoise Web Worker via a `MessageChannel`, completely bypassing the main thread. This prevents UI freezes that would otherwise occur from relaying ~200 message events per second through the main thread event loop.
 
-```
-AudioWorklet ◄──MessageChannel──► Worker (RNNoise WASM)
-     │                                     │
-     │  control messages only               │  init / destroy only
-     ▼                                     ▼
-              Main Thread
+```mermaid
+graph LR
+  AW["AudioWorklet"] <-->|"audio frames\n(MessageChannel)"| W["Worker\n(RNNoise WASM)"]
+  AW -.-|"control messages"| MT["Main Thread"]
+  W -.-|"init / destroy"| MT
 ```
 
 | Property | Value |
