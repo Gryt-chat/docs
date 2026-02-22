@@ -110,12 +110,12 @@ graph TD
 
 ### Image versions
 
-Pin specific versions instead of `latest` for reproducible deploys:
+Images default to `latest`. Pin a specific version for reproducible deploys:
 
 ```bash
-SERVER_VERSION=1.0.0
-SFU_VERSION=1.0.0
-CLIENT_VERSION=1.0.1  # only if using --profile web
+SERVER_VERSION=x.y.z
+SFU_VERSION=x.y.z
+CLIENT_VERSION=x.y.z  # only if using --profile web
 ```
 
 Browse available tags at [github.com/orgs/gryt-chat/packages](https://github.com/orgs/gryt-chat/packages).
@@ -254,8 +254,8 @@ docker compose pull && docker compose up -d
 # Same, but include the web client
 docker compose --profile web pull && docker compose --profile web up -d
 
-# Update to a specific version
-SFU_VERSION=1.2.0 docker compose up -d sfu
+# Update a single service to a specific version
+SFU_VERSION=x.y.z docker compose up -d sfu
 
 # Stop everything
 docker compose down
@@ -292,9 +292,9 @@ docker compose ps
 To upgrade to specific versions, edit the `*_VERSION` vars in `.env`:
 
 ```bash
-SERVER_VERSION=1.1.0
-SFU_VERSION=1.1.0
-CLIENT_VERSION=1.1.0  # only if using --profile web
+SERVER_VERSION=x.y.z
+SFU_VERSION=x.y.z
+CLIENT_VERSION=x.y.z  # only if using --profile web
 ```
 
 Then run `docker compose up -d`.
