@@ -61,13 +61,24 @@ A `GainNode` with 0–200 % range (2x boost). Logarithmic scaling maps the slide
 
 ### Stage 2: RNNoise Noise Reduction (AudioWorklet)
 
-When enabled, audio is routed through an `AudioWorkletNode` running RNNoise compiled to WebAssembly. The worklet processes 480-sample frames (10 ms at 48 kHz) in a dedicated thread, adding roughly **20 ms** of latency. This replaces the previous `ScriptProcessorNode` approach, eliminating main-thread blocking and audio glitches.
+When enabled, audio is routed through an `AudioWorkletNode` running RNNoise compiled to WebAssembly. The worklet processes 480-sample frames (10 ms at 48 kHz) in a dedicated thread, adding roughly **20 ms** of latency.
+
+Audio frames flow directly between the AudioWorklet and the RNNoise Web Worker via a `MessageChannel`, completely bypassing the main thread. This prevents UI freezes that would otherwise occur from relaying ~200 message events per second through the main thread event loop.
+
+```
+AudioWorklet ◄──MessageChannel──► Worker (RNNoise WASM)
+     │                                     │
+     │  control messages only               │  init / destroy only
+     ▼                                     ▼
+              Main Thread
+```
 
 | Property | Value |
 |----------|-------|
 | Frame size | 480 samples (10 ms) |
 | Sample rate | 48 kHz |
-| Processing thread | AudioWorklet (off main thread) |
+| Processing thread | AudioWorklet + Worker (off main thread) |
+| Main thread involvement | Control messages only (enable/disable) |
 | Typical added latency | ~20 ms |
 
 ### Stage 3: Auto Gain Control (True AGC)
