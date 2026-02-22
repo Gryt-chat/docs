@@ -13,13 +13,16 @@ GitHub Container Registry — no need to clone any repos or build anything.
 
 ## What's included
 
-| Service | Image | Purpose |
-|---------|-------|---------|
-| **Client** | `ghcr.io/gryt-chat/client` | Web UI (React + Nginx) |
-| **Server** | `ghcr.io/gryt-chat/server` | Signaling, chat, file uploads |
-| **SFU** | `ghcr.io/gryt-chat/sfu` | WebRTC media forwarding |
-| **ScyllaDB** | `scylladb/scylla` | Message & user storage |
-| **MinIO** | `minio/minio` | S3-compatible file storage |
+| Service | Image | Purpose | Required? |
+|---------|-------|---------|-----------|
+| **Server** | `ghcr.io/gryt-chat/server` | Signaling, chat, file uploads | Yes |
+| **SFU** | `ghcr.io/gryt-chat/sfu` | WebRTC media forwarding | Yes |
+| **ScyllaDB** | `scylladb/scylla` | Message & user storage | Yes |
+| **MinIO** | `minio/minio` | S3-compatible file storage | Yes |
+| **Client** | `ghcr.io/gryt-chat/client` | Web UI (React + Nginx) | Optional |
+
+Most users connect via the [Gryt desktop app](https://github.com/Gryt-chat/gryt/releases) (available for Linux, macOS, and Windows).
+The web client is optional and only needed if you want browser-based access.
 
 ## Quick start
 
@@ -68,13 +71,22 @@ CORS_ORIGIN=http://localhost:3666,https://app.gryt.chat
 </Step>
 
 <Step>
-### Start everything
+### Start the server
 
 ```bash
 docker compose up -d
 ```
 
-Wait about 30–60 seconds for ScyllaDB to initialize, then open [http://localhost:3666](http://localhost:3666).
+This starts the core services: **Server**, **SFU**, **ScyllaDB**, and **MinIO**.
+Wait about 30–60 seconds for ScyllaDB to initialize, then connect with the Gryt desktop app.
+
+To also run the web client (optional):
+
+```bash
+docker compose --profile web up -d
+```
+
+The web client will be available at [http://localhost:3666](http://localhost:3666).
 
 </Step>
 
@@ -84,9 +96,11 @@ Wait about 30–60 seconds for ScyllaDB to initialize, then open [http://localho
 
 ```mermaid
 graph TD
+  Desktop["Gryt Desktop App"] --> Server["Server :5000"]
+  Desktop --> SFU["SFU :5005"]
   subgraph Docker Network
-    Client["Client :3666"] --> Server["Server :5000"]
-    Server --> SFU["SFU :5005"]
+    Client["Client :3666 (optional)"] --> Server
+    Server --> SFU
     Server --> Scylla["ScyllaDB :9042"]
     Server --> MinIO["MinIO :9000"]
   end
@@ -99,9 +113,9 @@ graph TD
 Pin specific versions instead of `latest` for reproducible deploys:
 
 ```bash
-CLIENT_VERSION=1.0.1
 SERVER_VERSION=1.0.0
 SFU_VERSION=1.0.0
+CLIENT_VERSION=1.0.1  # only if using --profile web
 ```
 
 Browse available tags at [github.com/orgs/gryt-chat/packages](https://github.com/orgs/gryt-chat/packages).
@@ -110,8 +124,8 @@ Browse available tags at [github.com/orgs/gryt-chat/packages](https://github.com
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `CLIENT_PORT` | `3666` | Web UI |
 | `SERVER_PORT` | `5000` | Signaling API + WebSocket |
+| `CLIENT_PORT` | `3666` | Web UI (only with `--profile web`) |
 | `SFU_PORT` | `5005` | SFU WebSocket |
 | `SFU_UDP_MIN` | `10000` | WebRTC media UDP range start |
 | `SFU_UDP_MAX` | `10019` | WebRTC media UDP range end |
@@ -237,6 +251,9 @@ docker compose restart server
 # Update to latest images
 docker compose pull && docker compose up -d
 
+# Same, but include the web client
+docker compose --profile web pull && docker compose --profile web up -d
+
 # Update to a specific version
 SFU_VERSION=1.2.0 docker compose up -d sfu
 
@@ -254,7 +271,7 @@ All services expose health endpoints. Check the stack health:
 ```bash
 curl http://localhost:5000/health   # server
 curl http://localhost:5005/health   # sfu
-curl http://localhost:3666/health   # client
+curl http://localhost:3666/health   # client (only with --profile web)
 ```
 
 Or use `docker compose ps` to see the health status of all containers.
@@ -275,9 +292,9 @@ docker compose ps
 To upgrade to specific versions, edit the `*_VERSION` vars in `.env`:
 
 ```bash
-CLIENT_VERSION=1.1.0
 SERVER_VERSION=1.1.0
 SFU_VERSION=1.1.0
+CLIENT_VERSION=1.1.0  # only if using --profile web
 ```
 
 Then run `docker compose up -d`.
