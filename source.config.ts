@@ -4,6 +4,7 @@ import {
   frontmatterSchema,
   metaSchema,
 } from 'fumadocs-mdx/config';
+import { remarkMdxMermaid } from 'fumadocs-mermaid';
 
 export const docs = defineDocs({
   docs: {
@@ -16,7 +17,7 @@ export const docs = defineDocs({
 
 export default defineConfig({
   mdxOptions: {
-    remarkPlugins: [],
+    remarkPlugins: [remarkMdxMermaid],
     rehypePlugins: [],
   },
 });

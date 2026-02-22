@@ -6,23 +6,30 @@ icon: Building
 
 Gryt follows a microservices architecture with four components:
 
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Web Client    │    │  Gryt Servers   │    │   SFU Server    │
-│   (React/TS)    │◄──►│   (Node.js)     │◄──►│     (Go)        │
-│                 │    │                 │    │                 │
-│ • Voice UI      │    │ • Signaling     │    │ • Media Relay   │
-│ • Audio Proc.   │    │ • User Mgmt     │    │ • WebRTC        │
-│ • Server Mgmt   │    │ • Room Mgmt     │    │ • Track Mgmt    │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-                                │
-                       ┌─────────────────┐
-                       │  Auth Service   │
-                       │ (Hosted by Gryt)│
-                       │                 │
-                       │ • OIDC / PKCE   │
-                       │ • JWT via JWKS  │
-                       └─────────────────┘
+```mermaid
+graph TB
+  subgraph Client Layer
+    WC["Web Client\n(React / TypeScript)"]
+  end
+
+  subgraph Backend
+    GS["Signaling Server\n(Node.js / Socket.IO)"]
+    SFU["SFU Server\n(Go / Pion WebRTC)"]
+    DB["ScyllaDB"]
+    S3["MinIO\n(S3-compatible)"]
+  end
+
+  subgraph Identity
+    Auth["Auth Service\n(Keycloak — OIDC / PKCE)"]
+  end
+
+  WC <-->|"WSS — signaling"| GS
+  WC -.->|"UDP — DTLS-SRTP media"| SFU
+  WC -->|"OIDC login"| Auth
+  GS <-->|"WS — room mgmt"| SFU
+  GS --> DB
+  GS --> S3
+  GS -->|"JWKS token verification"| Auth
 ```
 
 ## Web Client
@@ -50,8 +57,13 @@ packages/client/src/
 
 ### Audio processing pipeline
 
-```
-Microphone → Noise Gate → Volume Control → Mute → Analyser → SFU
+```mermaid
+graph LR
+  Mic["Microphone"] --> NG["Noise Gate"]
+  NG --> Vol["Volume Control"]
+  Vol --> Mute["Mute"]
+  Mute --> Analyser
+  Analyser --> SFU
 ```
 
 State management uses React hooks and context. Audio settings (volume, noise gate, device) are stored in `localStorage` and synced via custom hooks.
@@ -114,13 +126,35 @@ func (r *Room) ForwardTrack(track *Track) {
 
 Authentication uses a centrally hosted Keycloak instance. Clients authenticate via OIDC Authorization Code + PKCE (public client, no client secret). Servers validate tokens by checking the JWT signature against the Keycloak JWKS endpoint -- no shared secret with Gryt is required.
 
+```mermaid
+sequenceDiagram
+  participant C as Client
+  participant K as Keycloak
+  participant S as Server
+
+  C->>K: Redirect to login (PKCE challenge)
+  K-->>C: Login page
+  C->>K: Credentials (username + password)
+  K-->>C: Authorization code
+  C->>K: Exchange code + PKCE verifier
+  K-->>C: ID token + access token (JWT)
+  C->>S: Connect with identity token
+  S->>K: Fetch JWKS public keys
+  S-->>S: Verify token signature + claims
+  S-->>C: Authenticated session
+```
+
 ## Data flow
 
-```
-Client → Server → SFU → Other Clients
-  ↓        ↓       ↓
-Auth    Room    Media
-Service Manager  Relay
+```mermaid
+graph LR
+  C["Client"] --> S["Server"]
+  S --> SFU
+  SFU --> OC["Other Clients"]
+
+  C -.-> Auth["Auth Service"]
+  S -.-> RM["Room Manager"]
+  SFU -.-> MR["Media Relay"]
 ```
 
 1. Client authenticates with Keycloak and gets a JWT
