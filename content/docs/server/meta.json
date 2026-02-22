@@ -1,0 +1,11 @@
+{
+  "root": true,
+  "title": "Server",
+  "icon": "Server",
+  "pages": [
+    "index",
+    "api-reference",
+    "rate-limiting",
+    "multi-server"
+  ]
+}

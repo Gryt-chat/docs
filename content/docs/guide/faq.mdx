@@ -1,0 +1,71 @@
+---
+title: FAQ
+description: Frequently asked questions about Gryt
+icon: MessageCircleQuestionMark
+---
+
+## What is Gryt?
+
+Gryt is an open-source WebRTC voice chat platform. It provides real-time voice communication with noise suppression, echo cancellation, and a modern UI. Think Discord-style voice channels, self-hosted.
+
+## How do I get started?
+
+The fastest path is the dev launcher:
+
+```bash
+git clone --recurse-submodules https://github.com/Gryt-chat/gryt.git
+cd gryt
+ops/start_dev.sh
+```
+
+Then open `http://localhost:3666`.
+
+## What are the system requirements?
+
+**Client:** A modern browser with WebRTC support (Chrome, Firefox, Safari, Edge), plus a microphone.
+
+**Server:** Node.js 18+ and Bun (or npm). Go 1.21+ for the SFU. Docker 20.10+ for containerized deployment.
+
+## Do I need to set up authentication?
+
+No. Auth is provided as a hosted service at `https://auth.gryt.chat`. Your server validates JWTs via JWKS automatically. You can optionally disable it with `GRYT_AUTH_MODE=disabled`.
+
+## Why isn't my microphone working?
+
+1. Check browser permissions (WebRTC requires HTTPS in production)
+2. Ensure the correct device is selected in the audio settings
+3. Try a different browser
+
+## Can I use push-to-talk?
+
+Not yet. Gryt currently uses voice activation with a configurable noise gate threshold.
+
+## How do I add multiple servers?
+
+Click the "+" button in the client server list and enter the server URL. The client validates and connects automatically.
+
+## What happens when the server restarts?
+
+Voice chat continues uninterrupted through the SFU while the signaling server is down. Once the server comes back online, clients automatically reconnect, restore their session, and rejoin the voice channel. The whole process takes a few seconds and requires no user action.
+
+## Windows says the app is dangerous / macOS won't open it
+
+This is expected for open-source apps that aren't signed with an expensive code signing certificate. The app is fully open source — you can inspect every line of code or [build it yourself](/docs/client/build-from-source).
+
+- **Windows**: Click **More info → Run anyway** on the SmartScreen prompt.
+- **macOS**: Right-click the app → **Open** → **Open** again.
+
+See the [Code signing and OS trust](/docs/client/build-from-source#code-signing-and-os-trust) section for details.
+
+## Is Gryt free to use?
+
+Yes, for personal and non-commercial use. Gryt is source-available under the [AGPL-3.0 license](/docs/guide/licensing). You can self-host it, modify it, and use it however you like — as long as you share any changes you make under the same license. If you want to use Gryt commercially or offer it as a service, [get in touch](mailto:sivert@sivert.io) about a commercial license.
+
+## Can I self-host authentication?
+
+The repo includes a local Keycloak setup for development (`auth/docker-compose.keycloak.yml`). Full self-hosted auth documentation is planned.
+
+## Where can I get help?
+
+- [GitHub Issues](https://github.com/Gryt-chat/gryt/issues)
+- [Discord](https://discord.gg/Q3JKUGsnHE)

@@ -1,0 +1,149 @@
+---
+title: Architecture
+description: System architecture and design decisions
+icon: Building
+---
+
+Gryt follows a microservices architecture with four components:
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Web Client    │    │  Gryt Servers   │    │   SFU Server    │
+│   (React/TS)    │◄──►│   (Node.js)     │◄──►│     (Go)        │
+│                 │    │                 │    │                 │
+│ • Voice UI      │    │ • Signaling     │    │ • Media Relay   │
+│ • Audio Proc.   │    │ • User Mgmt     │    │ • WebRTC        │
+│ • Server Mgmt   │    │ • Room Mgmt     │    │ • Track Mgmt    │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+                                │
+                       ┌─────────────────┐
+                       │  Auth Service   │
+                       │ (Hosted by Gryt)│
+                       │                 │
+                       │ • OIDC / PKCE   │
+                       │ • JWT via JWKS  │
+                       └─────────────────┘
+```
+
+## Web Client
+
+```
+packages/client/src/
+├── packages/
+│   ├── audio/          # Audio processing and device management
+│   │   ├── hooks/      # useMicrophone, useAudioDevices
+│   │   ├── processors/ # Noise gate, volume control
+│   │   └── visualization/
+│   ├── webRTC/         # SFU connection and WebRTC handling
+│   │   ├── hooks/      # useSFU, usePeerConnection
+│   │   ├── connection/
+│   │   └── signaling/
+│   ├── socket/         # Server communication
+│   │   ├── hooks/      # useSockets, useServerState
+│   │   ├── components/ # Server list, user list
+│   │   └── types/
+│   └── settings/       # Configuration and preferences
+├── components/         # Shared UI components (Radix UI)
+├── hooks/              # Global React hooks
+└── types/              # TypeScript type definitions
+```
+
+### Audio processing pipeline
+
+```
+Microphone → Noise Gate → Volume Control → Mute → Analyser → SFU
+```
+
+State management uses React hooks and context. Audio settings (volume, noise gate, device) are stored in `localStorage` and synced via custom hooks.
+
+## Signaling Server
+
+```
+packages/server/src/
+├── websocket/     # WebSocket handler, connection management, auth middleware
+├── signaling/     # WebRTC signaling coordinator (offer/answer relay)
+├── room/          # Room lifecycle, state sync, isolation
+├── user/          # User state, presence tracking
+├── auth/          # Token validation via JWKS
+└── api/           # REST endpoints (messages, uploads, health)
+```
+
+### Room management
+
+Rooms are created on first join and cleaned up when empty. Room IDs are prefixed with the server name to prevent cross-server collisions:
+
+```typescript
+const createRoomId = (serverName: string, channelId: string): string => {
+  const prefix = serverName.split('.')[0];
+  return `${prefix}_${channelId}`;
+};
+```
+
+## SFU Server
+
+```
+packages/sfu/
+├── cmd/sfu/           # Entry point
+├── internal/
+│   ├── config/        # Environment-based configuration
+│   ├── websocket/     # Thread-safe WebSocket wrapper
+│   ├── webrtc/        # Peer connection management
+│   ├── track/         # Media track lifecycle
+│   └── signaling/     # Signaling coordination
+└── pkg/types/         # Shared message structures
+```
+
+### Selective forwarding
+
+The SFU receives audio tracks from each participant and forwards them to every other peer in the room -- no transcoding, minimal latency:
+
+```go
+func (r *Room) ForwardTrack(track *Track) {
+    r.mutex.RLock()
+    defer r.mutex.RUnlock()
+
+    for peerID, peer := range r.Peers {
+        if peerID != track.PeerID {
+            peer.ForwardTrack(track)
+        }
+    }
+}
+```
+
+## Authentication
+
+Authentication uses a centrally hosted Keycloak instance. Clients authenticate via OIDC Authorization Code + PKCE (public client, no client secret). Servers validate tokens by checking the JWT signature against the Keycloak JWKS endpoint -- no shared secret with Gryt is required.
+
+## Data flow
+
+```
+Client → Server → SFU → Other Clients
+  ↓        ↓       ↓
+Auth    Room    Media
+Service Manager  Relay
+```
+
+1. Client authenticates with Keycloak and gets a JWT
+2. Client opens a WebSocket to the signaling server (JWT in handshake)
+3. On voice channel join, the server requests a room from the SFU
+4. SFU sends a WebRTC offer; the client answers
+5. ICE candidates are exchanged via the signaling server
+6. Media flows directly between client and SFU over UDP
+
+## Deployment
+
+| Stack | Path | Use case |
+|-------|------|----------|
+| Cloudflare Tunnel | `ops/deploy/host/compose.yml` | Hosting with Tunnel + DB + S3 |
+| Production | `ops/deploy/compose/prod.yml` | Behind a reverse proxy |
+| Dev | `ops/deploy/compose/dev.yml` | Local development |
+| Kubernetes | `ops/helm/gryt/` | Helm chart |
+
+See the [Deployment](/docs/deployment) section for details.
+
+## Scalability
+
+- **SFU**: Multiple instances behind a load balancer
+- **Signaling server**: Multiple instances with session affinity
+- **Database**: ScyllaDB with per-server keyspaces
+- **Storage**: S3-compatible object storage

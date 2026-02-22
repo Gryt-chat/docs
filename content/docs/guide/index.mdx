@@ -1,0 +1,52 @@
+---
+title: Introduction
+description: Overview of the Gryt WebRTC voice chat platform
+---
+
+Gryt is a WebRTC-based voice chat platform built with TypeScript, React, Go, and Keycloak. It provides low-latency voice communication with noise suppression, echo cancellation, and a modern UI.
+
+## Components
+
+| Component | Tech | Role |
+|-----------|------|------|
+| **Client** | React + TypeScript (Electron) | UI, audio processing, WebRTC |
+| **Server** | Node.js + TypeScript | Signaling, rooms, user state |
+| **SFU** | Go + Pion WebRTC | Media forwarding |
+| **Auth** | Keycloak (hosted) | OIDC authentication |
+
+## How it works
+
+1. Users authenticate via Keycloak (OIDC + PKCE)
+2. The client connects to a signaling server over WebSocket
+3. When joining a voice channel, the server coordinates a WebRTC session through the SFU
+4. The SFU selectively forwards audio tracks between participants
+
+## Next steps
+
+<Cards>
+  <Card
+    title="Quick Start"
+    description="Get Gryt running locally in under a minute"
+    href="/docs/guide/quick-start"
+  />
+  <Card
+    title="Architecture"
+    description="Deep dive into how the components fit together"
+    href="/docs/guide/architecture"
+  />
+  <Card
+    title="Configuration"
+    description="Environment variables and settings for each service"
+    href="/docs/guide/configuration"
+  />
+  <Card
+    title="Accessibility"
+    description="Our commitment to building a 100% accessible platform"
+    href="/docs/guide/accessibility"
+  />
+  <Card
+    title="Deployment"
+    description="Docker Compose, Kubernetes, and Cloudflare Tunnel guides"
+    href="/docs/deployment"
+  />
+</Cards>

@@ -1,0 +1,127 @@
+---
+title: Voice Debugging
+description: Steps for diagnosing voice transmission issues
+icon: Bug
+---
+
+When voice works locally but other peers don't hear anything, the issue is usually in the WebRTC connection path (ICE / UDP reachability) or SFU forwarding.
+
+## Checklist
+
+### 1) Check SFU logs
+
+```bash
+docker logs <sfu-container-name> -f
+```
+
+Look for:
+- server registration
+- client joins
+- forwarding / RTP activity
+- connection state changes
+
+### 2) Check server logs
+
+```bash
+docker logs <server-container-name> -f
+```
+
+Look for:
+- SFU client connect status
+- room registration
+- voice channel join/leave events
+
+### 3) Check browser console
+
+Open dev tools and look for:
+- ICE connection failures
+- SFU websocket connection issues
+- audio track errors
+
+### 4) Verify SFU health endpoint
+
+```bash
+curl -I http://localhost:5005/health
+```
+
+### 5) Verify STUN + UDP configuration
+
+Ensure STUN is configured:
+
+```bash
+STUN_SERVERS="stun:stun.l.google.com:19302,stun:stun1.l.google.com:19302"
+```
+
+And pin a dedicated UDP port range on the SFU (and open it publicly):
+
+```bash
+ICE_UDP_PORT_MIN=10000
+ICE_UDP_PORT_MAX=10019
+```
+
+If the SFU is behind NAT / has multiple NICs, set the public IP it should advertise:
+
+```bash
+ICE_ADVERTISE_IP=203.0.113.10
+```
+
+## Interactive test steps
+
+Use these steps in order when debugging a voice channel join.
+
+### Step 1 -- verify voice channel click handler
+
+1. Open browser dev tools (F12)
+2. Go to Console
+3. Click on a voice channel
+4. Look for messages like:
+
+```text
+VOICE CHANNEL CLICK DEBUG: ...
+Proceeding with new connection attempt
+Room access granted: { room_id: "...", join_token: "...", sfu_url: "..." }
+```
+
+If you don't see these messages, the click handler isn't running or the channel type isn't set to `voice`.
+
+### Step 2 -- check server logs
+
+After clicking a voice channel, check server logs for room-access messages. If they're missing, the room request event isn't reaching the server -- check WebSocket connectivity.
+
+### Step 3 -- verify SFU is reachable
+
+```bash
+curl -I http://localhost:5005/health
+```
+
+### Step 4 -- verify microphone permissions
+
+Run in the browser console:
+
+```javascript
+navigator.mediaDevices.getUserMedia({ audio: true })
+  .then(stream => {
+    console.log("Microphone access granted:", stream);
+    console.log("Audio tracks:", stream.getAudioTracks());
+    stream.getTracks().forEach(track => track.stop());
+  })
+  .catch(err => console.error("Microphone error:", err));
+```
+
+### Step 5 -- sanity-check WebRTC + STUN
+
+```javascript
+console.log("RTCPeerConnection supported:", !!window.RTCPeerConnection);
+const pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
+console.log("WebRTC configuration test passed");
+pc.close();
+```
+
+## What to report
+
+When asking for help, include:
+- SFU logs (last ~50 lines)
+- server logs (last ~50 lines)
+- browser console errors
+- STUN config and SFU UDP port range
+- steps to reproduce

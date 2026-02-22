@@ -1,0 +1,12 @@
+{
+  "root": true,
+  "title": "Client",
+  "icon": "Monitor",
+  "pages": [
+    "index",
+    "build-from-source",
+    "voice-communication",
+    "audio-processing",
+    "user-interface"
+  ]
+}

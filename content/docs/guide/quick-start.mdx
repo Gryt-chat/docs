@@ -1,0 +1,100 @@
+---
+title: Quick Start
+description: Get Gryt running in under 5 minutes
+icon: Rocket
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+
+## Docker Compose (recommended)
+
+The fastest way to run Gryt. Pre-built images from GitHub Container Registry — no cloning needed.
+
+<Tabs items={["curl", "wget"]}>
+<Tab value="curl">
+```bash
+mkdir gryt && cd gryt
+curl -LO https://raw.githubusercontent.com/Gryt-chat/gryt/main/docker-compose.yml
+curl -LO https://raw.githubusercontent.com/Gryt-chat/gryt/main/.env.example
+cp .env.example .env
+docker compose up -d
+```
+</Tab>
+<Tab value="wget">
+```bash
+mkdir gryt && cd gryt
+wget https://raw.githubusercontent.com/Gryt-chat/gryt/main/docker-compose.yml
+wget https://raw.githubusercontent.com/Gryt-chat/gryt/main/.env.example
+cp .env.example .env
+docker compose up -d
+```
+</Tab>
+</Tabs>
+
+Wait ~30 seconds for the database to start, then open [http://localhost:3666](http://localhost:3666).
+
+<Callout type="info">
+This spins up everything: the web client, signaling server, SFU media server, ScyllaDB, and MinIO.
+See the full [Docker Compose guide](/docs/deployment/docker-compose) for all configuration options,
+production hardening, and TLS setup.
+</Callout>
+
+## Docker (development — from source)
+
+If you want to hack on Gryt itself:
+
+```bash
+git clone --recurse-submodules https://github.com/Gryt-chat/gryt.git
+cd gryt
+ops/start_dev.sh
+```
+
+Open `http://localhost:3666`.
+
+## Docker (Cloudflare Tunnel)
+
+Self-host with automatic HTTPS tunnels — no port forwarding needed for HTTP traffic:
+
+```bash
+cp ops/deploy/host/.env.example ops/deploy/host/.env
+# edit .env with your Cloudflare tunnel token
+docker compose -f ops/deploy/host/compose.yml up -d --build
+```
+
+See the [Cloudflare Tunnel guide](/docs/deployment/cloudflare-tunnel) for details.
+
+## Kubernetes with Helm
+
+```bash
+helm install gryt oci://ghcr.io/gryt-chat/charts/gryt
+```
+
+Or from the repo:
+
+```bash
+git clone --recurse-submodules https://github.com/Gryt-chat/gryt.git
+cd gryt
+helm install gryt ./ops/helm/gryt \
+  --set gryt.domain=yourdomain.com \
+  --set server.secrets.serverPassword=your-secure-password
+```
+
+## Configuration
+
+All services work out-of-the-box for local use. For production, see the [Configuration](/docs/guide/configuration) page.
+
+## Next steps
+
+- [Docker Compose guide](/docs/deployment/docker-compose) — full self-hosting walkthrough
+- [Configuration](/docs/guide/configuration) — all environment variables
+- [Architecture](/docs/guide/architecture) — how the pieces fit together
+- [Troubleshooting](/docs/guide/troubleshooting) — common issues
+
+**Can't connect?** Check logs:
+
+```bash
+docker compose logs -f
+```
+
+**Audio not working?** WebRTC requires HTTPS in production — see the [TLS section](/docs/deployment/docker-compose#tls-with-caddy-recommended).

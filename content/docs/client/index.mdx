@@ -1,0 +1,92 @@
+---
+title: Overview
+description: React + TypeScript client — UI, audio processing, and WebRTC
+icon: Monitor
+---
+
+The Gryt client is a React/TypeScript application (packaged with Electron for desktop) that handles the user interface, audio processing pipeline, and WebRTC connections to the SFU.
+
+## Features
+
+- **Audio pipeline**: RNNoise noise reduction, auto gain, compressor, noise gate, volume control, mute, real-time visualization
+- **Voice controls**: Mute/unmute, deafen, device hot-swapping
+- **Chat**: Text messaging with attachments, replies, editing, message retry with nonce deduplication
+- **Multi-server**: Seamless server switching with room isolation
+- **UI**: Radix UI components, dark/light themes, Framer Motion animations
+
+## Project structure
+
+```
+client/src/
+├── packages/
+│   ├── audio/      # useMicrophone, noise gate, volume, visualization
+│   ├── webRTC/     # useSFU, peer connections, track management
+│   ├── socket/     # useSockets, server views, user components
+│   ├── settings/   # useSettings, useTheme, local storage
+│   └── mobile/     # Touch gestures, responsive helpers
+├── components/     # Shared UI (Radix UI)
+├── hooks/          # Global React hooks
+└── types/          # TypeScript definitions
+```
+
+## Getting started
+
+```bash
+cd packages/client
+bun install   # or npm install
+bun dev       # or npm run dev
+```
+
+Open `http://localhost:3666`.
+
+## Key hooks
+
+### `useMicrophone`
+
+```typescript
+const { microphoneBuffer, isRecording } = useMicrophone(shouldAccess);
+```
+
+Provides raw and final analysers, gain nodes, and device management. Feeds into the audio processing pipeline.
+
+### `useSFU`
+
+```typescript
+const {
+  connect, disconnect, isConnected,
+  isConnecting, streamSources, connectionState
+} = useSFU();
+```
+
+Manages the WebRTC connection to the SFU with automatic reconnection and track lifecycle handling.
+
+### `useSockets`
+
+```typescript
+const {
+  sockets, clients,
+  serverDetailsList, currentConnection
+} = useSockets();
+```
+
+Multi-server WebSocket management with real-time user state synchronization.
+
+## Configuration
+
+Optional `packages/client/.env`:
+
+```bash
+VITE_AUDIO_SAMPLE_RATE=48000
+VITE_AUDIO_BUFFER_SIZE=256
+```
+
+Audio settings (volume, noise gate, device) are configured through the UI.
+
+## Build
+
+```bash
+bun run build       # production bundle
+bun run preview     # preview locally
+bun run type-check
+bun run lint
+```

@@ -1,0 +1,97 @@
+---
+title: Deployment Guide
+description: Deploy Gryt locally or in production
+icon: Server
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Card, Cards } from 'fumadocs-ui/components/card';
+
+## Deployment options
+
+<Cards>
+  <Card
+    title="Docker Compose"
+    description="Fastest way to self-host — pre-built images, no cloning, one command."
+    href="/docs/deployment/docker-compose"
+  />
+  <Card
+    title="Cloudflare Tunnel"
+    description="Self-host with automatic HTTPS tunnels — no port forwarding for HTTP."
+    href="/docs/deployment/cloudflare-tunnel"
+  />
+</Cards>
+
+## Production requirements
+
+<Callout type="warn">
+These apply to **all** deployment methods.
+</Callout>
+
+- **HTTPS/WSS required** — browsers require a secure context for WebRTC microphone access.
+- **UDP media ports** — the SFU needs a dedicated UDP port range reachable from the internet (default `10000-10019/udp`).
+- **JWT_SECRET** — used by the signaling server for session tokens. Generate with `openssl rand -base64 48`.
+
+## Quick comparison
+
+| Method | Best for | TLS | Needs open ports? |
+|--------|----------|-----|-------------------|
+| [Docker Compose](/docs/deployment/docker-compose) | Self-hosting on a VPS or bare metal | Add Caddy/Nginx | Yes (443 TCP + UDP) |
+| [Cloudflare Tunnel](/docs/deployment/cloudflare-tunnel) | Hosting behind NAT / no static IP | Automatic | UDP only |
+| Kubernetes (Helm) | Scaled / multi-node clusters | cert-manager | Yes |
+
+## Docker Compose (recommended)
+
+Download two files and run `docker compose up -d` — no repo clone needed:
+
+```bash
+mkdir gryt && cd gryt
+curl -LO https://raw.githubusercontent.com/Gryt-chat/gryt/main/docker-compose.yml
+curl -LO https://raw.githubusercontent.com/Gryt-chat/gryt/main/.env.example
+cp .env.example .env
+docker compose up -d
+```
+
+See the full [Docker Compose guide](/docs/deployment/docker-compose) for configuration, TLS, upgrades, and production hardening.
+
+## Kubernetes (Helm)
+
+```bash
+helm install gryt ./ops/helm/gryt -f ops/helm/gryt/examples/production-values.yaml
+```
+
+All images are pulled from `ghcr.io/gryt-chat/*`.
+
+## Docker images
+
+All services are published to GitHub Container Registry under the [`gryt-chat`](https://github.com/orgs/gryt-chat/packages) org:
+
+| Service | Image |
+|---------|-------|
+| Web Client | `ghcr.io/gryt-chat/client` |
+| Signaling Server | `ghcr.io/gryt-chat/server` |
+| SFU (Media) | `ghcr.io/gryt-chat/sfu` |
+| Landing Site | `ghcr.io/gryt-chat/site` |
+| Documentation | `ghcr.io/gryt-chat/docs` |
+
+Each image is tagged with semver (`1.0.0`, `1.0`, `1`) and `latest`. Multi-arch builds (amd64 + arm64).
+
+## Ports
+
+| Port | Proto | Service |
+|------|------:|---------|
+| `443` | TCP | TLS termination (proxy / tunnel edge) |
+| `3666` | TCP | Web client (dev / direct access) |
+| `5000` | TCP | Signaling server |
+| `5005` | TCP | SFU WebSocket |
+| `10000-10019` | UDP | SFU WebRTC media (must be public) |
+
+## Health checks
+
+All services expose a health endpoint:
+
+```bash
+curl http://localhost:5000/health   # server
+curl http://localhost:5005/health   # sfu
+curl http://localhost:3666/health   # client
+```

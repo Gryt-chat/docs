@@ -1,0 +1,102 @@
+---
+title: Contributing
+description: How to contribute to Gryt
+icon: Heart
+---
+
+## Prerequisites
+
+- **Node.js** 18+ and **Bun** (client and server)
+- **Go** 1.21+ (SFU)
+- **Docker** (optional)
+
+## Setup
+
+```bash
+git clone --recurse-submodules https://github.com/YOUR_USERNAME/gryt.git
+cd gryt
+
+cd packages/client && bun install && cd ../..
+cd packages/server && bun install && cd ../..
+cd packages/sfu && go mod download && cd ../..
+cd packages/docs && npm install && cd ../..
+```
+
+Start everything:
+
+```bash
+ops/start_dev.sh
+```
+
+## Workflow
+
+1. Create an issue describing the bug or feature
+2. Fork the repo and create a branch
+3. Make changes and add tests
+4. Run lint and tests
+5. Submit a pull request
+
+## Code style
+
+### TypeScript
+
+- Use strict mode
+- Follow ESLint and Prettier configs
+- Add JSDoc comments for public APIs
+
+```typescript
+/**
+ * Manages microphone input and audio processing.
+ * @param shouldAccess - Whether to request microphone access
+ */
+const useMicrophone = (shouldAccess: boolean): MicrophoneState => {
+  // ...
+};
+```
+
+### Go
+
+- Follow `gofmt` formatting
+- Add godoc comments for exported functions
+- Handle errors explicitly
+
+```go
+// ProcessAudio applies the processing pipeline to the buffer.
+func (p *AudioProcessor) ProcessAudio(buffer AudioBuffer) (AudioBuffer, error) {
+    // ...
+}
+```
+
+## Testing
+
+```bash
+# Client
+cd packages/client && bun test
+
+# Server
+cd packages/server && bun test
+
+# SFU
+cd packages/sfu && go test ./...
+```
+
+## Blog and site content
+
+The marketing site and blog live in `packages/site`. Blog posts are MDX files in `content/blog/` — see the [Site docs](/docs/site/blog) for the full writing guide.
+
+Quick steps to add a blog post:
+
+1. Create `packages/site/content/blog/my-post.mdx` with frontmatter (`title`, `author`, `date`)
+2. Place images in `packages/site/public/` and reference them as `![alt](/filename.png)`
+3. Run `npm run dev` in `packages/site` to preview
+
+## Pull request checklist
+
+- Tests pass (`bun test`, `go test ./...`)
+- Code is linted (`bun run lint`, `go fmt ./...`)
+- Documentation is updated if needed
+- No breaking changes (or clearly marked)
+
+## License
+
+Contributions are licensed under the [AGPL-3.0](/docs/guide/licensing). By submitting a pull request, you agree that your contributions will be licensed under the same terms.

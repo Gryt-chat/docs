@@ -1,0 +1,61 @@
+---
+title: Cloudflare Tunnel
+description: Host Gryt behind Cloudflare Tunnel (HTTP) + direct UDP (WebRTC media)
+icon: Cloud
+---
+
+This setup uses Cloudflare Tunnel for **HTTPS/WSS** (client, server, SFU websocket) while keeping WebRTC **media UDP** direct-to-host.
+
+## What Cloudflare can and can’t proxy
+
+- **OK via Tunnel**:
+  - Client HTTP (static site)
+  - Server HTTP + WebSocket (Socket.IO)
+  - SFU websocket (HTTP upgraded to WSS at the edge)
+- **Not OK via Tunnel**:
+  - WebRTC media (UDP). You must open/forward a UDP port range to the SFU host.
+
+## Recommended compose stack
+
+Use the self-contained hosting stack:
+
+- `ops/deploy/host/compose.yml`
+- `ops/deploy/host/.env` (create from `.env.example`)
+
+## Configure
+
+```bash
+cd ops/deploy/host
+cp .env.example .env
+```
+
+Edit `ops/deploy/host/.env` (minimum):
+
+```bash
+JWT_SECRET="replace-me" # openssl rand -base64 48
+SFU_PUBLIC_HOST="wss://sfu.example.com"
+CORS_ORIGIN="https://gryt.example.com"
+```
+
+## Start
+
+```bash
+docker compose -f ops/deploy/host/compose.yml up -d --build
+```
+
+## Cloudflared routing (example)
+
+Map hostnames to localhost origins:
+
+- `gryt.example.com` → `http://127.0.0.1:8080`
+- `api.gryt.example.com` → `http://127.0.0.1:5000` (WebSocket upgrade required)
+- `sfu.example.com` → `http://127.0.0.1:5005` (WebSocket upgrade required)
+
+## Firewall / port forwarding (critical)
+
+Open/forward the SFU UDP media range to the host running the `sfu` container:
+
+- `SFU_UDP_MIN..SFU_UDP_MAX/udp` (default `10000-10019/udp`)
+
+If the SFU host is behind NAT or has multiple interfaces, set `SFU_ADVERTISE_IP` so it advertises the correct public IP in ICE candidates. For multi-network setups (e.g. LAN + public), both `SFU_ADVERTISE_IP` and `SFU_PUBLIC_HOST` accept comma-separated values — the client automatically pings each endpoint and picks the fastest one.
+

@@ -1,0 +1,207 @@
+---
+title: Voice Communication
+description: High-quality audio with noise suppression and echo cancellation
+icon: Mic
+---
+
+Real-time voice communication with noise suppression, echo cancellation, and voice activity detection.
+
+## Key Features
+
+### High-Quality Audio
+- **Crystal-Clear Voice**: Professional-grade audio quality with minimal latency
+- **Noise Suppression**: Advanced algorithms filter out background noise
+- **Echo Cancellation**: Eliminates echo and feedback automatically
+- **Automatic Gain Control**: Maintains consistent volume levels
+
+### Voice Controls
+- **Mute/Unmute**: Server-synchronized microphone control with visual feedback
+- **Deafen**: Local audio output control (mutes incoming audio)
+- **Push-to-Talk**: Coming soon - hands-free voice activation
+- **Voice Activation**: Automatic transmission based on voice activity
+
+### Real-time Feedback
+- **Voice Activity Detection**: Visual indicators showing who's speaking
+- **Audio Level Meters**: Real-time visualization of audio input/output
+- **Connection Status**: Clear indicators for connection states
+- **Speaking Indicators**: Visual feedback for all participants
+
+## Voice Controls
+
+### Mute Control
+
+The mute button provides server-synchronized microphone control:
+
+```typescript
+// Mute state management
+interface MuteState {
+  isMuted: boolean;
+  serverSynchronized: boolean;
+  visualFeedback: 'muted' | 'unmuted' | 'connecting';
+}
+
+// Toggle mute with server sync
+const toggleMute = async () => {
+  const newMuteState = !currentMuteState;
+  
+  // Update local state immediately for responsive UI
+  setLocalMuteState(newMuteState);
+  
+  // Send to server for synchronization
+  await socket.emit('updateMute', newMuteState);
+  
+  // Update audio pipeline
+  updateAudioPipeline({ muted: newMuteState });
+};
+```
+
+**Visual Feedback:**
+- 🔴 **Red**: Microphone is muted
+- 🟢 **Green**: Microphone is active
+- 🟡 **Yellow**: Mute state is syncing with server
+
+### Deafen Control
+
+Deafen provides local audio output control:
+
+```typescript
+// Deafen state management
+interface DeafenState {
+  isDeafened: boolean;
+  localOnly: boolean; // Doesn't affect server state
+  audioOutput: 'muted' | 'active';
+}
+
+// Toggle deafen (local only)
+const toggleDeafen = () => {
+  const newDeafenState = !currentDeafenState;
+  
+  // Update local audio output
+  setAudioOutputMuted(newDeafenState);
+  
+  // Update visual state
+  setDeafenState(newDeafenState);
+};
+```
+
+**Visual Feedback:**
+- 🟠 **Orange**: Audio output is deafened
+- 🟢 **Green**: Audio output is active
+- **Note**: Others still see you as connected when deafened
+
+### Push-to-Talk (Coming Soon)
+
+Push-to-talk will provide hands-free voice activation:
+
+```typescript
+// Push-to-talk configuration
+interface PushToTalkConfig {
+  enabled: boolean;
+  keyBinding: string; // e.g., 'Space', 'Ctrl+Space'
+  activationThreshold: number; // Voice level threshold
+  releaseDelay: number; // Delay before deactivation
+}
+
+// Push-to-talk handler
+const handlePushToTalk = (pressed: boolean) => {
+  if (pressed) {
+    // Activate microphone
+    setMicrophoneActive(true);
+  } else {
+    // Deactivate after delay
+    setTimeout(() => {
+      setMicrophoneActive(false);
+    }, config.releaseDelay);
+  }
+};
+```
+
+## Server Restart Resilience
+
+Gryt automatically handles signaling server restarts without losing your voice session.
+
+### How It Works
+
+The voice architecture separates the **signaling server** (session management, member lists) from the **SFU** (audio forwarding). When the signaling server restarts:
+
+1. **Audio continues uninterrupted** — the SFU operates independently, so voice chat keeps working during the restart
+2. **Automatic reconnection** — once the signaling server is back online, clients automatically reconnect and restore their session
+3. **Voice channel rejoin** — the client performs a full SFU disconnect and reconnect to cleanly re-establish speaking indicators, stream mapping, and member list status
+4. **Identity preservation** — session restoration uses the access token from the initial connection, so nicknames and user identity are preserved
+
+### Timing
+
+| Phase | Duration | What happens |
+|-------|----------|-------------|
+| Server down | Varies | Audio continues via SFU; signaling unavailable |
+| Reconnect | ~1s | Socket.IO auto-reconnects; session restored from JWT |
+| Voice rejoin | ~2.5s | Full SFU disconnect + reconnect; speaking indicators restored |
+
+### What Users See
+
+- A brief "Reconnecting..." toast notification
+- Voice temporarily disconnects and reconnects (connect sound plays)
+- Member list updates to show correct voice status within seconds
+
+## Audio Quality Features
+
+### RNNoise Noise Reduction
+
+AI-powered noise suppression via an `AudioWorkletNode` running RNNoise compiled to WebAssembly. Processes 480-sample frames off the main thread with ~20 ms added latency. Toggle in **Settings → Audio → Noise Reduction (RNNoise)**.
+
+### Auto Gain Control
+
+True RMS-based AGC that normalizes your voice to a configurable target level (-30 to -5 dB, default -20 dB). Quiet speech gets boosted, loud speech gets reduced. Enabled by default.
+
+### Compressor
+
+Optional dynamic range compressor that tames peaks after AGC. Adjustable from gentle leveling (0 %) to heavy squash (100 %). Enabled by default at 50 %.
+
+### Noise Gate
+
+Configurable threshold gate that silences the mic when you're not speaking. Uses the raw (pre-RNNoise) signal level for accurate detection.
+
+For full pipeline details and settings reference, see [Audio Processing](/docs/client/audio-processing).
+
+## Voice Activity Detection
+
+### Visual Indicators
+
+Real-time visual feedback for all participants:
+
+- **Speaking Animation**: Pulsing border around user avatars when voice is detected
+- **Audio Level Bars**: Real-time visualization of voice levels in settings
+- **Connection Status**: Clear indicators for connection states
+- **Mute Indicators**: Visual feedback for mute/deafen states
+
+## Troubleshooting
+
+### Common Audio Issues
+
+**Microphone not working?**
+- Check browser permissions for microphone access
+- Verify HTTPS in production (required for `getUserMedia`)
+- Try selecting a different input device in Audio Settings
+
+**Echo or feedback?**
+- Use headphones instead of speakers
+- Echo cancellation is enabled by default via browser constraints
+- Reduce output volume if echo persists
+
+**Voice cutting in and out?**
+- Lower the noise gate threshold in Audio Settings
+- If using RNNoise, it may be gating legitimate speech — try disabling it
+
+**Audio too quiet or too loud?**
+- Adjust the AGC target level slider
+- Combine with the microphone volume slider for fine control
+
+## Performance Metrics
+
+### Audio Quality Metrics
+
+- **Latency**: < 50 ms end-to-end (< 5 ms without RNNoise)
+- **Packet Loss**: < 0.1 % under normal conditions
+- **Jitter**: < 10 ms variation
+- **Bitrate**: Configurable per channel (32–510 kbps presets; eSports mode caps at 128 kbps)
+- **Sample Rate**: 48 kHz

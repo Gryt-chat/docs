@@ -1,0 +1,158 @@
+---
+title: Configuration
+description: Environment variables and settings for each Gryt service
+icon: Settings
+---
+
+## Web Client
+
+The web client works out-of-the-box. Optional settings in `packages/client/.env`:
+
+```bash
+VITE_AUDIO_SAMPLE_RATE=48000
+VITE_AUDIO_BUFFER_SIZE=256
+```
+
+Audio settings (volume, noise gate, device selection) are configured through the UI at runtime.
+
+## Signaling Server
+
+Create a `.env` file in `packages/server/` based on `example.env`:
+
+```bash
+PORT=5000
+
+# SFU websocket (internal, container-to-container)
+SFU_WS_HOST="ws://sfu:5005"
+
+# SFU websocket that browsers connect to (public URL).
+# Comma-separated for multi-network (client auto-selects fastest).
+SFU_PUBLIC_HOST="wss://sfu.example.com"
+
+STUN_SERVERS="stun:stun.l.google.com:19302"
+
+SERVER_NAME="My Brand New Server"
+SERVER_INVITE_ONLY="false"
+CORS_ORIGIN="https://gryt.chat"
+SERVER_PASSWORD="123"
+
+# Authentication
+GRYT_AUTH_API=https://auth.gryt.chat
+
+# ScyllaDB
+SCYLLA_CONTACT_POINTS=127.0.0.1
+SCYLLA_LOCAL_DATACENTER=datacenter1
+SCYLLA_KEYSPACE=gryt
+
+# S3 / Object storage
+S3_REGION=auto
+S3_ACCESS_KEY_ID=
+S3_SECRET_ACCESS_KEY=
+S3_BUCKET=gryt-bucket
+S3_FORCE_PATH_STYLE=false
+
+NODE_ENV=development
+DEBUG=gryt:*
+```
+
+### MinIO (self-hosted S3)
+
+```bash
+S3_ENDPOINT=http://localhost:9000
+S3_ACCESS_KEY_ID=admin
+S3_SECRET_ACCESS_KEY=change-me-please
+S3_BUCKET=gryt-bucket
+S3_FORCE_PATH_STYLE=true
+```
+
+```bash
+docker run -d --name minio \
+  -p 9000:9000 -p 9001:9001 \
+  -v /srv/minio/data:/data \
+  -e MINIO_ROOT_USER=admin \
+  -e MINIO_ROOT_PASSWORD=change-me-please \
+  quay.io/minio/minio server /data --console-address ":9001"
+
+docker run --rm --network host \
+  -e MC_HOST_minio=http://admin:change-me-please@localhost:9000 \
+  quay.io/minio/mc mb --ignore-existing minio/gryt-bucket
+```
+
+## SFU Server
+
+Create a `.env` file in `packages/sfu/`:
+
+```bash
+PORT=5005
+STUN_SERVERS=stun:stun.l.google.com:19302,stun:stun1.l.google.com:19302
+ICE_UDP_PORT_MIN=10000
+ICE_UDP_PORT_MAX=10019
+LOG_LEVEL=info
+MAX_CONNECTIONS=1000
+```
+
+For production, also consider setting `ICE_ADVERTISE_IP` if the SFU host is behind NAT.
+For multi-network setups (e.g. LAN party + public), both variables accept comma-separated values:
+
+```bash
+ICE_ADVERTISE_IP=203.0.113.10,192.168.1.100
+```
+
+## Authentication
+
+Authentication is centrally hosted at `https://auth.gryt.chat`. No additional configuration is needed by default.
+
+To require Gryt accounts on your server:
+
+```bash
+GRYT_AUTH_MODE=required
+GRYT_OIDC_ISSUER=https://auth.gryt.chat/realms/gryt
+GRYT_OIDC_AUDIENCE=gryt-web
+```
+
+To disable authentication:
+
+```bash
+GRYT_AUTH_MODE=disabled
+```
+
+See the [Server docs](/docs/server) for more on auth integration.
+
+## STUN + SFU UDP ports (production)
+
+This project does **not** require a TURN server. Instead:
+
+1. Configure STUN servers (`STUN_SERVERS`)
+2. Pin a dedicated SFU UDP port range (`ICE_UDP_PORT_MIN` / `ICE_UDP_PORT_MAX`)
+3. Open that UDP range on the SFU host firewall
+
+```bash
+STUN_SERVERS=stun:stun.l.google.com:19302,stun:stun1.l.google.com:19302
+ICE_UDP_PORT_MIN=10000
+ICE_UDP_PORT_MAX=10019
+```
+
+## Docker Compose stacks
+
+| Stack | Path | Use case |
+|-------|------|----------|
+| **All-in-one** | `docker-compose.yml` | [Recommended self-hosting](/docs/deployment/docker-compose) — pre-built GHCR images |
+| Cloudflare Tunnel | `ops/deploy/host/compose.yml` | Hosting with Tunnel + DB + S3 |
+| Production | `ops/deploy/compose/prod.yml` | Classic reverse-proxy production (GHCR images) |
+| Dev deps | `ops/deploy/compose/dev-deps.yml` | ScyllaDB + MinIO for local dev |
+| Dev app | `ops/deploy/compose/dev.yml` | SFU + servers + client (builds from source) |
+
+## Health checks
+
+```bash
+curl http://localhost:5000/health   # server
+curl http://localhost:5005/health   # SFU
+```
+
+## Security best practices
+
+- Never commit `.env` files to version control
+- Use strong, unique passwords for `SERVER_PASSWORD`
+- Use HTTPS/WSS in production
+- Configure CORS origins to match your domain
+- Run containers as non-root users

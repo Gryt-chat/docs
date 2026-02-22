@@ -1,0 +1,160 @@
+---
+title: Troubleshooting
+description: Common issues and solutions for Gryt
+icon: Bug
+---
+
+## Installation warnings
+
+### Windows SmartScreen blocks the installer
+
+Windows SmartScreen may show **"Windows protected your PC"** when running the installer. This happens because the app is not yet signed with an EV code signing certificate. Click **More info → Run anyway**.
+
+If the option doesn't appear, your organization may have a Group Policy blocking unsigned apps. In that case, [build from source](/docs/client/build-from-source) instead.
+
+### macOS Gatekeeper blocks the app
+
+macOS shows **"can't be opened because Apple cannot check it for malicious software"**. Right-click the app → **Open** → confirm **Open**. This bypass is remembered for future launches.
+
+### Linux AppImage won't launch
+
+The AppImage may not have the execute permission set after download:
+
+```bash
+chmod +x Gryt-Chat-*.AppImage
+./Gryt-Chat-*.AppImage
+```
+
+## Connection issues
+
+### WebSocket connection fails
+
+```bash
+curl http://localhost:5000/health    # server
+curl http://localhost:5005/health    # SFU
+```
+
+- Verify ports 5000 and 5005 are not blocked by a firewall
+- Check CORS: `CORS_ORIGIN` in `server/.env` must match the client origin
+- In production, ensure WSS (not WS) is used
+
+### SFU connection fails
+
+```bash
+wscat -c ws://localhost:5005
+```
+
+- Verify STUN servers are reachable: `dig stun.l.google.com`
+- Check SFU UDP port range is open (`ICE_UDP_PORT_MIN` / `ICE_UDP_PORT_MAX`)
+- Review SFU logs: `docker compose logs sfu`
+
+## Audio issues
+
+### Microphone not working
+
+- Check browser permissions (`chrome://settings/content/microphone`)
+- WebRTC requires HTTPS in production
+- Try a different browser or audio device
+
+### Poor quality / echo
+
+- Use headphones to avoid feedback loops
+- Adjust the noise gate threshold in audio settings
+- Ensure `echoCancellation` and `noiseSuppression` are enabled (default)
+
+### Audio cutting out
+
+- Check network stability
+- Review SFU logs for connection state changes
+- See the [Voice Debugging](/docs/sfu/voice-debugging) guide
+
+## Server restart / reconnection
+
+### Voice shows "Unknown" user after restart
+
+This was fixed in the latest release. The root cause was a race condition where
+clients would re-join with a stale local nickname before the server finished
+restoring their session from the JWT. Ensure you are running the latest server
+and client versions.
+
+### Voice activity indicators missing after restart
+
+Gryt now performs a full SFU disconnect and reconnect when the signaling server
+comes back online. This cleanly re-establishes stream mapping, speaking
+indicators, and member list voice status. The reconnect takes roughly 2–3
+seconds after the server is available again.
+
+### Member list stuck on "Online" instead of "In Voice"
+
+The member sidebar status is now based on `hasJoinedChannel` alone rather than
+requiring a secondary WebRTC confirmation flag. After updating, member status
+should reflect voice participation as soon as the client rejoins the channel.
+
+## Docker issues
+
+### Containers fail to start
+
+```bash
+docker compose logs
+docker stats
+```
+
+- Check for port conflicts: `netstat -tulpn | grep :5000`
+- Rebuild: `docker compose down; docker compose build --no-cache; docker compose up -d`
+
+### High resource usage
+
+```yaml
+# Limit resources in compose
+services:
+  server:
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+```
+
+## Kubernetes issues
+
+### Pods stuck or crashing
+
+```bash
+kubectl get pods -l app.kubernetes.io/name=gryt
+kubectl describe pod <pod-name>
+kubectl logs <pod-name>
+```
+
+### Services not reachable
+
+```bash
+kubectl get services -l app.kubernetes.io/name=gryt
+kubectl get ingress
+```
+
+## Debug logging
+
+```bash
+DEBUG=gryt:* npm run dev          # all components
+DEBUG=gryt:audio:* npm run dev    # audio only
+DEBUG=gryt:websocket:* npm run dev
+```
+
+## Debug endpoints (development only)
+
+| Endpoint | Service | Description |
+|----------|---------|-------------|
+| `GET /health` | server, SFU | Health check |
+| `GET /debug/rooms` | server | Room states |
+| `GET /debug/users` | server | Connected users |
+| `GET /debug/peers` | SFU | Peer connections |
+| `GET /debug/tracks` | SFU | Media tracks |
+| `GET /metrics` | SFU | Prometheus metrics |
+
+## Reporting issues
+
+When opening an issue, include:
+1. OS, browser, and Docker/K8s version
+2. Sanitized environment variables
+3. Server and browser console logs
+4. Steps to reproduce

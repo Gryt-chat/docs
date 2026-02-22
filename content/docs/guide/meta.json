@@ -1,0 +1,16 @@
+{
+  "root": true,
+  "title": "Guide",
+  "icon": "BookOpen",
+  "pages": [
+    "index",
+    "quick-start",
+    "configuration",
+    "architecture",
+    "accessibility",
+    "contributing",
+    "licensing",
+    "faq",
+    "troubleshooting"
+  ]
+}

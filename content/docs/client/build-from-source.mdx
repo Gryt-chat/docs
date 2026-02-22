@@ -1,0 +1,157 @@
+---
+title: Build from Source
+description: Compile the Gryt desktop client yourself from the public source code
+icon: Hammer
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+
+Don't want to trust a pre-built binary? You can build the Electron desktop client yourself directly from source. The entire codebase is open — inspect it, audit it, then build it.
+
+## Prerequisites
+
+- **Node.js** v20 or later
+- **npm** (comes with Node.js) or **bun**
+- **Git**
+
+<Tabs items={["Linux", "macOS", "Windows"]}>
+<Tab value="Linux">
+Most distributions ship the required build tools. On Debian/Ubuntu:
+
+```bash
+sudo apt update
+sudo apt install -y git nodejs npm
+```
+</Tab>
+<Tab value="macOS">
+Install Node.js via [Homebrew](https://brew.sh) or the [official installer](https://nodejs.org):
+
+```bash
+brew install node git
+```
+</Tab>
+<Tab value="Windows">
+Install [Node.js](https://nodejs.org) (LTS) and [Git for Windows](https://git-scm.com/download/win). Use PowerShell or Git Bash for the commands below.
+</Tab>
+</Tabs>
+
+## Clone the repository
+
+```bash
+git clone --recurse-submodules https://github.com/Gryt-chat/gryt.git
+cd gryt/packages/client
+```
+
+## Install dependencies
+
+<Tabs items={["npm", "bun"]}>
+<Tab value="npm">
+```bash
+npm install
+```
+</Tab>
+<Tab value="bun">
+```bash
+bun install
+```
+</Tab>
+</Tabs>
+
+## Build the desktop app
+
+This compiles the TypeScript source with Vite, then packages it with Electron Builder. No artifacts are published — everything stays local.
+
+```bash
+npm run electron:build
+```
+
+The command runs `cross-env ELECTRON=1 vite build && electron-builder --publish never` under the hood.
+
+### Building for a specific platform only
+
+By default `electron:build` targets the platform you're running on. To explicitly target one platform:
+
+```bash
+# Linux (AppImage + deb)
+npx cross-env ELECTRON=1 vite build && npx electron-builder --linux --publish never
+
+# macOS (zip)
+npx cross-env ELECTRON=1 vite build && npx electron-builder --mac --publish never
+
+# Windows (NSIS installer + portable exe)
+npx cross-env ELECTRON=1 vite build && npx electron-builder --win --publish never
+```
+
+<Callout type="info">
+Cross-compiling (e.g. building a Windows `.exe` on Linux) is possible but may require additional tooling. Building on the target OS is the most reliable approach.
+</Callout>
+
+## Find your build output
+
+Built artifacts are written to `packages/client/release/`:
+
+| Platform | Artifacts |
+|----------|-----------|
+| Linux    | `.AppImage`, `.deb` |
+| macOS    | `.zip` |
+| Windows  | NSIS installer (`.exe`), portable (`.exe`) |
+
+## Verify the build
+
+1. **Read the source** — the full client source lives in `packages/client/src/`. No hidden code, no obfuscation.
+2. **Check dependencies** — run `npm ls` to list every dependency and its resolved version.
+3. **Compare checksums** — after building, you can compare the SHA-256 hash of your local build against the published release to confirm they were built from the same source.
+
+```bash
+sha256sum release/*.AppImage   # Linux
+sha256sum release/*.exe        # Windows
+shasum -a 256 release/*.zip    # macOS
+```
+
+<Callout type="warn">
+Exact byte-for-byte reproducibility between your local build and the CI release is unlikely due to timestamps, signing certificates, and platform differences. The important thing is that you can audit every line of code that goes into the build.
+</Callout>
+
+## Code signing and OS trust
+
+Pre-built releases from GitHub may trigger security warnings on Windows (SmartScreen) or macOS (Gatekeeper) because the binaries are not yet signed with a trusted certificate. This is normal for open-source projects and does **not** mean the software is malicious.
+
+### Windows SmartScreen
+
+When you run the installer, Windows may show **"Windows protected your PC"**. Click **More info → Run anyway** to proceed.
+
+SmartScreen builds reputation over time — the more users download and run the app from a given certificate, the fewer warnings appear. An EV (Extended Validation) code signing certificate bypasses this warm-up entirely.
+
+### macOS Gatekeeper
+
+macOS may show **"Gryt Chat can't be opened because Apple cannot check it for malicious software."** To open it:
+
+1. Right-click (or Control-click) the app
+2. Select **Open**
+3. Click **Open** in the confirmation dialog
+
+This only needs to be done once. Subsequent launches work normally.
+
+### Linux
+
+AppImage and `.deb` packages do not have an equivalent gatekeeper system. You may need to mark the AppImage as executable:
+
+```bash
+chmod +x Gryt-Chat-*.AppImage
+```
+
+### Build metadata
+
+The Electron Builder config includes metadata that helps establish trust with operating systems:
+
+- **Copyright and publisher** — embedded in the executable's file properties
+- **`requestedExecutionLevel: asInvoker`** — declares the app does not require admin privileges
+- **macOS entitlements** — declares only the permissions the app actually needs (microphone, network)
+- **NSIS display names** — proper app name in Add/Remove Programs and Start Menu
+
+If you're building from source, these are all configured in `electron-builder.yml` and applied automatically during the build.
+
+## Prefer the pre-built release?
+
+If you've reviewed the source and are comfortable, you can grab the latest build from the [GitHub Releases page](https://github.com/Gryt-chat/gryt/releases) instead.

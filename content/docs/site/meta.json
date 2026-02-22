@@ -1,0 +1,9 @@
+{
+  "root": true,
+  "title": "Site",
+  "icon": "Globe",
+  "pages": [
+    "index",
+    "blog"
+  ]
+}

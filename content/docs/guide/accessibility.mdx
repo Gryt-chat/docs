@@ -1,0 +1,58 @@
+---
+title: Accessibility
+description: Our commitment to building a 100% accessible voice chat platform
+icon: Accessibility
+---
+
+Gryt's goal is to be a **100% accessible** voice chat platform. Accessibility is not an afterthought — it is a core design principle that shapes every decision we make, from the fonts we ship to the components we build.
+
+## Why accessibility matters
+
+Voice chat platforms are inherently social tools. If they aren't accessible, they exclude the very people who could benefit most from low-friction, real-time communication. We believe everyone deserves equal access to online communities regardless of visual, motor, auditory, or cognitive ability.
+
+## Typography: Atkinson Hyperlegible
+
+Gryt uses [Atkinson Hyperlegible Next](https://brailleinstitute.org/freefont) as its primary typeface and **Atkinson Hyperlegible Mono** for all monospaced text (code blocks, hotkey badges, debug panels, and technical displays).
+
+Atkinson Hyperlegible was created by the **Braille Institute of America** with one goal: maximum legibility. Traditional typefaces optimize for aesthetics; Atkinson Hyperlegible optimizes for character differentiation. Key design decisions include:
+
+- **Exaggerated letter forms** — Characters like `I`, `l`, `1` and `0`, `O`, `Q` are unambiguously distinct, reducing misreadings for users with low vision.
+- **Open apertures** — Letters like `c`, `e`, and `s` have wider openings so they remain distinguishable at small sizes or low resolutions.
+- **Asymmetric shapes** — Mirrored letters such as `b`/`d` and `p`/`q` have subtle asymmetries that make them easier to tell apart.
+- **Variable weight axis** — The font ships as a single variable file supporting weights 200–900, so we can use it everywhere from thin labels to bold headings without loading extra files.
+
+The mono variant applies these same legibility principles to fixed-width text, making it significantly easier to read code, IP addresses, keybinds, and latency numbers compared to traditional monospace fonts.
+
+## Current accessibility features
+
+### Keyboard navigation
+Every interactive element in Gryt is reachable and operable with the keyboard alone. Voice controls, server switching, channel navigation, and chat all work without a mouse.
+
+### Configurable hotkeys
+Users can rebind push-to-talk, mute, deafen, and other voice controls to any key combination. This lets users with limited mobility choose key placements that work for them.
+
+### Screen reader support
+We use semantic HTML and ARIA attributes throughout the client. Voice state changes (mute, deafen, speaking) are announced, and all controls have descriptive labels.
+
+### Theme support
+Gryt supports light and dark themes with system preference detection. Both themes are designed for WCAG AA color contrast compliance, and we are working toward full AAA compliance.
+
+### Focus management
+All modals and dialogs trap focus correctly, focus indicators are always visible, and tab order follows a logical reading sequence.
+
+## Roadmap
+
+We're actively working toward full WCAG 2.2 AA compliance across the entire platform. Here's what's on our radar:
+
+- **Reduced motion mode** — Respect `prefers-reduced-motion` and disable all non-essential animations.
+- **High contrast mode** — A dedicated high-contrast color scheme beyond standard dark/light themes.
+- **Live regions for chat** — Use ARIA live regions so incoming messages are announced by screen readers without interrupting the current focus.
+- **Audio cues** — Optional sound effects for state changes (user joined, muted, etc.) so users who can't see visual indicators still get feedback.
+- **Captioning and transcription** — Real-time speech-to-text for voice channels, making spoken conversations accessible to deaf and hard-of-hearing users.
+- **Full AAA contrast** — Upgrade all color pairings to meet WCAG AAA (7:1) contrast ratios.
+
+## Contributing to accessibility
+
+If you encounter an accessibility barrier in Gryt, please [open an issue](https://github.com/Gryt-chat/gryt/issues) and label it `accessibility`. We treat accessibility bugs with the same urgency as security issues.
+
+We also welcome contributions that improve accessibility — see the [contributing guide](/docs/guide/contributing) for how to get started.

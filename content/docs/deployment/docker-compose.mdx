@@ -1,0 +1,308 @@
+---
+title: Docker Compose
+description: Self-host Gryt with a single docker compose up — no cloning required
+icon: Container
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+
+The fastest way to self-host Gryt. Everything runs from pre-built images published to
+GitHub Container Registry — no need to clone any repos or build anything.
+
+## What's included
+
+| Service | Image | Purpose |
+|---------|-------|---------|
+| **Client** | `ghcr.io/gryt-chat/client` | Web UI (React + Nginx) |
+| **Server** | `ghcr.io/gryt-chat/server` | Signaling, chat, file uploads |
+| **SFU** | `ghcr.io/gryt-chat/sfu` | WebRTC media forwarding |
+| **ScyllaDB** | `scylladb/scylla` | Message & user storage |
+| **MinIO** | `minio/minio` | S3-compatible file storage |
+
+## Quick start
+
+<Steps>
+
+<Step>
+### Download the compose file and example env
+
+<Tabs items={["curl", "wget"]}>
+<Tab value="curl">
+```bash
+mkdir gryt && cd gryt
+curl -LO https://raw.githubusercontent.com/Gryt-chat/gryt/main/docker-compose.yml
+curl -LO https://raw.githubusercontent.com/Gryt-chat/gryt/main/.env.example
+cp .env.example .env
+```
+</Tab>
+<Tab value="wget">
+```bash
+mkdir gryt && cd gryt
+wget https://raw.githubusercontent.com/Gryt-chat/gryt/main/docker-compose.yml
+wget https://raw.githubusercontent.com/Gryt-chat/gryt/main/.env.example
+cp .env.example .env
+```
+</Tab>
+</Tabs>
+
+</Step>
+
+<Step>
+### Edit the `.env` file
+
+Open `.env` in your editor and configure at minimum:
+
+```bash
+# Give your server a name
+SERVER_NAME=My Gryt Server
+
+# Set a real secret in production
+JWT_SECRET=<run: openssl rand -base64 48>
+
+# The URL browsers will use to reach the client
+CORS_ORIGIN=http://localhost:3666
+```
+
+</Step>
+
+<Step>
+### Start everything
+
+```bash
+docker compose up -d
+```
+
+Wait about 30–60 seconds for ScyllaDB to initialize, then open [http://localhost:3666](http://localhost:3666).
+
+</Step>
+
+</Steps>
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                     Docker Network                       │
+│                                                         │
+│  ┌──────────┐    ┌──────────┐    ┌──────────┐          │
+│  │  Client   │    │  Server   │    │   SFU    │          │
+│  │  :3666    │───▶│  :5000    │───▶│  :5005   │          │
+│  └──────────┘    └────┬─────┘    └──────────┘          │
+│                       │                                  │
+│              ┌────────┴────────┐                        │
+│              │                 │                        │
+│        ┌─────┴─────┐   ┌──────┴─────┐                  │
+│        │  ScyllaDB  │   │   MinIO    │                  │
+│        │  :9042     │   │   :9000    │                  │
+│        └───────────┘   └────────────┘                  │
+└─────────────────────────────────────────────────────────┘
+```
+
+## Configuration reference
+
+### Image versions
+
+Pin specific versions instead of `latest` for reproducible deploys:
+
+```bash
+CLIENT_VERSION=1.0.1
+SERVER_VERSION=1.0.0
+SFU_VERSION=1.0.0
+```
+
+Browse available tags at [github.com/orgs/gryt-chat/packages](https://github.com/orgs/gryt-chat/packages).
+
+### Ports
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `CLIENT_PORT` | `3666` | Web UI |
+| `SERVER_PORT` | `5000` | Signaling API + WebSocket |
+| `SFU_PORT` | `5005` | SFU WebSocket |
+| `SFU_UDP_MIN` | `10000` | WebRTC media UDP range start |
+| `SFU_UDP_MAX` | `10019` | WebRTC media UDP range end |
+
+### Server
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SERVER_NAME` | `My Gryt Server` | Display name in the server browser |
+| `SERVER_DESCRIPTION` | `A Gryt voice chat server` | Server description |
+| `SERVER_PASSWORD` | *(empty)* | Password to join (leave empty for open) |
+| `SERVER_INVITE_ONLY` | `false` | Require invites to join |
+| `JWT_SECRET` | `change-me-in-production` | Session token secret |
+| `CORS_ORIGIN` | `http://localhost:3666` | Allowed origins for the API |
+
+### Authentication
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `GRYT_AUTH_MODE` | `disabled` | `disabled` or `required` |
+| `GRYT_OIDC_ISSUER` | `https://auth.gryt.chat/realms/gryt` | OIDC issuer URL |
+| `GRYT_OIDC_AUDIENCE` | `gryt-web` | OIDC audience |
+
+### WebRTC / NAT
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `STUN_SERVERS` | Google STUN | Comma-separated STUN URIs |
+| `SFU_PUBLIC_HOST` | `ws://localhost:5005` | Public SFU URL(s) for browsers (comma-separated for multi-network) |
+| `SFU_ADVERTISE_IP` | *(auto)* | Public IP(s) to advertise in ICE candidates (comma-separated for multi-network) |
+
+### Storage
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `MINIO_ROOT_USER` | `minioadmin` | MinIO admin username |
+| `MINIO_ROOT_PASSWORD` | `minioadmin` | MinIO admin password |
+| `S3_BUCKET` | `gryt` | Bucket for file uploads |
+
+## Production checklist
+
+<Callout type="warn" title="Before going public">
+- [ ] Set a strong `JWT_SECRET` — generate with `openssl rand -base64 48`
+- [ ] Change `MINIO_ROOT_USER` and `MINIO_ROOT_PASSWORD`
+- [ ] Open UDP ports `10000-10019` in your firewall
+- [ ] Set `SFU_ADVERTISE_IP` if behind NAT
+- [ ] Set `SFU_PUBLIC_HOST` to your public `wss://` URL
+- [ ] Set `CORS_ORIGIN` to your production domain
+- [ ] Put a reverse proxy (Caddy, Nginx, Traefik) in front for TLS
+- [ ] Pin image versions instead of `latest`
+</Callout>
+
+### TLS with Caddy (recommended)
+
+The simplest way to add HTTPS is [Caddy](https://caddyserver.com/) — it handles certificates automatically.
+
+Add this to your `docker-compose.yml`:
+
+```yaml
+services:
+  caddy:
+    image: caddy:latest
+    container_name: gryt-caddy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+    networks:
+      - gryt
+    restart: unless-stopped
+
+volumes:
+  caddy-data:
+```
+
+And create a `Caddyfile`:
+
+```
+gryt.example.com {
+    reverse_proxy client:80
+}
+
+api.example.com {
+    reverse_proxy server:5000
+}
+
+sfu.example.com {
+    reverse_proxy sfu:5005
+}
+```
+
+Then update your `.env`:
+
+```bash
+CORS_ORIGIN=https://gryt.example.com
+SFU_PUBLIC_HOST=wss://sfu.example.com
+CLIENT_PORT=8080  # Caddy takes over port 80/443
+
+# Multi-network example (LAN party + public):
+# SFU_PUBLIC_HOST=wss://sfu.example.com,ws://192.168.1.100:5005
+# SFU_ADVERTISE_IP=203.0.113.10,192.168.1.100
+```
+
+## Managing the stack
+
+```bash
+# View logs
+docker compose logs -f
+
+# View logs for a single service
+docker compose logs -f server
+
+# Restart a service after config change
+docker compose restart server
+
+# Update to latest images
+docker compose pull && docker compose up -d
+
+# Update to a specific version
+SFU_VERSION=1.2.0 docker compose up -d sfu
+
+# Stop everything
+docker compose down
+
+# Stop and remove all data (clean slate)
+docker compose down -v
+```
+
+## Health checks
+
+All services expose health endpoints. Check the stack health:
+
+```bash
+curl http://localhost:5000/health   # server
+curl http://localhost:5005/health   # sfu
+curl http://localhost:3666/health   # client
+```
+
+Or use `docker compose ps` to see the health status of all containers.
+
+## Upgrading
+
+```bash
+# Pull the latest images
+docker compose pull
+
+# Recreate containers with new images
+docker compose up -d
+
+# Verify
+docker compose ps
+```
+
+To upgrade to specific versions, edit the `*_VERSION` vars in `.env`:
+
+```bash
+CLIENT_VERSION=1.1.0
+SERVER_VERSION=1.1.0
+SFU_VERSION=1.1.0
+```
+
+Then run `docker compose up -d`.
+
+## Using external S3 / database
+
+To use an external S3-compatible provider (AWS, Cloudflare R2, etc.) or an external ScyllaDB/Cassandra cluster, remove the
+`scylla`, `minio`, and `minio-init` services from `docker-compose.yml` and set the appropriate environment variables on the
+`server` service directly:
+
+```yaml
+server:
+  environment:
+    # External ScyllaDB
+    SCYLLA_CONTACT_POINTS: "your-scylla-host:9042"
+    SCYLLA_KEYSPACE: gryt
+
+    # External S3 (e.g. Cloudflare R2)
+    S3_ENDPOINT: "https://<account-id>.r2.cloudflarestorage.com"
+    S3_REGION: auto
+    S3_ACCESS_KEY_ID: "<your-key>"
+    S3_SECRET_ACCESS_KEY: "<your-secret>"
+    S3_BUCKET: gryt
+    S3_FORCE_PATH_STYLE: "false"
+```

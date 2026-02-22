@@ -1,0 +1,101 @@
+---
+title: Writing Blog Posts
+description: How to create and format blog posts for gryt.chat/blog
+icon: FileText
+---
+
+Blog posts are MDX files in `packages/site/content/blog/`. They support standard Markdown, GitHub Flavored Markdown (tables, strikethrough), and JSX.
+
+## Creating a post
+
+Create a new `.mdx` file in `content/blog/`:
+
+```bash
+content/blog/my-new-post.mdx
+```
+
+The filename becomes the URL slug: `gryt.chat/blog/my-new-post`.
+
+## Frontmatter
+
+Every post needs a YAML frontmatter block:
+
+```yaml
+---
+title: My Post Title
+description: A short summary shown on the blog index and in meta tags.
+author: Your Name
+date: 2026-02-21
+tags:
+  - gryt
+  - topic
+---
+```
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `title` | Yes | Displayed as the post heading |
+| `description` | No | Shown on the blog index card and in the page header |
+| `author` | Yes | Author name displayed in post metadata |
+| `date` | Yes | Publication date (`YYYY-MM-DD`), used for sorting (newest first) |
+| `image` | No | Hero image URL shown at the top of the post and on the card |
+| `tags` | No | Array of tags displayed as pills |
+
+## Images
+
+Place images in `public/` and reference them with absolute paths:
+
+```markdown
+![Alt text describing the image](/my-image.png)
+```
+
+All images in blog posts automatically get **lightbox** behavior — clicking an image opens it in a fullscreen overlay with the alt text as a caption. The lightbox uses Radix Dialog and supports closing via the X button or the Escape key.
+
+Write descriptive alt text — it doubles as the lightbox caption.
+
+## Videos
+
+Use a `<video>` JSX element directly in MDX:
+
+```jsx
+<video
+  src="/my-video.mp4"
+  controls
+  playsInline
+  style={{ width: '100%', borderRadius: 'var(--radius-sm)', margin: '24px 0' }}
+>
+  Your browser does not support the video tag.
+</video>
+```
+
+## Internal links
+
+Use standard Markdown links with absolute paths for internal navigation:
+
+```markdown
+Read more in [the next post](/blog/another-post).
+```
+
+Internal links (starting with `/`) are automatically handled by React Router — no full page reload.
+
+## Supported Markdown features
+
+- Standard Markdown (headings, bold, italic, lists, code blocks, blockquotes, horizontal rules)
+- GFM extensions (tables, strikethrough, task lists)
+- Fenced code blocks with language highlighting
+- Inline JSX (any valid React JSX)
+
+## Post ordering
+
+Posts are sorted by `date` in descending order (newest first) on the blog index. To control the order of same-day posts, use different dates.
+
+## Development
+
+Run the site dev server to preview posts with hot reload:
+
+```bash
+cd packages/site
+npm run dev
+```
+
+Changes to `.mdx` files are picked up automatically by Vite's HMR.

@@ -1,0 +1,10 @@
+{
+  "root": true,
+  "title": "Deployment",
+  "icon": "Cloud",
+  "pages": [
+    "index",
+    "docker-compose",
+    "cloudflare-tunnel"
+  ]
+}

@@ -1,0 +1,48 @@
+---
+title: Overview
+description: The gryt.chat marketing site and blog — Vite, React, and MDX
+icon: Globe
+---
+
+The Gryt site (`packages/site`) is the public-facing website at [gryt.chat](https://gryt.chat). It serves the landing page, feature overview, and blog.
+
+## Stack
+
+- **Vite** for bundling and dev server
+- **React 19** with React Router for SPA routing
+- **MDX** for blog posts (via `@mdx-js/rollup` with remark plugins)
+- **Radix UI** for accessible primitives (Dialog, Navigation Menu, Tooltip)
+- **CSS Modules** for scoped styling with CSS custom properties
+
+## Project structure
+
+```
+site/
+├── content/
+│   └── blog/           # MDX blog posts
+├── public/             # Static assets (images, videos, logo)
+├── src/
+│   ├── components/     # Navbar, Footer, Hero, Lightbox, etc.
+│   ├── lib/
+│   │   └── blog.ts     # Blog post loader (Vite glob import)
+│   ├── pages/          # Route components (BlogIndex, BlogPost, Home)
+│   └── index.css       # Global styles and CSS variables
+└── vite.config.ts
+```
+
+## Getting started
+
+```bash
+cd packages/site
+npm install
+npm run dev
+```
+
+Open `http://localhost:5173`.
+
+## Build
+
+```bash
+npm run build     # production bundle → dist/
+npm run preview   # preview the production build locally
+```
