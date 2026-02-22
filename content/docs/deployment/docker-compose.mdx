@@ -61,8 +61,8 @@ SERVER_NAME=My Gryt Server
 # Set a real secret in production
 JWT_SECRET=<run: openssl rand -base64 48>
 
-# The URL browsers will use to reach the client
-CORS_ORIGIN=http://localhost:3666
+# Allowed origins (hosted client + local dev)
+CORS_ORIGIN=http://localhost:3666,https://app.gryt.chat
 ```
 
 </Step>
@@ -130,7 +130,7 @@ Browse available tags at [github.com/orgs/gryt-chat/packages](https://github.com
 | `SERVER_PASSWORD_IP_MAX_RETRIES` | `15` | Per-IP attempts before lockout (across all users) |
 | `SERVER_INVITE_ONLY` | `false` | Require invites to join |
 | `JWT_SECRET` | `change-me-in-production` | Session token secret |
-| `CORS_ORIGIN` | `http://localhost:3666` | Allowed origins for the API |
+| `CORS_ORIGIN` | `http://localhost:3666,https://app.gryt.chat` | Allowed origins for the API (comma-separated) |
 
 ### Authentication
 
@@ -164,7 +164,7 @@ Browse available tags at [github.com/orgs/gryt-chat/packages](https://github.com
 - [ ] Open UDP ports `10000-10019` in your firewall
 - [ ] Set `SFU_ADVERTISE_IP` if behind NAT
 - [ ] Set `SFU_PUBLIC_HOST` to your public `wss://` URL
-- [ ] Set `CORS_ORIGIN` to your production domain
+- [ ] Ensure `CORS_ORIGIN` includes `https://app.gryt.chat` and your production domain
 - [ ] Put a reverse proxy (Caddy, Nginx, Traefik) in front for TLS
 - [ ] Pin image versions instead of `latest`
 </Callout>
@@ -213,7 +213,7 @@ sfu.example.com {
 Then update your `.env`:
 
 ```bash
-CORS_ORIGIN=https://gryt.example.com
+CORS_ORIGIN=https://app.gryt.chat,https://gryt.example.com
 SFU_PUBLIC_HOST=wss://sfu.example.com
 CLIENT_PORT=8080  # Caddy takes over port 80/443
 
