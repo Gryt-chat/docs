@@ -228,6 +228,49 @@ Delete a custom emoji. Requires `admin` or `owner` role.
 { "ok": true }
 ```
 
+#### BetterTTV Import
+
+**GET** `/api/emojis/bttv/user/:userId`
+
+Fetch emotes for a BetterTTV user. The `userId` is the hex ID from a BetterTTV profile URL (`https://betterttv.com/users/<userId>`). No authentication required (acts as a proxy to the BetterTTV API).
+
+**Response:**
+```json
+{
+  "username": "forsen",
+  "channelEmotes": [
+    { "id": "5f3eb452b2efd65d77e867ed", "code": "forsenBlunder", "imageType": "png", "animated": false }
+  ],
+  "sharedEmotes": [
+    { "id": "578bfabf78f4d09f44986499", "code": "forsenShuffle", "imageType": "gif", "animated": true }
+  ]
+}
+```
+
+**POST** `/api/emojis/bttv/import`
+
+Import selected BetterTTV emotes as server emojis. Requires `admin` or `owner` role. The server downloads each emote from the BetterTTV CDN, processes it (128x128 resize, GIF animation preserved), and stores it. Maximum 200 emotes per request.
+
+**Request Body:**
+```json
+{
+  "emotes": [
+    { "id": "5f3eb452b2efd65d77e867ed", "code": "forsenBlunder", "imageType": "png", "name": "forsenblunder" },
+    { "id": "578bfabf78f4d09f44986499", "code": "forsenShuffle", "imageType": "gif", "name": "forsenshuffle" }
+  ]
+}
+```
+
+**Response:**
+```json
+{
+  "results": [
+    { "name": "forsenblunder", "file_id": "abc-123", "ok": true },
+    { "name": "forsenshuffle", "file_id": "def-456", "ok": true }
+  ]
+}
+```
+
 ### Data Structures
 
 #### ServerInfo

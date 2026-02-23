@@ -1,0 +1,98 @@
+---
+title: Custom Emojis
+description: Upload, manage, and import custom emojis for your Gryt server
+icon: Smile
+---
+
+Custom emojis let members express themselves with images unique to your server. Anyone can use them in chat with the `:shortcode:` syntax, and admins can manage the full library from Server Settings.
+
+## Supported formats
+
+| Format | Extension | Animated | Notes |
+|--------|-----------|----------|-------|
+| PNG | `.png` | No | Converted to 128x128 with transparency |
+| JPEG | `.jpg` / `.jpeg` | No | Converted to 128x128 PNG |
+| WebP | `.webp` | Yes | Animated WebP is preserved |
+| GIF | `.gif` | Yes | Resized to 128x128, animation preserved |
+| SVG | `.svg` | No | Stored as-is (no resize) |
+
+All raster images are resized to **128x128 pixels** (contain fit, transparent background). The maximum file size per image is **5 MB**.
+
+## Naming rules
+
+Emoji shortcodes must follow these rules:
+
+- **2 to 32 characters** long
+- Only **lowercase letters**, **numbers**, and **underscores** (`a-z`, `0-9`, `_`)
+- Must be unique within the server
+
+Examples: `:pepehappy:`, `:cat_jam:`, `:lol2:`
+
+## Uploading emojis
+
+Go to **Server Settings > Emojis** (requires admin or owner role).
+
+### Single or multi-file upload
+
+1. Click **Choose files** and select one or more images.
+2. Each file appears in a preview list with an auto-generated name derived from the filename.
+3. Edit the shortcode name for any emoji before uploading.
+4. Click **Upload all** to upload the entire batch, or click the upload icon on an individual emoji.
+
+### ZIP archive upload
+
+You can upload a `.zip` file containing multiple images:
+
+1. Click **Choose files** and select a `.zip` archive.
+2. Gryt extracts all valid image files from the archive (nested folders are supported; `__MACOSX` metadata is ignored).
+3. Each extracted image appears in the preview list with its filename used as the shortcode.
+4. Edit names as needed, then upload.
+
+Files inside the ZIP follow the same format and size rules as individual uploads.
+
+## Importing from BetterTTV
+
+You can bulk-import emotes from any public [BetterTTV](https://betterttv.com) user page.
+
+### Step by step
+
+1. Open **Server Settings > Emojis**.
+2. In the **Import from BetterTTV** section, paste a BetterTTV user URL, e.g.:
+   ```
+   https://betterttv.com/users/555943515393e61c772ee968
+   ```
+3. Click **Fetch**. Gryt retrieves the user's channel emotes and shared emotes.
+4. A preview grid appears with all emotes. Each emote shows:
+   - A preview thumbnail
+   - An editable shortcode name (auto-derived from the BetterTTV emote code)
+   - A **GIF** badge if the emote is animated
+5. Use the checkboxes to select or deselect individual emotes. **Select all** / **Deselect all** buttons are available for convenience.
+6. If there are many emotes, use the **filter** field to narrow the list.
+7. Edit any shortcode names as needed (names that conflict with existing server emojis are flagged).
+8. Click **Import N emojis** to import the selected emotes.
+
+The server downloads each emote at full resolution from the BetterTTV CDN, processes it through the same pipeline as regular uploads (128x128 resize, GIF animation preserved), and stores it as a server emoji.
+
+### URL format
+
+The URL must match the pattern `https://betterttv.com/users/<user_id>`, where the user ID is the hexadecimal string in the URL. Both channel emotes and shared emotes are fetched.
+
+## Using emojis in chat
+
+Type `:` followed by the shortcode to trigger the autocomplete picker. You can also open the emoji picker from the chat input toolbar.
+
+Custom emojis appear alongside standard Unicode emojis in the picker, in a dedicated **Custom** category.
+
+```
+:pepehappy:     → shows the custom emoji
+:wave:          → shows the standard Unicode wave emoji
+```
+
+## Managing existing emojis
+
+In **Server Settings > Emojis**, below the upload section, you'll see the full list of server emojis. Admins can:
+
+- **Rename** — Click the edit icon next to any emoji to change its shortcode.
+- **Delete** — Click the delete icon to permanently remove an emoji from the server.
+
+Renaming an emoji updates the shortcode everywhere going forward; messages already sent will reference the old name and may show as missing.
