@@ -181,6 +181,8 @@ ICE_UDP_PORT_MAX=10019
 
 Cloudflare Tunnel (and Cloudflare’s “orange cloud” proxying) can be used for the **SFU WebSocket** (`SFU_PUBLIC_HOST` over `wss://...`), but WebRTC **media is still direct UDP** to the SFU host.
 
+This is a good way to get TLS/WSS for production without running your own HTTPS reverse proxy for the SFU WebSocket.
+
 If you're tunneling the SFU WebSocket, make sure you still:
 
 - Open the SFU UDP media port(s) on the host (recommended: `ICE_UDP_MUX_PORT/udp`, typically `443/udp`)

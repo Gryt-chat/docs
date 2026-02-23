@@ -81,10 +81,11 @@ Each image is tagged with `latest` and semver tags (e.g. `1.2.3`, `1.2`, `1`). M
 | Port | Proto | Service |
 |------|------:|---------|
 | `443` | TCP | TLS termination (proxy / tunnel edge) |
+| `443` | UDP | SFU WebRTC media (if using `ICE_UDP_MUX_PORT=443`) |
 | `3666` | TCP | Web client (dev / direct access) |
 | `5000` | TCP | Signaling server |
 | `5005` | TCP | SFU WebSocket |
-| `10000-10019` | UDP | SFU WebRTC media (must be public) |
+| `10000-10019` | UDP | SFU WebRTC media (if not using UDP mux; must be public) |
 
 ## Health checks
 
