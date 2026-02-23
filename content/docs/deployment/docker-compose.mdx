@@ -128,8 +128,9 @@ Browse available tags at [github.com/orgs/gryt-chat/packages](https://github.com
 | `SERVER_PORT` | `5000` | Signaling API + WebSocket |
 | `CLIENT_PORT` | `3666` | Web UI (only with `--profile web`) |
 | `SFU_PORT` | `5005` | SFU WebSocket |
-| `SFU_UDP_MIN` | `10000` | WebRTC media UDP range start |
-| `SFU_UDP_MAX` | `10019` | WebRTC media UDP range end |
+| `ICE_UDP_MUX_PORT` | `443` | **Recommended**: run WebRTC over a single UDP port (open UDP 443) |
+| `SFU_UDP_MIN` | `10000` | WebRTC UDP range start (if not using `ICE_UDP_MUX_PORT`) |
+| `SFU_UDP_MAX` | `10019` | WebRTC UDP range end (if not using `ICE_UDP_MUX_PORT`) |
 
 ### Server
 
@@ -176,7 +177,7 @@ Browse available tags at [github.com/orgs/gryt-chat/packages](https://github.com
 <Callout type="warn" title="Before going public">
 - [ ] Set a strong `JWT_SECRET` — generate with `openssl rand -base64 48`
 - [ ] Change `MINIO_ROOT_USER` and `MINIO_ROOT_PASSWORD`
-- [ ] Open UDP ports `10000-10019` in your firewall
+- [ ] Open **UDP 443** for the SFU (recommended), or open UDP `10000-10019` if using the high-port range
 - [ ] Set `SFU_ADVERTISE_IP` if behind NAT
 - [ ] Set `SFU_PUBLIC_HOST` to your public `wss://` URL
 - [ ] Ensure `CORS_ORIGIN` includes `https://app.gryt.chat` and your production domain

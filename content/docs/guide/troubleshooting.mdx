@@ -45,7 +45,8 @@ wscat -c ws://localhost:5005
 ```
 
 - Verify STUN servers are reachable: `dig stun.l.google.com`
-- Check SFU UDP port range is open (`ICE_UDP_PORT_MIN` / `ICE_UDP_PORT_MAX`)
+- If using ICE UDP mux (`ICE_UDP_MUX_PORT`), ensure **UDP 443** (or your chosen mux port) is open
+- Otherwise, ensure the SFU UDP port range is open (`ICE_UDP_PORT_MIN` / `ICE_UDP_PORT_MAX`)
 - Review SFU logs: `docker compose logs sfu`
 
 ## Audio issues

@@ -93,6 +93,11 @@ Create a `.env` file in `packages/sfu/`:
 ```bash
 PORT=5005
 STUN_SERVERS=stun:stun.l.google.com:19302,stun:stun1.l.google.com:19302
+
+# Recommended: run WebRTC over a single UDP port (better on restrictive networks)
+ICE_UDP_MUX_PORT=443
+
+# Alternative (if not using ICE_UDP_MUX_PORT): pin a UDP port range
 ICE_UDP_PORT_MIN=10000
 ICE_UDP_PORT_MAX=10019
 LOG_LEVEL=info
@@ -135,6 +140,13 @@ GRYT_OIDC_ISSUER=https://auth.gryt.chat/realms/gryt
 GRYT_OIDC_AUDIENCE=gryt-web
 ```
 
+### Self-hosted authentication (bring your own Keycloak)
+
+If you want to run a **completely separate** Gryt deployment with your **own** authentication provider, you can self-host
+Keycloak and point your server/client to your issuer.
+
+See: [Self-host Authentication (Keycloak / OIDC)](/docs/guide/self-hosted-oidc)
+
 To disable authentication:
 
 ```bash
@@ -148,11 +160,19 @@ See the [Server docs](/docs/server) for more on auth integration.
 This project does **not** require a TURN server. Instead:
 
 1. Configure STUN servers (`STUN_SERVERS`)
-2. Pin a dedicated SFU UDP port range (`ICE_UDP_PORT_MIN` / `ICE_UDP_PORT_MAX`)
-3. Open that UDP range on the SFU host firewall
+2. Either:
+   - **Recommended**: use ICE UDP mux on a single port (`ICE_UDP_MUX_PORT`, typically `443`) and open **UDP 443**
+   - Or pin a dedicated SFU UDP port range (`ICE_UDP_PORT_MIN` / `ICE_UDP_PORT_MAX`) and open that range
+
+If `ICE_UDP_MUX_PORT` is set, the SFU can carry ICE + DTLS + SRTP over that single UDP port, so you typically don't need to expose the high-port UDP range.
 
 ```bash
 STUN_SERVERS=stun:stun.l.google.com:19302,stun:stun1.l.google.com:19302
+
+# Recommended: single-port UDP for WebRTC
+ICE_UDP_MUX_PORT=443
+
+# Alternative: high-port UDP range
 ICE_UDP_PORT_MIN=10000
 ICE_UDP_PORT_MAX=10019
 ```

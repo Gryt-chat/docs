@@ -52,7 +52,13 @@ Ensure STUN is configured:
 STUN_SERVERS="stun:stun.l.google.com:19302,stun:stun1.l.google.com:19302"
 ```
 
-And pin a dedicated UDP port range on the SFU (and open it publicly):
+Recommended: use ICE UDP mux on a single port (and open it publicly). This improves success rates on networks that block high UDP port ranges:
+
+```bash
+ICE_UDP_MUX_PORT=443
+```
+
+Alternative: pin a dedicated UDP port range on the SFU (and open it publicly):
 
 ```bash
 ICE_UDP_PORT_MIN=10000
