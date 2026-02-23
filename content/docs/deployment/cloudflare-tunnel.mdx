@@ -82,6 +82,22 @@ ingress:
   - service: http_status:404
 ```
 
+## DNS records: enable Proxied (orange cloud) for all hostnames
+
+Every hostname routed through the tunnel **must** have its DNS record set to **Proxied** (orange cloud) in the Cloudflare dashboard. This includes the SFU hostname.
+
+| Hostname | Type | Content | Proxy status |
+|---|---|---|---|
+| `gryt.example.com` | CNAME | `<tunnel-id>.cfargotunnel.com` | **Proxied** (orange) |
+| `api.gryt.example.com` | CNAME | `<tunnel-id>.cfargotunnel.com` | **Proxied** (orange) |
+| `sfu.example.com` | CNAME | `<tunnel-id>.cfargotunnel.com` | **Proxied** (orange) |
+
+<Callout type="warn">
+**Don't grey-cloud the SFU hostname.** Even though WebRTC media is direct UDP,
+the SFU **WebSocket** (port 5005) still goes through the tunnel. If you set `sfu.example.com` to
+DNS-only (grey cloud), browsers won't be able to reach the SFU WebSocket and voice connections will fail.
+</Callout>
+
 ## Firewall / port forwarding (critical)
 
 Open/forward UDP to the host running the `sfu` container.

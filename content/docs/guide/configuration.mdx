@@ -185,8 +185,11 @@ This is a good way to get TLS/WSS for production without running your own HTTPS 
 
 If you're tunneling the SFU WebSocket, make sure you still:
 
+- Set the DNS record for the SFU hostname to **Proxied** (orange cloud) — the WebSocket needs to go through the tunnel
 - Open the SFU UDP media port(s) on the host (recommended: `ICE_UDP_MUX_PORT/udp`, typically `443/udp`)
 - Set `SFU_ADVERTISE_IP` / `ICE_ADVERTISE_IP` to your **real public IPv4/IPv6** (not a Cloudflare anycast IP)
+
+See [Cloudflare Tunnel](/docs/deployment/cloudflare-tunnel) for a full walkthrough.
 
 ## Docker Compose stacks
 
