@@ -177,6 +177,15 @@ ICE_UDP_PORT_MIN=10000
 ICE_UDP_PORT_MAX=10019
 ```
 
+### Cloudflare Tunnel / proxy and WebRTC
+
+Cloudflare Tunnel (and Cloudflare’s “orange cloud” proxying) can be used for the **SFU WebSocket** (`SFU_PUBLIC_HOST` over `wss://...`), but WebRTC **media is still direct UDP** to the SFU host.
+
+If you're tunneling the SFU WebSocket, make sure you still:
+
+- Open the SFU UDP media port(s) on the host (recommended: `ICE_UDP_MUX_PORT/udp`, typically `443/udp`)
+- Set `SFU_ADVERTISE_IP` / `ICE_ADVERTISE_IP` to your **real public IPv4/IPv6** (not a Cloudflare anycast IP)
+
 ## Docker Compose stacks
 
 | Stack | Path | Use case |
