@@ -35,7 +35,7 @@ curl http://localhost:5005/health    # SFU
 ```
 
 - Verify ports 5000 and 5005 are not blocked by a firewall
-- Check CORS: `CORS_ORIGIN` in `server/.env` must include `https://app.gryt.chat` and any custom client origins
+- Check CORS: `CORS_ORIGIN` in `server/.env` must include `http://127.0.0.1:15738` (desktop app), `https://app.gryt.chat` (web client), and any custom client origins
 - In production, ensure WSS (not WS) is used
 
 ### SFU connection fails

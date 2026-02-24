@@ -32,7 +32,7 @@ SFU_PUBLIC_HOST="wss://sfu.example.com"
 STUN_SERVERS="stun:stun.l.google.com:19302"
 
 SERVER_NAME="My Brand New Server"
-CORS_ORIGIN="https://app.gryt.chat"
+CORS_ORIGIN="http://127.0.0.1:15738,https://app.gryt.chat"
 
 # Optional: server-to-SFU shared secret (NOT a user join password)
 # SERVER_PASSWORD="your-internal-sfu-shared-secret"
@@ -250,25 +250,42 @@ curl http://localhost:5005/health   # SFU
 The `CORS_ORIGIN` environment variable controls which web origins can talk to your server.
 This acts as a simple access gate: only clients loaded from a listed origin will be able to connect.
 
+### Common origins
+
+| Origin | What it is |
+|--------|-----------|
+| `http://127.0.0.1:15738` | **Gryt desktop app** (Electron) — always include this |
+| `https://app.gryt.chat` | Hosted web client |
+| `https://gryt.example.com` | Your self-hosted web client (if applicable) |
+| `http://localhost:3666` | Local Docker web client (`--profile web`) |
+
+A typical production setup:
+
 ```bash
-# Only allow the hosted client and your custom domain
-CORS_ORIGIN="https://app.gryt.chat,https://gryt.example.com"
+CORS_ORIGIN="http://127.0.0.1:15738,https://app.gryt.chat"
 ```
 
-Because the Electron desktop app defaults to a specific local port (e.g. `http://localhost:3666`),
-you can separate dev and production environments by listing different ports:
+If you also self-host the web client or use a custom domain, add it:
 
 ```bash
-# Production server — only accepts the production client
-CORS_ORIGIN="https://app.gryt.chat"
+CORS_ORIGIN="http://127.0.0.1:15738,https://app.gryt.chat,https://gryt.example.com"
+```
+
+### Environment isolation
+
+You can separate dev and production servers by listing different web client origins:
+
+```bash
+# Production server
+CORS_ORIGIN="http://127.0.0.1:15738,https://app.gryt.chat"
 
 # Dev server — only accepts the local dev client
-CORS_ORIGIN="http://localhost:3777"
+CORS_ORIGIN="http://127.0.0.1:15738,http://localhost:3777"
 ```
 
-A dev client on `localhost:3777` cannot connect to a production server that only allows
-`https://app.gryt.chat`, and vice versa. This gives you environment isolation without
-any extra infrastructure.
+A dev web client on `localhost:3777` cannot connect to a production server that only allows
+`https://app.gryt.chat`, and vice versa. The desktop app (`127.0.0.1:15738`) is typically
+included in both since it connects to whichever server the user selects.
 
 <Callout type="info">
 CORS is enforced by the browser and by the server's Socket.IO and REST middleware.

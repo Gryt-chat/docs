@@ -64,8 +64,8 @@ SERVER_NAME=My Gryt Server
 # Set a real secret in production
 JWT_SECRET=<run: openssl rand -base64 48>
 
-# Allowed origins (hosted client + local dev)
-CORS_ORIGIN=http://localhost:3666,https://app.gryt.chat
+# Allowed origins (desktop app + hosted web client + local web client)
+CORS_ORIGIN=http://127.0.0.1:15738,http://localhost:3666,https://app.gryt.chat
 ```
 
 </Step>
@@ -150,7 +150,7 @@ Browse available tags at [github.com/orgs/gryt-chat/packages](https://github.com
 | `VOICE_MAX_USERS` | *(auto)* | Optional voice seat limit override |
 | `REFRESH_TOKEN_TTL_DAYS` | `7` | Refresh token lifetime (days) |
 | `JWT_SECRET` | `change-me-in-production` | Session token secret |
-| `CORS_ORIGIN` | `http://localhost:3666,https://app.gryt.chat` | Allowed origins for the API (comma-separated) |
+| `CORS_ORIGIN` | see below | Allowed origins (comma-separated). Always include `http://127.0.0.1:15738` (desktop app) and `https://app.gryt.chat` (web client) |
 
 If you set `SERVER_PASSWORD`, keep it stable. Changing it may require restarting the SFU, because the SFU caches the password per server ID.
 
@@ -196,7 +196,7 @@ docker compose exec server node dist/admin/setOwner.js --grytUserId <keycloak_su
 - [ ] Open **UDP 443** for the SFU (recommended), or open UDP `10000-10019` if using the high-port range
 - [ ] Set `SFU_ADVERTISE_IP` if behind NAT
 - [ ] Set `SFU_PUBLIC_HOST` to your public `wss://` URL
-- [ ] Ensure `CORS_ORIGIN` includes `https://app.gryt.chat` and your production domain
+- [ ] Ensure `CORS_ORIGIN` includes `http://127.0.0.1:15738` (desktop app), `https://app.gryt.chat` (web client), and your production domain
 - [ ] Put a reverse proxy (Caddy, Nginx, Traefik) in front for TLS
 - [ ] Pin image versions instead of `latest`
 </Callout>
@@ -245,7 +245,7 @@ sfu.example.com {
 Then update your `.env`:
 
 ```bash
-CORS_ORIGIN=https://app.gryt.chat,https://gryt.example.com
+CORS_ORIGIN=http://127.0.0.1:15738,https://app.gryt.chat,https://gryt.example.com
 SFU_PUBLIC_HOST=wss://sfu.example.com
 CLIENT_PORT=8080  # Caddy takes over port 80/443
 
