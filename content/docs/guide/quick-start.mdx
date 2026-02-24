@@ -38,7 +38,6 @@ Open `.env` in your editor and review the key settings:
 
 ```bash
 SERVER_NAME=My Gryt Server       # display name shown to users
-SERVER_PASSWORD=                  # leave empty for open access, or set a password
 JWT_SECRET=change-me-in-production  # IMPORTANT: run `openssl rand -base64 48` for a real secret
 ```
 
@@ -59,6 +58,9 @@ Wait ~30 seconds for the database to initialize.
 Connect to your server using the [Gryt desktop app](https://github.com/Gryt-chat/gryt/releases) or
 [app.gryt.chat](https://app.gryt.chat) — both work with local and remote servers.
 Enter your server address (e.g. `localhost` for local, or your public IP/domain for remote).
+
+**Invite-only**: the **first user** to join a brand-new server automatically becomes the **owner/admin**.
+After that, the server is **invite-only**. Create invite links in **Server settings → Invites** and share them.
 
 To also self-host the web client:
 
@@ -122,7 +124,7 @@ git clone --recurse-submodules https://github.com/Gryt-chat/gryt.git
 cd gryt
 helm install gryt ./ops/helm/gryt \
   --set gryt.domain=yourdomain.com \
-  --set server.secrets.serverPassword=your-secure-password
+  --set server.secrets.serverPassword=your-internal-sfu-shared-secret
 ```
 
 ## Configuration

@@ -72,12 +72,17 @@ State management uses React hooks and context. Audio settings (volume, noise gat
 
 ```
 packages/server/src/
-├── websocket/     # WebSocket handler, connection management, auth middleware
-├── signaling/     # WebRTC signaling coordinator (offer/answer relay)
-├── room/          # Room lifecycle, state sync, isolation
-├── user/          # User state, presence tracking
-├── auth/          # Token validation via JWKS
-└── api/           # REST endpoints (messages, uploads, health)
+├── socket/        # Socket.IO server, handlers, auth middleware, server state sync
+│   ├── handlers/  # server:join, chat:*, voice:*, admin:*, etc.
+│   ├── middleware/# accessToken validation + role enforcement
+│   └── utils/     # server details, client sync helpers
+├── routes/        # REST API endpoints (messages, uploads, members, emojis, etc.)
+├── db/            # ScyllaDB access layer (users, messages, roles, invites, ...)
+├── auth/          # OIDC identity token verification (JWKS)
+├── storage/       # S3/MinIO integration
+├── jobs/          # background workers (media sweep, emoji queue)
+├── sfu/           # SFU client (server↔SFU sync)
+└── utils/         # jwt, rate limiter, profanity filter, server ID helpers
 ```
 
 ### Room management

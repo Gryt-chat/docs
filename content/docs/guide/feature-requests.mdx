@@ -1,0 +1,36 @@
+---
+title: Feature requests
+description: Where to request features and how to run our feedback board
+icon: Lightbulb
+---
+
+## Where to request features
+
+We track **feature requests** on our Fider board:
+
+- **Feature requests**: `https://feedback.gryt.chat`
+- **Bugs / regressions**: [GitHub Issues](https://github.com/Gryt-chat/gryt/issues)
+
+## Self-hosting Fider (optional)
+
+If you want your own feature-request board, Fider is easy to self-host — see the official guide:
+
+- [Hosting on Docker (Fider)](https://docs.fider.io/hosting-instance/)
+
+### Keycloak (OIDC) login
+
+Fider can authenticate against any OAuth2 provider, including **Keycloak (OIDC)**.
+
+In Fider (as an admin): **Site Settings → Authentication → Add New**.
+
+For a typical Keycloak realm, you’ll use:
+
+- **Authorize URL**: `https://<keycloak>/realms/<realm>/protocol/openid-connect/auth`
+- **Token URL**: `https://<keycloak>/realms/<realm>/protocol/openid-connect/token`
+- **Profile API URL**: `https://<keycloak>/realms/<realm>/protocol/openid-connect/userinfo`
+- **Scope**: `openid profile email`
+- **JSON Path ID**: `sub`
+- **JSON Path Email**: `email`
+- **JSON Path Name**: `preferred_username` (or `name`)
+
+In Keycloak, create a client for Fider and add the **redirect URI** shown by Fider (usually `https://feedback.gryt.chat/oauth/<provider>/callback`).

@@ -82,26 +82,32 @@ const {
 
 | Event | Payload | Description |
 |-------|---------|-------------|
-| `join` | `{ channelID: string }` | Join a voice channel |
-| `leave` | `{}` | Leave current voice channel |
-| `updateNickname` | `string` | Update user nickname |
-| `updateMute` | `boolean` | Update mute state |
-| `offer` | `RTCSessionDescription` | WebRTC offer for SFU |
-| `answer` | `RTCSessionDescription` | WebRTC answer from SFU |
-| `ice-candidate` | `RTCIceCandidate` | ICE candidate for connection |
+| `server:join` | `{ nickname?: string; identityToken: string; inviteCode?: string }` | Join the server (invite-only unless existing member / bootstrap owner) |
+| `server:leave` | `{}` | Leave the server (deactivate membership) |
+| `server:details` | `{}` | Fetch server details (requires joined session) |
+| `server:info` | `{}` | Fetch public server preview (no join required) |
+| `token:refresh` | `{ refreshToken?: string; identityToken?: string; accessToken?: string }` | Refresh an access token |
+| `voice:room:request` | `roomId: string` | Request SFU room credentials (join token + URL(s)) |
+| `voice:stream:set` | `streamID: string` | Mark voice join/leave and enable device-switch handling |
+| `voice:state:update` | `{ isMuted: boolean; isDeafened: boolean; isAFK: boolean }` | Update voice state flags |
+| `voice:camera:state` | `{ enabled: boolean; streamId?: string }` | Update camera sharing state |
+| `voice:screen:state` | `{ enabled: boolean; videoStreamId?: string; audioStreamId?: string }` | Update screen share state |
 
 #### Server → Client
 
 | Event | Payload | Description |
 |-------|---------|-------------|
-| `info` | `ServerInfo` | Server information and channels |
-| `users` | `UserList` | Current users in channels |
-| `user-joined` | `UserInfo` | User joined notification |
-| `user-left` | `UserInfo` | User left notification |
-| `user-updated` | `UserInfo` | User state changed |
-| `offer` | `RTCSessionDescription` | WebRTC offer from SFU |
-| `answer` | `RTCSessionDescription` | WebRTC answer to SFU |
-| `ice-candidate` | `RTCIceCandidate` | ICE candidate from SFU |
+| `server:joined` | `{ accessToken: string; refreshToken?: string; nickname: string; avatarFileId?: string \| null; isOwner: boolean; setupRequired: boolean }` | Join success |
+| `server:error` | `{ error: string; message?: string; retryAfterMs?: number; canReapply?: boolean }` | Join/auth errors (including `invite_required`, `invalid_invite`, rate limits) |
+| `server:details` | `serverDetails` | Full server state for the UI |
+| `server:info` | `{ name?: string; description?: string; members?: string; version?: string }` | Public server preview |
+| `token:refreshed` | `{ accessToken: string }` | New access token |
+| `token:error` | `{ error: string; message?: string }` | Refresh/token errors |
+| `token:revoked` | `{ reason?: string; message?: string }` | Session revoked; client must rejoin |
+| `voice:room:granted` | `{ room_id: string; join_token: string; sfu_url: string; sfu_urls?: string[]; timestamp: number }` | SFU room credentials |
+| `voice:room:error` | `string \| { error: string; message?: string; retryAfterMs?: number }` | Voice join errors |
+| `voice:peer:joined` | `{ clientId: string; nickname: string }` | Voice peer joined |
+| `voice:peer:left` | `{ clientId: string; nickname: string }` | Voice peer left |
 
 ### REST Endpoints
 

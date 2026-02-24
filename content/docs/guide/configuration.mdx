@@ -32,17 +32,21 @@ SFU_PUBLIC_HOST="wss://sfu.example.com"
 STUN_SERVERS="stun:stun.l.google.com:19302"
 
 SERVER_NAME="My Brand New Server"
-SERVER_INVITE_ONLY="false"
 CORS_ORIGIN="https://app.gryt.chat"
-SERVER_PASSWORD="123"
 
-# Password brute-force protection (optional)
+# Optional: server-to-SFU shared secret (NOT a user join password)
+# SERVER_PASSWORD="your-internal-sfu-shared-secret"
+#
+# If you set SERVER_PASSWORD, keep it stable. Changing it may require restarting the SFU,
+# because the SFU caches the password per server ID.
+
+# Invite brute-force protection (optional)
 # Two-tier: per (IP + user) and per IP. Cooldowns escalate exponentially.
-# SERVER_PASSWORD_MAX_RETRIES=5            # attempts before lockout
-# SERVER_PASSWORD_RETRY_WINDOW_MS=300000   # sliding window (5 min)
-# SERVER_PASSWORD_RETRY_COOLDOWN_MS=60000  # base cooldown (1 min)
-# SERVER_PASSWORD_MAX_COOLDOWN_MS=3600000  # escalation cap (1 hour)
-# SERVER_PASSWORD_IP_MAX_RETRIES=15        # per-IP attempts before lockout
+# SERVER_INVITE_MAX_RETRIES=8            # invalid invites before lockout (per IP+user)
+# SERVER_INVITE_RETRY_WINDOW_MS=300000   # sliding window (5 min)
+# SERVER_INVITE_RETRY_COOLDOWN_MS=60000  # base cooldown (1 min)
+# SERVER_INVITE_MAX_COOLDOWN_MS=3600000  # escalation cap (1 hour)
+# SERVER_INVITE_IP_MAX_RETRIES=20        # invalid invites before lockout (per IP)
 
 # Authentication
 GRYT_AUTH_API=https://auth.gryt.chat
@@ -62,6 +66,39 @@ S3_FORCE_PATH_STYLE=false
 NODE_ENV=development
 DEBUG=gryt:*
 ```
+
+### Additional signaling server options
+
+```bash
+# Limit voice seats explicitly (otherwise derived from SFU UDP port range)
+VOICE_MAX_USERS=100
+
+# Refresh token lifetime (days)
+REFRESH_TOKEN_TTL_DAYS=7
+
+# Advanced: disable dependencies (mostly useful in development)
+DISABLE_S3=true       # disables uploads + icon/avatar endpoints
+DISABLE_SCYLLA=true   # skips Scylla init (most server features will not work)
+
+# Advanced: chat history cache TTL (ms)
+MESSAGE_CACHE_TTL_MS=30000
+```
+
+### Changing the server owner (CLI)
+
+Servers do not support an env-based owner override. Ownership is claimed by the **first user to join** a fresh server.
+
+If you need to change the owner later (recovery, transfers), run the one-shot admin CLI **inside the server container**:
+
+```bash
+# Docker Compose
+docker compose exec server node dist/admin/setOwner.js --grytUserId <keycloak_sub>
+
+# Or plain Docker
+docker exec gryt-server node dist/admin/setOwner.js --grytUserId <keycloak_sub>
+```
+
+`<keycloak_sub>` is the user's Gryt ID (OIDC subject). The target user should already be a **member** of the server (has joined before), otherwise they may be unable to join an invite-only server.
 
 ### MinIO (self-hosted S3)
 
@@ -150,7 +187,7 @@ See: [Self-host Authentication (Keycloak / OIDC)](/docs/guide/self-hosted-oidc)
 To disable authentication:
 
 ```bash
-GRYT_AUTH_MODE=disabled
+GRYT_AUTH_MODE=disabled  # nobody can join (server lock)
 ```
 
 See the [Server docs](/docs/server) for more on auth integration.
@@ -237,13 +274,14 @@ any extra infrastructure.
 CORS is enforced by the browser and by the server's Socket.IO and REST middleware.
 It is not a security boundary against non-browser clients — someone could still connect
 with `curl` or a modified client. For real authentication, enable
-[Gryt Auth](/docs/guide/configuration#authentication) or set a `SERVER_PASSWORD`.
+[Gryt Auth](/docs/guide/configuration#authentication) (`GRYT_AUTH_MODE=required`).
 </Callout>
 
 ## Security best practices
 
 - Never commit `.env` files to version control
-- Use strong, unique passwords for `SERVER_PASSWORD`
 - Use HTTPS/WSS in production
 - Configure CORS origins to match your domain
+- Use `GRYT_AUTH_MODE=required` if you need account-based access control
+- Use invite links to control membership (Server settings → Invites)
 - Run containers as non-root users

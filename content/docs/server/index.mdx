@@ -34,16 +34,17 @@ SFU_PUBLIC_HOST="wss://sfu.example.com"
 STUN_SERVERS="stun:stun.l.google.com:19302"
 
 SERVER_NAME="My Brand New Server"
-SERVER_INVITE_ONLY="false"
 CORS_ORIGIN="https://app.gryt.chat"
-SERVER_PASSWORD="123"
 
-# Password brute-force protection (optional)
-# SERVER_PASSWORD_MAX_RETRIES=5
-# SERVER_PASSWORD_RETRY_WINDOW_MS=300000
-# SERVER_PASSWORD_RETRY_COOLDOWN_MS=60000
-# SERVER_PASSWORD_MAX_COOLDOWN_MS=3600000
-# SERVER_PASSWORD_IP_MAX_RETRIES=15
+# Optional: server-to-SFU shared secret (NOT a user join password)
+# SERVER_PASSWORD="your-internal-sfu-shared-secret"
+
+# Invite brute-force protection (optional)
+# SERVER_INVITE_MAX_RETRIES=8
+# SERVER_INVITE_RETRY_WINDOW_MS=300000
+# SERVER_INVITE_RETRY_COOLDOWN_MS=60000
+# SERVER_INVITE_MAX_COOLDOWN_MS=3600000
+# SERVER_INVITE_IP_MAX_RETRIES=20
 
 GRYT_AUTH_API=https://auth.gryt.chat
 
@@ -78,7 +79,23 @@ GRYT_OIDC_ISSUER=https://auth.gryt.chat/realms/gryt
 GRYT_OIDC_AUDIENCE=gryt-web
 ```
 
-Set `GRYT_AUTH_MODE=disabled` to skip auth entirely.
+Set `GRYT_AUTH_MODE=disabled` to reject all joins (server lock).
+
+## Changing the owner (CLI)
+
+The **first user** to join a brand-new server automatically becomes the **owner/admin**.
+
+To change the owner later (recovery/transfers), run:
+
+```bash
+node dist/admin/setOwner.js --grytUserId <keycloak_sub>
+```
+
+When running in Docker Compose:
+
+```bash
+docker compose exec server node dist/admin/setOwner.js --grytUserId <keycloak_sub>
+```
 
 ### Local Keycloak (dev)
 
@@ -90,38 +107,33 @@ Point client/server configs to `http://localhost:8080/realms/gryt`.
 
 ## WebSocket events
 
-### Client to Server
+### Client → Server (high-level)
 
-| Event | Payload | Description |
-|-------|---------|-------------|
-| `join` | `{ channelID }` | Join a voice channel |
-| `leave` | `{}` | Leave current channel |
-| `updateNickname` | `string` | Update nickname |
-| `updateMute` | `boolean` | Update mute state |
-| `offer` | `RTCSessionDescription` | WebRTC offer for SFU |
-| `answer` | `RTCSessionDescription` | WebRTC answer from SFU |
-| `ice-candidate` | `RTCIceCandidate` | ICE candidate |
-| `chat:send` | `{ conversationId, accessToken, text?, attachments?, replyToMessageId?, nonce? }` | Send a chat message (nonce enables idempotent retry) |
-| `chat:edit` | `{ conversationId, accessToken, messageId, text }` | Edit own message |
-| `chat:delete` | `{ conversationId, accessToken, messageId }` | Delete own message (owners can delete any) |
-| `chat:fetch` | `{ conversationId, accessToken, limit?, before? }` | Fetch message history |
+| Event | Payload | Notes |
+|------|---------|------|
+| `server:join` | `{ nickname?, identityToken, inviteCode? }` | Join the server. **Invite-only** unless you are already a member or you are the first user (bootstrap owner). |
+| `server:leave` | `{}` | Leave (deactivate membership) and revoke refresh tokens for that user. |
+| `server:details` | `{}` | Get server details (requires joined session). |
+| `server:info` | `{}` | Public server preview (no join required). |
+| `token:refresh` | `{ refreshToken?, identityToken?, accessToken? }` | Refresh an access token (preferred: refreshToken + identityToken). |
+| `voice:room:request` | `roomId: string` | Request a voice join token + SFU URL(s). |
+| `voice:stream:set` | `streamID: string` | Mark user as joined/left voice; enables device-switch handling. |
+| `voice:state:update` | `{ isMuted, isDeafened, isAFK }` | Update voice presence flags. |
+| `chat:send` | `{ conversationId, accessToken, text?, attachments?, replyToMessageId?, nonce? }` | Send message (nonce supports idempotent retry). |
+| `chat:fetch` | `{ conversationId, accessToken?, limit?, before? }` | Fetch message history. |
 
-### Server to Client
+### Server → Client (high-level)
 
-| Event | Payload | Description |
-|-------|---------|-------------|
-| `info` | `ServerInfo` | Server information and channels |
-| `users` | `UserList` | Current users in channels |
-| `user-joined` | `UserInfo` | User joined |
-| `user-left` | `UserInfo` | User left |
-| `user-updated` | `UserInfo` | User state changed |
-| `offer` | `RTCSessionDescription` | WebRTC offer from SFU |
-| `answer` | `RTCSessionDescription` | WebRTC answer to SFU |
-| `ice-candidate` | `RTCIceCandidate` | ICE candidate from SFU |
-| `chat:new` | `MessageRecord` | New chat message broadcast |
-| `chat:edited` | `MessageRecord` | Edited message broadcast |
-| `chat:deleted` | `{ conversationId, messageId }` | Deleted message broadcast |
-| `chat:error` | `string \| { error, retryAfterMs? }` | Chat error (including rate limits) |
+| Event | Payload | Notes |
+|------|---------|------|
+| `server:joined` | `{ accessToken, refreshToken?, nickname, avatarFileId?, isOwner, setupRequired }` | Join success. |
+| `server:error` | `{ error, message?, retryAfterMs?, canReapply? }` | Includes `invite_required`, `invalid_invite`, rate limits, etc. |
+| `server:details` | `serverDetails` | Full server state for the UI. |
+| `server:info` | `{ name, description?, members?, version? }` | Public preview. |
+| `token:refreshed` | `{ accessToken }` | New access token. |
+| `token:error` / `token:revoked` | `{ error, message? }` | Token invalid/revoked. |
+| `voice:room:granted` | `{ room_id, join_token, sfu_url, sfu_urls?, timestamp }` | SFU join credentials. |
+| `voice:room:error` | `string \| { error, message?, retryAfterMs? }` | Voice join errors (rate-limited, full, unavailable). |
 
 ## REST endpoints
 

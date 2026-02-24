@@ -28,7 +28,9 @@ Then open `http://localhost:3666`.
 
 ## Do I need to set up authentication?
 
-No. Auth is provided as a hosted service at `https://auth.gryt.chat`. Your server validates JWTs via JWKS automatically. You can optionally disable it with `GRYT_AUTH_MODE=disabled`.
+No. Auth is provided as a hosted service at `https://auth.gryt.chat`. Your server validates JWTs via JWKS automatically.
+
+If you set `GRYT_AUTH_MODE=disabled`, the server rejects all joins (server lock).
 
 ## Why isn't my microphone working?
 
@@ -67,5 +69,6 @@ The repo includes a local Keycloak setup for development (`auth/docker-compose.k
 
 ## Where can I get help?
 
-- [GitHub Issues](https://github.com/Gryt-chat/gryt/issues)
+- [Feature requests](https://feedback.gryt.chat)
+- [Bug reports](https://github.com/Gryt-chat/gryt/issues)
 - [Discord](https://discord.gg/Q3JKUGsnHE)
