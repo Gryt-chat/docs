@@ -145,6 +145,10 @@ The voice architecture separates the **signaling server** (session management, m
 
 ## Audio Quality Features
 
+### Screen Share Audio Isolation
+
+The desktop app uses OS-native per-process audio capture to exclude Gryt's own audio from screen share streams. On Windows this uses WASAPI process loopback exclusion; on macOS it uses ScreenCaptureKit's `excludesCurrentProcessAudio`. Other participants hear only your game or application audio, not the voices of people already in the call. See [Audio Processing — Native Capture](/docs/client/audio-processing#screen-share-audio--native-capture) for technical details.
+
 ### RNNoise Noise Reduction
 
 AI-powered noise suppression via an `AudioWorkletNode` running RNNoise compiled to WebAssembly. Processes 480-sample frames off the main thread with ~20 ms added latency. Toggle in **Settings → Audio → Noise Reduction (RNNoise)**.

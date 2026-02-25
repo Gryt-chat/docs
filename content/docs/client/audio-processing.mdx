@@ -114,6 +114,36 @@ Server-synchronized mute via a `GainNode` set to 0. State is synced bidirectiona
 
 The final analyser provides real-time visual feedback (level meters, frequency spectrum). The output is connected to a `MediaStreamDestination` for WebRTC transmission to the SFU.
 
+## Screen Share Audio — Native Capture
+
+When screen sharing with system audio, Gryt uses **OS-native per-process audio capture** on the desktop app to exclude its own audio from the stream. This means other participants hear your game, music, or application audio — but not the voices of people already in the call.
+
+### How it works
+
+```mermaid
+graph LR
+  OS["OS audio mixer"] -->|"system audio\nminus Gryt"| NB["Native binary"]
+  NB -->|"PCM via stdout"| Main["Electron main process"]
+  Main -->|"IPC"| Worklet["AudioWorklet"]
+  Worklet --> Dest["MediaStreamDestination"]
+  Dest --> WebRTC["SFU"]
+```
+
+- **Windows** (10 build 20348+): Uses the WASAPI `PROCESS_LOOPBACK_MODE_EXCLUDE_TARGET_PROCESS_TREE` API to capture all system audio except Gryt's process tree.
+- **macOS** (13.0+): Uses ScreenCaptureKit with `excludesCurrentProcessAudio` to exclude the current app's audio.
+- **Linux / Web**: No OS-level API is available. Screen share audio is passed through unfiltered.
+
+The native binary is a small standalone executable shipped alongside the Electron app. It writes raw 48 kHz 16-bit stereo PCM to stdout; the main process forwards chunks to the renderer via IPC, where an `AudioWorkletNode` converts them into a `MediaStreamTrack` for WebRTC transmission.
+
+### Platform support
+
+| Platform | Method | Gryt audio excluded? |
+|----------|--------|---------------------|
+| Windows (desktop app) | WASAPI process loopback | Yes |
+| macOS (desktop app) | ScreenCaptureKit | Yes |
+| Linux (desktop app) | System loopback | No |
+| Web (any OS) | `getDisplayMedia` | No |
+
 ## Settings Reference
 
 All audio settings are persisted to `localStorage` and take effect immediately:

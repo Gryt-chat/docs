@@ -65,6 +65,18 @@ wscat -c ws://localhost:5005
 - Adjust the noise gate threshold in audio settings
 - Ensure `echoCancellation` and `noiseSuppression` are enabled (default)
 
+### Others hear themselves when I screen share with audio
+
+On the **desktop app** (Windows/macOS), Gryt automatically excludes its own audio from the screen share capture using OS-native APIs. If this is not working:
+
+- **Windows**: Requires Windows 10 build 20348 or later. Check with `winver`.
+- **macOS**: Requires macOS 13.0 (Ventura) or later.
+- If the native binary is missing, the feature is silently unavailable. Rebuild with `npm run build:native` or reinstall the app.
+
+On the **web client** and **Linux desktop app**, there is no OS-level API to separate Gryt audio from other system audio. Your options:
+- Use headphones so Gryt voice audio is not picked up by the screen capture.
+- Route Gryt to a separate audio output device (virtual audio cable) and share only your main output.
+
 ### Audio cutting out
 
 - Check network stability

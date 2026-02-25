@@ -68,6 +68,10 @@ graph LR
 
 State management uses React hooks and context. Audio settings (volume, noise gate, device) are stored in `localStorage` and synced via custom hooks.
 
+### Screen share audio (Electron)
+
+On the desktop app, screen share audio uses a native binary to capture system audio while excluding Gryt's own process tree. The binary communicates with the Electron main process via stdin/stdout (raw PCM), which forwards audio chunks to the renderer via IPC. An `AudioWorkletNode` converts the PCM stream into a `MediaStreamTrack` for WebRTC. See [Audio Processing](/docs/client/audio-processing#screen-share-audio--native-capture) for details.
+
 ## Signaling Server
 
 ```

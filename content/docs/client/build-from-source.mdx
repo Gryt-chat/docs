@@ -60,13 +60,17 @@ bun install
 
 ## Build the desktop app
 
-This compiles the TypeScript source with Vite, then packages it with Electron Builder. No artifacts are published — everything stays local.
+This compiles the native audio capture binary (if supported on your platform), builds the TypeScript source with Vite, then packages it with Electron Builder. No artifacts are published — everything stays local.
 
 ```bash
 npm run electron:build
 ```
 
-The command runs `cross-env ELECTRON=1 vite build && electron-builder --publish never` under the hood.
+The command runs `npm run build:native && cross-env ELECTRON=1 vite build && electron-builder --publish never` under the hood.
+
+<Callout type="info">
+The native audio capture binary enables Gryt to exclude its own voice audio from screen share streams. It is compiled automatically on Windows (requires MSVC `cl.exe`) and macOS (requires `swiftc`). On Linux the binary is not available — the build step is skipped and screen share audio is passed through unfiltered.
+</Callout>
 
 ### Building for a specific platform only
 
