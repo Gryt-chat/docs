@@ -20,6 +20,11 @@ import { Card, Cards } from 'fumadocs-ui/components/card';
     description="Self-host with automatic HTTPS tunnels — no port forwarding for HTTP."
     href="/docs/deployment/cloudflare-tunnel"
   />
+  <Card
+    title="Monitoring"
+    description="Optional Prometheus + Grafana stack for metrics and dashboards."
+    href="/docs/deployment/monitoring"
+  />
 </Cards>
 
 ## Production requirements
@@ -96,6 +101,11 @@ curl http://localhost:5000/health   # server
 curl http://localhost:5005/health   # sfu
 curl http://localhost:3666/health   # client
 ```
+
+## Monitoring
+
+Both Server and SFU expose Prometheus metrics at `/metrics`. An optional
+Prometheus + Grafana stack is included — see the [Monitoring guide](/docs/deployment/monitoring).
 
 ## Interested in offering Gryt hosting?
 

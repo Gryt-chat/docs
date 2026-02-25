@@ -20,6 +20,8 @@ GitHub Container Registry — no need to clone any repos or build anything.
 | **ScyllaDB** | `scylladb/scylla` | Message & user storage | Yes |
 | **MinIO** | `minio/minio` | S3-compatible file storage | Yes |
 | **Client** | `ghcr.io/gryt-chat/client` | Web UI (React + Nginx) | Optional |
+| **Prometheus** | `prom/prometheus` | Metrics collection | Optional |
+| **Grafana** | `grafana/grafana` | Metrics dashboards | Optional |
 
 Most users connect via the [Gryt desktop app](https://github.com/Gryt-chat/gryt/releases) (available for Linux, macOS, and Windows).
 The web client is optional and only needed if you want browser-based access.
@@ -314,6 +316,19 @@ curl http://localhost:3666/health   # client (only with --profile web)
 ```
 
 Or use `docker compose ps` to see the health status of all containers.
+
+## Monitoring
+
+Both the Server and SFU expose Prometheus metrics at `/metrics`. Enable the
+optional monitoring stack (Prometheus + Grafana) with:
+
+```bash
+docker compose --profile monitoring up -d
+```
+
+Grafana is available at [http://localhost:3000](http://localhost:3000) (default login: `admin` / `admin`).
+
+See the full [Monitoring guide](/docs/deployment/monitoring) for configuration, available metrics, and recommended dashboards.
 
 ## Upgrading
 

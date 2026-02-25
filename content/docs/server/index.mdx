@@ -14,6 +14,7 @@ The Gryt signaling server is a Node.js/TypeScript application that manages WebRT
 - **Chat**: Text channels with message editing, replies, attachments, nonce-based deduplication, and owner moderation
 - **WebSocket**: Socket.IO with automatic reconnection and rate limiting
 - **Auth**: JWT validation via Keycloak JWKS (hosted at `auth.gryt.chat`)
+- **Metrics**: Prometheus endpoint (`/metrics`) with HTTP, Socket.IO, and Node.js runtime metrics
 
 ## Getting started
 
@@ -175,6 +176,7 @@ sequenceDiagram
 | Endpoint | Description |
 |----------|-------------|
 | `GET /health` | Health check |
+| `GET /metrics` | Prometheus metrics |
 | `GET /debug/rooms` | Room states |
 | `GET /debug/users` | Connected users |
 | `GET /debug/connections` | WebSocket connections |

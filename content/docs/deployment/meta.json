@@ -5,6 +5,7 @@
   "pages": [
     "index",
     "docker-compose",
-    "cloudflare-tunnel"
+    "cloudflare-tunnel",
+    "monitoring"
   ]
 }
