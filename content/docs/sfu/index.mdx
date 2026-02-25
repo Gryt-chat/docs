@@ -22,6 +22,7 @@ sfu/
 ├── cmd/sfu/           # Entry point
 ├── internal/
 │   ├── config/        # Environment-based configuration
+│   ├── metrics/       # Prometheus metrics
 │   ├── websocket/     # Thread-safe WebSocket wrapper + handler
 │   ├── webrtc/        # Peer connection management
 │   ├── track/         # Media track lifecycle
@@ -91,10 +92,10 @@ Or with the start script:
 | Endpoint | Description |
 |----------|-------------|
 | `GET /health` | Health check |
+| `GET /metrics` | Prometheus metrics |
 | `GET /debug/rooms` | Active rooms |
 | `GET /debug/peers` | Peer connections |
 | `GET /debug/tracks` | Media tracks |
-| `GET /metrics` | Prometheus metrics |
 
 ## Development
 

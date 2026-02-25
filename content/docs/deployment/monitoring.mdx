@@ -5,7 +5,6 @@ icon: ChartLine
 ---
 
 import { Callout } from 'fumadocs-ui/components/callout';
-import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
 
 Both the **Server** and the **SFU** expose a `/metrics` endpoint in Prometheus
 exposition format. You can scrape these with any Prometheus-compatible system, or
@@ -14,7 +13,8 @@ rest of the stack.
 
 ## Quick start
 
-The `docker-compose.yml` includes an optional **monitoring** profile:
+The `docker-compose.yml` includes an optional **monitoring** profile.
+Everything is self-contained — no extra config files needed:
 
 ```bash
 docker compose --profile monitoring up -d

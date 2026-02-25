@@ -232,9 +232,8 @@ See [Cloudflare Tunnel](/docs/deployment/cloudflare-tunnel) for a full walkthrou
 
 | Stack | Path | Use case |
 |-------|------|----------|
-| **All-in-one** | `docker-compose.yml` | [Recommended self-hosting](/docs/deployment/docker-compose) — pre-built GHCR images |
+| **Production / self-host** | `ops/deploy/compose/prod.yml` | [Recommended self-hosting](/docs/deployment/docker-compose) — pre-built GHCR images |
 | Cloudflare Tunnel | `ops/deploy/host/compose.yml` | Hosting with Tunnel + DB + S3 |
-| Production | `ops/deploy/compose/prod.yml` | Classic reverse-proxy production (GHCR images) |
 | Dev deps | `ops/deploy/compose/dev-deps.yml` | ScyllaDB + MinIO for local dev |
 | Dev app | `ops/deploy/compose/dev.yml` | SFU + servers + client (builds from source) |
 

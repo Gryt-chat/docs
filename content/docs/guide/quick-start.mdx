@@ -19,17 +19,15 @@ The fastest way to run Gryt. Pre-built images from GitHub Container Registry —
 <Tab value="curl">
 ```bash
 mkdir gryt && cd gryt
-curl -LO https://raw.githubusercontent.com/Gryt-chat/gryt/main/docker-compose.yml
-curl -LO https://raw.githubusercontent.com/Gryt-chat/gryt/main/.env.example
-cp .env.example .env
+curl -Lo docker-compose.yml https://raw.githubusercontent.com/Gryt-chat/gryt/main/ops/deploy/compose/prod.yml
+curl -Lo .env https://raw.githubusercontent.com/Gryt-chat/gryt/main/ops/deploy/compose/.env.example
 ```
 </Tab>
 <Tab value="wget">
 ```bash
 mkdir gryt && cd gryt
-wget https://raw.githubusercontent.com/Gryt-chat/gryt/main/docker-compose.yml
-wget https://raw.githubusercontent.com/Gryt-chat/gryt/main/.env.example
-cp .env.example .env
+wget -O docker-compose.yml https://raw.githubusercontent.com/Gryt-chat/gryt/main/ops/deploy/compose/prod.yml
+wget -O .env https://raw.githubusercontent.com/Gryt-chat/gryt/main/ops/deploy/compose/.env.example
 ```
 </Tab>
 </Tabs>
