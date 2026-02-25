@@ -4,11 +4,13 @@
   "icon": "BookOpen",
   "pages": [
     "index",
+    "why-gryt",
     "quick-start",
     "configuration",
     "emojis",
     "architecture",
     "accessibility",
+    "roadmap",
     "feature-requests",
     "contributing",
     "licensing",

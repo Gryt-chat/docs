@@ -18,7 +18,7 @@ cd gryt
 ops/start_dev.sh
 ```
 
-Then open `http://localhost:3666`.
+Then open [http://localhost:3666](http://localhost:3666).
 
 ## What are the system requirements?
 
@@ -28,7 +28,7 @@ Then open `http://localhost:3666`.
 
 ## Do I need to set up authentication?
 
-No. Auth is provided as a hosted service at `https://auth.gryt.chat`. Your server validates JWTs via JWKS automatically.
+No. Auth is provided as a hosted service at `auth.gryt.chat`. Your server validates JWTs via JWKS automatically.
 
 If you set `GRYT_AUTH_MODE=disabled`, the server rejects all joins (server lock).
 
@@ -40,7 +40,7 @@ If you set `GRYT_AUTH_MODE=disabled`, the server rejects all joins (server lock)
 
 ## Can I use push-to-talk?
 
-Not yet. Gryt currently uses voice activation with a configurable noise gate threshold.
+Yes. You can enable push-to-talk in **Settings → Hotkeys** and bind it to any key. In Electron, the hotkey works globally (even when Gryt is not focused). Channels can also require push-to-talk via channel settings.
 
 ## How do I add multiple servers?
 

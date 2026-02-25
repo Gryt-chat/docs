@@ -59,6 +59,11 @@ export function baseOptions(): BaseLayoutProps {
         url: 'https://discord.gg/Q3JKUGsnHE',
         external: true,
       },
+      {
+        text: 'Feedback',
+        url: 'https://feedback.gryt.chat',
+        external: true,
+      },
     ],
   };
 }

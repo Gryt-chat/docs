@@ -1,0 +1,176 @@
+---
+title: Roadmap
+description: What's shipped, what's in progress, and what's coming next
+icon: Map
+---
+
+This page tracks every major feature across Gryt. Use it to see what's already available, what's actively being worked on, and what's planned for the future.
+
+| Emoji | Meaning |
+|-------|---------|
+| ✅ | **Shipped** — available now |
+| 🔨 | **In progress** — actively being worked on |
+| 📋 | **Planned** — on the radar, not yet started |
+
+Have a feature you'd like to see? Check the [feature requests](/docs/guide/feature-requests) page.
+
+---
+
+## Voice and audio
+
+- ✅ HD voice (WebRTC, Opus, 48 kHz, configurable bitrate)
+- ✅ Noise suppression (RNNoise AI)
+- ✅ Echo cancellation
+- ✅ Auto Gain Control
+- ✅ Dynamic range compressor
+- ✅ Noise gate
+- ✅ eSports low-pass filter
+- ✅ Mute / deafen (server-synchronized)
+- ✅ Voice activity detection and speaking indicators
+- ✅ Device hot-swapping
+- ✅ Loopback monitoring
+- ✅ Configurable hotkeys (push-to-talk, disconnect)
+- ✅ Audio visualization (spectrum, level meters)
+- ✅ Push-to-talk (configurable hotkeys, browser + Electron)
+- ✅ Per-user volume control (0–200%)
+- ✅ Audio cues for state changes (join, leave, connect, disconnect)
+- ✅ Connect / disconnect sounds (configurable, custom sound files)
+- ✅ Per-channel voice settings (required push-to-talk, bitrate presets, eSports mode, disable RNNoise)
+- 📋 Soundboard (play audio clips into voice)
+
+## Video and screen sharing
+
+- ✅ Camera support with device selection
+- ✅ Camera preview, mirroring, quality settings
+- ✅ Screen sharing (video + audio)
+- ✅ Screen quality presets (native, 1080p, 720p, 480p)
+- ✅ FPS settings (15, 30, 60)
+- ✅ Focused video view and popout
+- ✅ Drag-and-drop video grid
+- 📋 Go-live / stream to channel
+- 📋 Video layout options (gallery, spotlight, sidebar)
+
+## Text chat
+
+- ✅ Rich text messages with Markdown
+- ✅ Message editing and deletion
+- ✅ Message replies
+- ✅ File attachments (multi-file, drag-and-drop, clipboard paste)
+- ✅ Image lightbox
+- ✅ Media player for audio/video
+- ✅ Mentions (@username autocomplete)
+- ✅ Emoji reactions
+- ✅ Emoji autocomplete (`:shortcode:`)
+- ✅ Emoji picker
+- ✅ Custom server emojis (upload, batch, ZIP, animated GIF, BTTV import)
+- ✅ Link embeds (YouTube, Twitch, Spotify, SoundCloud, TikTok, Instagram, X, Vimeo)
+- ✅ Profanity filter (off / flag / censor / block)
+- ✅ Message grouping and date separators
+- ✅ Unread message tracking
+- ✅ Code syntax highlighting in code blocks
+- 📋 Typing indicators
+- 📋 Threads (threaded replies)
+- 📋 Pinned messages
+- 📋 Message search
+- 📋 GIF picker (Tenor / Giphy)
+- 📋 Stickers
+- 📋 Polls
+- 📋 Spoiler tags
+- 📋 Slow mode (per-channel rate limit)
+- 📋 Scheduled messages
+
+## Servers and channels
+
+- ✅ Multi-server support (connect to many at once)
+- ✅ Text and voice channels
+- ✅ Channel creation, editing, deletion
+- ✅ Voice channel text chat (optional)
+- ✅ Server settings (name, description, icon)
+- ✅ Invite system (single-use, multi-use, expiration, revocation)
+- ✅ Roles (owner, admin, mod, member)
+- ✅ Audit log
+- ✅ Kick, ban, server mute/deafen
+- ✅ Server reports
+- ✅ Channel reordering (drag-and-drop)
+- ✅ Sidebar customization (spacers, separators with labels)
+- ✅ Per-channel role requirements (join, speak, stream)
+- ✅ Welcome screen / onboarding flow
+- 📋 Channel categories / folders
+- 📋 Per-channel permissions / role overrides
+- 📋 Forum channels
+- 📋 Announcement channels
+- 📋 Server templates
+- 📋 Server discovery / browser
+- 📋 Auto-moderation rules
+- 📋 Webhooks
+
+## Direct messages and social
+
+- 📋 Direct messages (1:1)
+- 📋 Group direct messages
+- 📋 Friend list / friend requests
+- 📋 User blocking
+
+## User profiles and presence
+
+- ✅ Avatars
+- ✅ Nicknames
+- ✅ AFK status
+- ✅ Online / in-voice / offline presence
+- 📋 Idle / do not disturb / invisible status
+- 📋 Custom status messages
+- 📋 Per-server user bio / profile page
+- 📋 Activity / rich presence
+
+## Notifications
+
+- ✅ Toast notifications
+- ✅ Sound notifications
+- ✅ Unread badges
+- 📋 Push notifications (desktop / mobile)
+- 📋 Per-channel notification preferences
+- 📋 Do-not-disturb mode
+
+## Accessibility
+
+- ✅ Atkinson Hyperlegible typeface
+- ✅ Full keyboard navigation
+- ✅ Screen reader support (ARIA)
+- ✅ Focus management
+- ✅ WCAG AA color contrast
+- ✅ Dark / light theme with system preference
+- ✅ Customizable appearance (accent color, gray scale, border radius, UI scale, chat font size, emoji size)
+- 📋 Reduced motion mode
+- 📋 High contrast theme
+- 📋 ARIA live regions for chat
+- 📋 Real-time captioning / transcription
+- 📋 Full WCAG AAA contrast
+
+## Platform and apps
+
+- ✅ Web client
+- ✅ Desktop app (Electron — Linux, macOS, Windows)
+- 📋 Mobile app (iOS / Android)
+
+## Self-hosting and infrastructure
+
+- ✅ Docker Compose deployment
+- ✅ Kubernetes / Helm charts
+- ✅ Cloudflare Tunnel support
+- ✅ S3-compatible storage (AWS S3, MinIO, Cloudflare R2)
+- ✅ ScyllaDB database
+- ✅ Keycloak OIDC authentication
+- ✅ Multi-network support (LAN + WAN)
+- ✅ Health check endpoints
+- 📋 One-click install scripts
+- 📋 Admin dashboard (web UI for server management)
+
+## Developer and integrations
+
+- ✅ REST API
+- ✅ WebSocket API (Socket.IO)
+- ✅ Open source (AGPL-3.0)
+- 📋 Bot / integration API
+- 📋 Slash commands
+- 📋 Plugin system
+- 📋 OAuth2 applications
