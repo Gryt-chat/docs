@@ -26,23 +26,37 @@ The mono variant applies these same legibility principles to fixed-width text, m
 ## Current accessibility features
 
 ### Keyboard navigation
-Every interactive element in Gryt is reachable and operable with the keyboard alone. Voice controls, server switching, channel navigation, and chat all work without a mouse.
+Core flows — chat input, voice-control hotkeys, and Radix-based dialogs — are operable with the keyboard. However, some interactive elements (video cards, reply links, the image lightbox, and the focused-video overlay) are not yet keyboard-accessible, and list views (channels, servers, members) do not support arrow-key navigation. We are working toward full keyboard operability for every interactive element.
 
 ### Configurable hotkeys
-Users can rebind push-to-talk, mute, deafen, and other voice controls to any key combination. This lets users with limited mobility choose key placements that work for them.
+Users can rebind **push-to-talk**, **mute**, **deafen**, and **disconnect** to any key combination via _Settings → Hotkeys_. This lets users with limited mobility choose key placements that work for them. Camera and screen-share toggles are not yet rebindable.
 
 ### Screen reader support
-We use semantic HTML and ARIA attributes throughout the client. Voice state changes (mute, deafen, speaking) are announced, and all controls have descriptive labels.
+The client is built on Radix UI primitives, which provide a baseline of ARIA roles and keyboard interactions for dialogs, menus, and form controls. However, comprehensive screen-reader support is still in progress: many icon-only buttons lack `aria-label` attributes, the layout does not yet use semantic HTML landmarks (`<nav>`, `<main>`, `<aside>`), and voice-state changes (mute, deafen, speaking) are not yet announced via ARIA live regions.
 
 ### Theme support
-Gryt supports light and dark themes with system preference detection. Both themes are designed for WCAG AA color contrast compliance, and we are working toward full AAA compliance.
+Gryt supports light and dark themes with system-preference detection. Both themes use the Radix UI color system, which targets WCAG AA contrast ratios. A formal, independent contrast audit has not yet been completed, and we are working toward full AAA compliance.
 
 ### Focus management
-All modals and dialogs trap focus correctly, focus indicators are always visible, and tab order follows a logical reading sequence.
+Radix-based modals and dialogs trap focus correctly, and tab order follows a logical reading sequence (no `tabIndex > 0` values). Custom overlays — the image lightbox, the emoji picker, and the focused-video view — do not yet trap focus or restore focus on close. We are actively closing these gaps.
 
 ## Roadmap
 
-We're actively working toward full WCAG 2.2 AA compliance across the entire platform. See the [roadmap](/docs/guide/roadmap#accessibility) for the full list of planned accessibility improvements, including reduced motion mode, a high-contrast theme, ARIA live regions for chat, real-time captioning, and full WCAG AAA contrast.
+We're working toward full WCAG 2.2 AA compliance across the entire platform. Current priorities include:
+
+- Keyboard handlers and ARIA roles for all custom interactive elements (video cards, reply links, lightbox)
+- Arrow-key navigation for channel, server, and member lists
+- `aria-label` on every icon-only button
+- Semantic HTML landmarks throughout the layout
+- ARIA live regions for voice-state changes and chat messages
+- Focus trapping and focus-return for custom overlays
+- Rebindable hotkeys for camera and screen-share toggles
+- Formal WCAG AA contrast audit with a path to AAA
+- Reduced-motion mode
+- High-contrast theme
+- Real-time captioning
+
+See the [roadmap](/docs/guide/roadmap#accessibility) for the full list of planned accessibility improvements.
 
 ## Contributing to accessibility
 
