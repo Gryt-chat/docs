@@ -4,6 +4,8 @@ description: What's shipped, what's in progress, and what's coming next
 icon: Map
 ---
 
+import { Accordion, Accordions } from 'fumadocs-ui/components/accordion';
+
 This page tracks every major feature across Gryt. Use it to see what's already available, what's actively being worked on, and what's planned for the future.
 
 | Emoji | Meaning |
@@ -16,8 +18,8 @@ Have a feature you'd like to see? Check the [feature requests](/docs/guide/featu
 
 ---
 
-## Voice and audio
-
+<Accordions>
+<Accordion title="Voice and audio">
 - ✅ HD voice (WebRTC, Opus, 48 kHz, configurable bitrate)
 - ✅ Noise suppression (RNNoise AI)
 - ✅ Echo cancellation
@@ -38,9 +40,9 @@ Have a feature you'd like to see? Check the [feature requests](/docs/guide/featu
 - ✅ Connect / disconnect sounds (configurable, custom sound files)
 - ✅ Per-channel voice settings (required push-to-talk, bitrate presets, eSports mode, disable RNNoise)
 - 📋 Soundboard (play audio clips into voice)
+</Accordion>
 
-## Video and screen sharing
-
+<Accordion title="Video and screen sharing">
 - ✅ Camera support with device selection
 - ✅ Camera preview, mirroring, quality settings
 - ✅ Screen sharing (video + audio)
@@ -54,9 +56,9 @@ Have a feature you'd like to see? Check the [feature requests](/docs/guide/featu
 - 📋 Video layout options (gallery, spotlight, sidebar)
 - 📋 Clips (save and share screen-share moments)
 - 📋 End-to-end encryption (SFrame / insertable streams)
+</Accordion>
 
-## Text chat
-
+<Accordion title="Text chat">
 - ✅ Rich text messages with Markdown
 - ✅ Message editing and deletion
 - ✅ Message replies
@@ -84,9 +86,9 @@ Have a feature you'd like to see? Check the [feature requests](/docs/guide/featu
 - 📋 Spoiler tags
 - 📋 Slow mode (per-channel rate limit)
 - 📋 Scheduled messages
+</Accordion>
 
-## Servers and channels
-
+<Accordion title="Servers and channels">
 - ✅ Multi-server support (connect to many at once)
 - ✅ Text and voice channels
 - ✅ Channel creation, editing, deletion
@@ -111,16 +113,16 @@ Have a feature you'd like to see? Check the [feature requests](/docs/guide/featu
 - 📋 Server discovery / browser
 - 📋 Auto-moderation rules
 - 📋 Webhooks
+</Accordion>
 
-## Direct messages and social
-
+<Accordion title="Direct messages and social">
 - 📋 Direct messages (1:1)
 - 📋 Group direct messages
 - 📋 Friend list / friend requests
 - 📋 User blocking
+</Accordion>
 
-## User profiles and presence
-
+<Accordion title="User profiles and presence">
 - ✅ Avatars
 - ✅ Nicknames
 - ✅ AFK status
@@ -129,18 +131,18 @@ Have a feature you'd like to see? Check the [feature requests](/docs/guide/featu
 - 📋 Custom status messages
 - 📋 Per-server user bio / profile page
 - 📋 Activity / rich presence
+</Accordion>
 
-## Notifications
-
+<Accordion title="Notifications">
 - ✅ Toast notifications
 - ✅ Sound notifications
 - ✅ Unread badges
 - 📋 Push notifications (desktop / mobile)
 - 📋 Per-channel notification preferences
 - 📋 Do-not-disturb mode
+</Accordion>
 
-## Accessibility
-
+<Accordion title="Accessibility">
 - ✅ Atkinson Hyperlegible typeface
 - ✅ Full keyboard navigation
 - ✅ Screen reader support (ARIA)
@@ -154,9 +156,9 @@ Have a feature you'd like to see? Check the [feature requests](/docs/guide/featu
 - 📋 ARIA live regions for chat
 - 📋 Real-time captioning / transcription
 - 📋 Full WCAG AAA contrast
+</Accordion>
 
-## Platform and apps
-
+<Accordion title="Platform and apps">
 - ✅ Web client
 - ✅ Desktop app (Electron — Linux, macOS, Windows)
 - 🔨 Code-signed Windows installer (.exe)
@@ -165,9 +167,9 @@ Have a feature you'd like to see? Check the [feature requests](/docs/guide/featu
 - 🔨 Mobile-responsive web layout
 - 📋 iOS app
 - 📋 Android app
+</Accordion>
 
-## Authentication and security
-
+<Accordion title="Authentication and security">
 - ✅ Keycloak OIDC single sign-on
 - ✅ User registration with terms of service acceptance
 - 🔨 Identity certificates (challenge-response join — community servers never see your auth token)
@@ -175,9 +177,9 @@ Have a feature you'd like to see? Check the [feature requests](/docs/guide/featu
 - 🔨 Security settings panel
 - 📋 Two-factor authentication (TOTP)
 - 📋 Account deletion self-service
+</Accordion>
 
-## Self-hosting and infrastructure
-
+<Accordion title="Self-hosting and infrastructure">
 - ✅ Docker Compose deployment
 - ✅ Kubernetes / Helm charts
 - ✅ Cloudflare Tunnel support
@@ -191,9 +193,9 @@ Have a feature you'd like to see? Check the [feature requests](/docs/guide/featu
 - 📋 Evaluate MinIO alternatives (Garage, SeaweedFS, OpenSTRG)
 - 📋 One-click install scripts
 - 📋 Admin dashboard (web UI for server management)
+</Accordion>
 
-## Developer and integrations
-
+<Accordion title="Developer and integrations">
 - ✅ REST API
 - ✅ WebSocket API (Socket.IO)
 - ✅ Open source (AGPL-3.0)
@@ -201,3 +203,5 @@ Have a feature you'd like to see? Check the [feature requests](/docs/guide/featu
 - 📋 Slash commands
 - 📋 Plugin system
 - 📋 OAuth2 applications
+</Accordion>
+</Accordions>
