@@ -4,11 +4,13 @@ description: Frequently asked questions about Gryt
 icon: MessageCircleQuestionMark
 ---
 
-## What is Gryt?
+## Getting started
+
+### What is Gryt?
 
 Gryt is an open-source WebRTC voice chat platform. It provides real-time voice communication with noise suppression, echo cancellation, and a modern UI. Think Discord-style voice channels, self-hosted.
 
-## How do I get started?
+### How do I get started?
 
 The fastest path is the dev launcher:
 
@@ -20,37 +22,100 @@ ops/start_dev.sh
 
 Then open [http://localhost:3666](http://localhost:3666).
 
-## What are the system requirements?
+### What are the system requirements?
 
 **Client:** A modern browser with WebRTC support (Chrome, Firefox, Safari, Edge), plus a microphone.
 
 **Server:** Node.js 18+ and Bun (or npm). Go 1.21+ for the SFU. Docker 20.10+ for containerized deployment.
 
-## Do I need to set up authentication?
+### How do I add multiple servers?
 
-No. Auth is provided as a hosted service at `auth.gryt.chat`. Your server validates JWTs via JWKS automatically.
+Click the "+" button in the client server list and enter the server URL. The client validates and connects automatically.
+
+## Why Gryt?
+
+### How is Gryt different from Discord?
+
+Discord is a centralized platform — all your data, voice, and identity live on Discord's infrastructure. You can't self-host it, audit the code, or control where your data goes.
+
+Gryt is self-hosted and open source. You run your own server, you own your data, and anyone can read the code. Voice quality uses the same underlying technology (WebRTC), but you control the infrastructure.
+
+### How is Gryt different from TeamSpeak?
+
+TeamSpeak is closed-source and proprietary. Gryt is open source under AGPL-3.0. Both support self-hosting, but with Gryt you can inspect, modify, and redistribute the code. Gryt also runs in the browser — no client install required (though a desktop app is available).
+
+### How is Gryt different from Mumble?
+
+Mumble is an excellent open-source voice chat tool, but its UI is dated and it requires a native client. Gryt provides a modern web-based UI, built-in text chat, file uploads, and an Electron desktop app — while keeping the self-hosted philosophy.
+
+### Why open source?
+
+Because you shouldn't have to trust a black box with your communication. Open source means:
+
+- You can audit the code to verify what it does
+- You can fork it if the project takes a direction you disagree with
+- Security researchers can find and report vulnerabilities
+- The community can contribute improvements
+
+### Is Gryt free to use?
+
+Yes, for personal and non-commercial use. Gryt is source-available under the [AGPL-3.0 license](/docs/guide/licensing). You can self-host it, modify it, and use it however you like — as long as you share any changes you make under the same license. If you want to use Gryt commercially or offer it as a service, [get in touch](mailto:sivert@sivert.io) about a commercial license.
+
+## Security and privacy
+
+### Can a malicious server owner steal my identity?
+
+No. Gryt uses [challenge-response authentication](/docs/guide/security) — your Keycloak token is never sent to community servers. Instead, you prove your identity by signing a challenge with a private key that never leaves your device. Even if a server operator captures everything from the join handshake, they cannot impersonate you on other servers.
+
+### What data does a server see when I join?
+
+The server sees your Gryt user ID (a UUID) and a public key certificate. It does **not** see your Keycloak token, password, email, or private key. After you join, the server can see messages and files you send to it — that's how server-hosted communication works.
+
+### Can a server admin read my messages?
+
+If the server stores messages, the server operator can access them. This is the same trade-off as any self-hosted chat system. Gryt's point is that you can run the server yourself, or choose a server operator you trust.
+
+### Can the SFU listen to voice?
+
+WebRTC encrypts voice in transit (DTLS-SRTP), but the SFU terminates WebRTC sessions to forward media between participants. If you don't control the SFU, treat it as trusted infrastructure. If you self-host, you control it.
+
+### What happens if I lose my device?
+
+A new keypair is generated automatically on your next sign-in from another device. The old certificate expires within 30 days, and the old device's keypair is useless without a valid Keycloak session.
+
+### Can I use my own identity provider?
+
+The repo includes a local Keycloak setup for development (`auth/docker-compose.keycloak.yml`). Full self-hosted auth documentation is planned. The Identity Service and Keycloak can be self-hosted alongside your servers.
+
+## Authentication
+
+### Do I need to set up authentication?
+
+No. Auth is provided as a hosted service at `auth.gryt.chat`. Your server validates identity certificates via the Identity Service JWKS automatically.
 
 If you set `GRYT_AUTH_MODE=disabled`, the server rejects all joins (server lock).
 
-## Why isn't my microphone working?
+### Do servers need to be registered anywhere?
+
+No. Any server can verify identity certificates by fetching the Identity Service's public key from its JWKS endpoint. There is no central registry of servers. Run the binary, point it at the JWKS URL, and it works — like TeamSpeak, but with cryptographic identity.
+
+## Client
+
+### Why isn't my microphone working?
 
 1. Check browser permissions (WebRTC requires HTTPS in production)
 2. Ensure the correct device is selected in the audio settings
 3. Try a different browser
 
-## Can I use push-to-talk?
+### Can I use push-to-talk?
 
 Yes. You can enable push-to-talk in **Settings → Hotkeys** and bind it to any key. In Electron, the hotkey works globally (even when Gryt is not focused). Channels can also require push-to-talk via channel settings.
 
-## How do I add multiple servers?
-
-Click the "+" button in the client server list and enter the server URL. The client validates and connects automatically.
-
-## What happens when the server restarts?
+### What happens when the server restarts?
 
 Voice chat continues uninterrupted through the SFU while the signaling server is down. Once the server comes back online, clients automatically reconnect, restore their session, and rejoin the voice channel. The whole process takes a few seconds and requires no user action.
 
-## Windows says the app is dangerous / macOS won't open it
+### Windows says the app is dangerous / macOS won't open it
 
 This is expected for open-source apps that aren't signed with an expensive code signing certificate. The app is fully open source — you can inspect every line of code or [build it yourself](/docs/client/build-from-source).
 
@@ -58,14 +123,6 @@ This is expected for open-source apps that aren't signed with an expensive code 
 - **macOS**: Right-click the app → **Open** → **Open** again.
 
 See the [Code signing and OS trust](/docs/client/build-from-source#code-signing-and-os-trust) section for details.
-
-## Is Gryt free to use?
-
-Yes, for personal and non-commercial use. Gryt is source-available under the [AGPL-3.0 license](/docs/guide/licensing). You can self-host it, modify it, and use it however you like — as long as you share any changes you make under the same license. If you want to use Gryt commercially or offer it as a service, [get in touch](mailto:sivert@sivert.io) about a commercial license.
-
-## Can I self-host authentication?
-
-The repo includes a local Keycloak setup for development (`auth/docker-compose.keycloak.yml`). Full self-hosted auth documentation is planned.
 
 ## Where can I get help?
 

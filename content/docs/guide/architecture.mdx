@@ -20,16 +20,19 @@ graph TB
   end
 
   subgraph Identity
-    Auth["Auth Service\n(Keycloak — OIDC / PKCE)"]
+    Auth["Keycloak\n(OIDC / PKCE)"]
+    IS["Identity Service\n(certificate signing)"]
   end
 
   WC <-->|"WSS — signaling"| GS
   WC -.->|"UDP — DTLS-SRTP media"| SFU
   WC -->|"OIDC login"| Auth
+  WC -->|"Get certificate"| IS
+  IS -->|"Verify Keycloak token"| Auth
   GS <-->|"WS — room mgmt"| SFU
   GS --> DB
   GS --> S3
-  GS -->|"JWKS token verification"| Auth
+  GS -->|"JWKS certificate verification"| IS
 ```
 
 ## Web Client
@@ -82,7 +85,7 @@ packages/server/src/
 │   └── utils/     # server details, client sync helpers
 ├── routes/        # REST API endpoints (messages, uploads, members, emojis, etc.)
 ├── db/            # ScyllaDB access layer (users, messages, roles, invites, ...)
-├── auth/          # OIDC identity token verification (JWKS)
+├── auth/          # Identity certificate & assertion verification (JWKS)
 ├── storage/       # S3/MinIO integration
 ├── jobs/          # background workers (media sweep, emoji queue)
 ├── sfu/           # SFU client (server↔SFU sync)
@@ -133,25 +136,36 @@ func (r *Room) ForwardTrack(track *Track) {
 
 ## Authentication
 
-Authentication uses a centrally hosted Keycloak instance. Clients authenticate via OIDC Authorization Code + PKCE (public client, no client secret). Servers validate tokens by checking the JWT signature against the Keycloak JWKS endpoint -- no shared secret with Gryt is required.
+Authentication uses two services: **Keycloak** for login and a lightweight **Identity Service** for certificate signing.
+
+Clients authenticate with Keycloak via OIDC Authorization Code + PKCE (public client, no client secret). After login, the client generates an ECDSA P-256 keypair and obtains a **signed certificate** from the Identity Service that binds the public key to the user's Gryt identity.
+
+When joining a community server, the client uses a **challenge-response** protocol — the Keycloak token is never sent to the server. This prevents malicious server operators from stealing and replaying credentials.
 
 ```mermaid
 sequenceDiagram
   participant C as Client
   participant K as Keycloak
-  participant S as Server
+  participant ID as Identity Service
+  participant S as Community Server
 
-  C->>K: Redirect to login (PKCE challenge)
-  K-->>C: Login page
-  C->>K: Credentials (username + password)
-  K-->>C: Authorization code
-  C->>K: Exchange code + PKCE verifier
-  K-->>C: ID token + access token (JWT)
-  C->>S: Connect with identity token
-  S->>K: Fetch JWKS public keys
-  S-->>S: Verify token signature + claims
-  S-->>C: Authenticated session
+  C->>K: OIDC login (PKCE)
+  K-->>C: Access token (JWT)
+  C->>C: Generate ECDSA keypair
+  C->>ID: Request certificate (access token + public key)
+  ID->>K: Verify access token (JWKS)
+  ID-->>C: Signed identity certificate
+
+  C->>S: server:join (nickname)
+  S-->>C: server:challenge (nonce)
+  C->>C: Sign assertion (aud=server, nonce)
+  C->>S: server:verify (certificate + assertion)
+  S->>ID: Fetch JWKS (cached)
+  S->>S: Verify certificate + assertion + nonce
+  S-->>C: Server access token
 ```
+
+See the [Security](/docs/guide/security) page for a detailed breakdown of this flow and its security properties.
 
 ## Data flow
 
@@ -166,12 +180,13 @@ graph LR
   SFU -.-> MR["Media Relay"]
 ```
 
-1. Client authenticates with Keycloak and gets a JWT
-2. Client opens a WebSocket to the signaling server (JWT in handshake)
-3. On voice channel join, the server requests a room from the SFU
-4. SFU sends a WebRTC offer; the client answers
-5. ICE candidates are exchanged via the signaling server
-6. Media flows directly between client and SFU over UDP
+1. Client authenticates with Keycloak and obtains a certificate from the Identity Service
+2. Client opens a WebSocket to the signaling server and completes challenge-response
+3. Server issues a server-scoped access token
+4. On voice channel join, the server requests a room from the SFU
+5. SFU sends a WebRTC offer; the client answers
+6. ICE candidates are exchanged via the signaling server
+7. Media flows directly between client and SFU over UDP
 
 ## Deployment
 
