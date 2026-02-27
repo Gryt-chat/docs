@@ -1,0 +1,16 @@
+.env
+.env.*
+.git
+.gitignore
+.github
+.eslintrc.json
+.source
+.next
+node_modules
+bun.lockb
+scripts/
+*.log
+*.md
+LICENSE
+.vscode/
+.idea/
