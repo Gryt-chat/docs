@@ -93,7 +93,9 @@ Have a feature you'd like to see? Check the [feature requests](/docs/guide/featu
 - ✅ Voice channel text chat (optional)
 - ✅ Server settings (name, description, icon)
 - ✅ Invite system (single-use, multi-use, expiration, revocation)
+- ✅ Invite link previews (server icon, name, and description on invite pages)
 - ✅ Roles (owner, admin, mod, member)
+- ✅ User identity replacement (owner can migrate a user's data to a new Gryt ID)
 - ✅ Audit log
 - ✅ Kick, ban, server mute/deafen
 - ✅ Server reports
@@ -164,6 +166,16 @@ Have a feature you'd like to see? Check the [feature requests](/docs/guide/featu
 - 📋 iOS app
 - 📋 Android app
 
+## Authentication and security
+
+- ✅ Keycloak OIDC single sign-on
+- ✅ User registration with terms of service acceptance
+- 🔨 Identity certificates (challenge-response join — community servers never see your auth token)
+- 🔨 Passkey / passwordless login (WebAuthn, Electron + web)
+- 🔨 Security settings panel
+- 📋 Two-factor authentication (TOTP)
+- 📋 Account deletion self-service
+
 ## Self-hosting and infrastructure
 
 - ✅ Docker Compose deployment
@@ -171,12 +183,11 @@ Have a feature you'd like to see? Check the [feature requests](/docs/guide/featu
 - ✅ Cloudflare Tunnel support
 - ✅ S3-compatible storage (AWS S3, MinIO, Cloudflare R2)
 - ✅ ScyllaDB database
-- ✅ Keycloak OIDC authentication
+- ✅ Identity service (certificate issuance for client identity verification)
 - ✅ Multi-network support (LAN + WAN)
 - ✅ Health check endpoints
 - ✅ Prometheus metrics + optional Grafana monitoring
 - 📋 Server-to-server proxying / federation
-- 📋 Public-key client identity (alternative to password-based auth)
 - 📋 Evaluate MinIO alternatives (Garage, SeaweedFS, OpenSTRG)
 - 📋 One-click install scripts
 - 📋 Admin dashboard (web UI for server management)
