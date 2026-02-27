@@ -1,12 +1,12 @@
-FROM node:20-alpine AS builder
+FROM oven/bun:1-alpine AS builder
 
 WORKDIR /app
 
-COPY package*.json ./
-RUN npm ci --ignore-scripts && npm install --no-save vite
+COPY package.json bun.lockb* ./
+RUN bun install --frozen-lockfile
 
 COPY . .
-RUN npx fumadocs-mdx && npm run build
+RUN bunx fumadocs-mdx && bun run build
 
 FROM node:20-alpine
 
