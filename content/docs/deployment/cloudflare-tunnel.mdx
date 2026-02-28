@@ -98,6 +98,26 @@ the SFU **WebSocket** (port 5005) still goes through the tunnel. If you set `sfu
 DNS-only (grey cloud), browsers won't be able to reach the SFU WebSocket and voice connections will fail.
 </Callout>
 
+## Upload size limit (100 MB)
+
+Cloudflare enforces a **100 MB maximum request body size** on Free and Pro plans (200 MB on Business, 500 MB on Enterprise). File uploads that exceed this limit are rejected by Cloudflare's edge before they reach your server. Because Cloudflare's error response does not include your server's CORS headers, the browser reports a misleading **CORS error** instead of the real cause.
+
+This affects all HTTP uploads routed through the tunnel — chat file attachments, avatars, and emoji uploads.
+
+<Callout type="warn" title="Large file uploads fail silently">
+If a user uploads a file larger than 100 MB through a Cloudflare Tunnel on a Free/Pro plan, they will see a generic CORS or network error. The request never reaches your Gryt server, so there will be no log entry on the server side.
+</Callout>
+
+### Alternatives for large uploads
+
+If you need to support file uploads larger than 100 MB, consider using a different reverse proxy instead of (or alongside) Cloudflare Tunnel:
+
+- **[Nginx Proxy Manager](https://nginxproxymanager.com/)** — web-based UI for managing Nginx reverse proxies with automatic Let's Encrypt certificates. Set `client_max_body_size` to your desired limit.
+- **[Traefik](https://traefik.io/)** — cloud-native reverse proxy with automatic TLS. No default body size limit.
+- **[Caddy](https://caddyserver.com/)** — simple reverse proxy with automatic HTTPS (see the [Docker Compose guide](/docs/deployment/docker-compose#tls-with-caddy-recommended)). No default body size limit.
+
+All three options handle TLS termination and have no inherent upload size restrictions, so the only limit will be what you configure on the Gryt server itself (default: 200 MB).
+
 ## Firewall / port forwarding (critical)
 
 Open/forward UDP to the host running the `sfu` container.
