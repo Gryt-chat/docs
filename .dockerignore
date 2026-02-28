@@ -6,7 +6,7 @@
 .eslintrc.json
 .source
 .next
-bun.lockb
+package-lock.json
 scripts/
 *.log
 *.md

@@ -6,7 +6,7 @@ icon: Heart
 
 ## Prerequisites
 
-- **Node.js** 18+ and **Bun** (client and server)
+- **Node.js** 22+ and **yarn**
 - **Go** 1.21+ (SFU)
 - **Docker** (optional)
 
@@ -16,8 +16,8 @@ icon: Heart
 git clone --recurse-submodules https://github.com/YOUR_USERNAME/gryt.git
 cd gryt
 
-cd packages/client && bun install && cd ../..
-cd packages/server && bun install && cd ../..
+cd packages/client && yarn install && cd ../..
+cd packages/server && yarn install && cd ../..
 cd packages/sfu && go mod download && cd ../..
 cd packages/docs && npm install && cd ../..
 ```
@@ -71,10 +71,10 @@ func (p *AudioProcessor) ProcessAudio(buffer AudioBuffer) (AudioBuffer, error) {
 
 ```bash
 # Client
-cd packages/client && bun test
+cd packages/client && yarn test
 
 # Server
-cd packages/server && bun test
+cd packages/server && yarn test
 
 # SFU
 cd packages/sfu && go test ./...
@@ -92,8 +92,8 @@ Quick steps to add a blog post:
 
 ## Pull request checklist
 
-- Tests pass (`bun test`, `go test ./...`)
-- Code is linted (`bun run lint`, `go fmt ./...`)
+- Tests pass (`yarn test`, `go test ./...`)
+- Code is linted (`yarn lint`, `go fmt ./...`)
 - Documentation is updated if needed
 - No breaking changes (or clearly marked)
 

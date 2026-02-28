@@ -9,8 +9,8 @@
 ## Development
 
 ```bash
-bun install
-bun dev
+yarn install
+yarn dev
 ```
 
 Open **http://localhost:3000**.

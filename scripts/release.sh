@@ -132,7 +132,7 @@ fi
 echo ""
 info "Installing dependencies…"
 cd "$PKG_DIR"
-bun install
+yarn install --frozen-lockfile --ignore-engines
 ok "Dependencies installed"
 
 # ── Docker build & push ─────────────────────────────────────────────────
