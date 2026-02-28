@@ -128,6 +128,13 @@ if [ "$RERELEASE" = true ]; then
   git tag -d "v${NEW_VERSION}" 2>/dev/null || true
 fi
 
+# ── Install dependencies (so Docker can COPY node_modules) ────────────────
+echo ""
+info "Installing dependencies…"
+cd "$PKG_DIR"
+bun install
+ok "Dependencies installed"
+
 # ── Docker build & push ─────────────────────────────────────────────────
 echo ""
 info "Building Docker image…"

@@ -6,7 +6,11 @@ icon: Settings
 
 ## Web Client
 
-The web client works out-of-the-box. Optional settings in `packages/client/.env`:
+<Callout type="warn">
+The web client is intended for **local development and contributing** to Gryt. Self-hosting it in production won't work with the centralized auth at `auth.gryt.chat` because your domain won't be registered as a redirect URI. Use the [Gryt desktop app](https://github.com/Gryt-chat/gryt/releases) or [app.gryt.chat](https://app.gryt.chat) to connect to servers. If you self-host your own Keycloak, the web client will work, but your users will have separate identities that don't carry across other Gryt servers.
+</Callout>
+
+Optional development settings in `packages/client/.env`:
 
 ```bash
 VITE_AUDIO_SAMPLE_RATE=48000
@@ -51,11 +55,6 @@ CORS_ORIGIN="http://127.0.0.1:15738,https://app.gryt.chat"
 # Authentication
 GRYT_AUTH_API=https://auth.gryt.chat
 
-# ScyllaDB
-SCYLLA_CONTACT_POINTS=127.0.0.1
-SCYLLA_LOCAL_DATACENTER=datacenter1
-SCYLLA_KEYSPACE=gryt
-
 # S3 / Object storage
 S3_REGION=auto
 S3_ACCESS_KEY_ID=
@@ -78,7 +77,6 @@ REFRESH_TOKEN_TTL_DAYS=7
 
 # Advanced: disable dependencies (mostly useful in development)
 DISABLE_S3=true       # disables uploads + icon/avatar endpoints
-DISABLE_SCYLLA=true   # skips Scylla init (most server features will not work)
 
 # Advanced: chat history cache TTL (ms)
 MESSAGE_CACHE_TTL_MS=30000
@@ -237,8 +235,8 @@ See [Cloudflare Tunnel](/docs/deployment/cloudflare-tunnel) for a full walkthrou
 | Stack | Path | Use case |
 |-------|------|----------|
 | **Production / self-host** | `ops/deploy/compose/prod.yml` | [Recommended self-hosting](/docs/deployment/docker-compose) — pre-built GHCR images |
-| Cloudflare Tunnel | `ops/deploy/host/compose.yml` | Hosting with Tunnel + DB + S3 |
-| Dev deps | `ops/deploy/compose/dev-deps.yml` | ScyllaDB + MinIO for local dev |
+| Cloudflare Tunnel | `ops/deploy/host/compose.yml` | Hosting with Tunnel + S3 |
+| Dev deps | `ops/deploy/compose/dev-deps.yml` | MinIO for local dev |
 | Dev app | `ops/deploy/compose/dev.yml` | SFU + servers + client (builds from source) |
 
 ## Health checks
@@ -258,20 +256,13 @@ This acts as a simple access gate: only clients loaded from a listed origin will
 | Origin | What it is |
 |--------|-----------|
 | `http://127.0.0.1:15738` | **Gryt desktop app** (Electron) — always include this |
-| `https://app.gryt.chat` | Hosted web client |
-| `https://gryt.example.com` | Your self-hosted web client (if applicable) |
-| `http://localhost:3666` | Local Docker web client (`--profile web`) |
+| `https://app.gryt.chat` | Official hosted web client |
+| `http://localhost:3666` | Local web client (development only) |
 
 A typical production setup:
 
 ```bash
 CORS_ORIGIN="http://127.0.0.1:15738,https://app.gryt.chat"
-```
-
-If you also self-host the web client or use a custom domain, add it:
-
-```bash
-CORS_ORIGIN="http://127.0.0.1:15738,https://app.gryt.chat,https://gryt.example.com"
 ```
 
 ### Environment isolation

@@ -3,6 +3,7 @@ FROM oven/bun:1-alpine AS builder
 WORKDIR /app
 
 COPY package.json bun.lockb* ./
+COPY node_modules ./node_modules
 RUN bun install --frozen-lockfile --ignore-scripts
 
 COPY . .

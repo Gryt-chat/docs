@@ -6,7 +6,6 @@
 .eslintrc.json
 .source
 .next
-node_modules
 bun.lockb
 scripts/
 *.log

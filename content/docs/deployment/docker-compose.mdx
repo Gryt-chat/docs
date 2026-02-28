@@ -17,15 +17,21 @@ GitHub Container Registry — no need to clone any repos or build anything.
 |---------|-------|---------|-----------|
 | **Server** | `ghcr.io/gryt-chat/server` | Signaling, chat, file uploads | Yes |
 | **SFU** | `ghcr.io/gryt-chat/sfu` | WebRTC media forwarding | Yes |
-| **ScyllaDB** | `scylladb/scylla` | Message & user storage | Yes |
 | **MinIO** | `minio/minio` | S3-compatible file storage | Yes |
 | **Image Worker** | `ghcr.io/gryt-chat/image-worker` | Background image compression + thumbnailing | Optional (recommended) |
-| **Client** | `ghcr.io/gryt-chat/client` | Web UI (React + Nginx) | Optional |
+| **Client** | `ghcr.io/gryt-chat/client` | Web UI (React + Nginx) | Dev / local only |
 | **Prometheus** | `prom/prometheus` | Metrics collection | Optional |
 | **Grafana** | `grafana/grafana` | Metrics dashboards | Optional |
 
 Most users connect via the [Gryt desktop app](https://github.com/Gryt-chat/gryt/releases) (available for Linux, macOS, and Windows).
-The web client is optional and only needed if you want browser-based access.
+
+<Callout type="warn" title="Web client and authentication">
+The web client Docker image is included for **local development and contributing** to Gryt. It is **not recommended for production self-hosting** because the OIDC login flow requires your domain to be registered as a redirect URI with the centralized auth service at `auth.gryt.chat` — and only official Gryt domains are whitelisted.
+
+If you need a web-based interface, use the hosted client at [app.gryt.chat](https://app.gryt.chat), or connect with the desktop app.
+
+You _can_ self-host your own Keycloak using the [provided configuration](/docs/guide/self-hosted-oidc), but that means your users will have separate accounts that don't work on other Gryt servers (no cross-server identity).
+</Callout>
 
 ## Quick start
 
@@ -65,8 +71,8 @@ SERVER_NAME=My Gryt Server
 # Set a real secret in production
 JWT_SECRET=<run: openssl rand -base64 48>
 
-# Allowed origins (desktop app + hosted web client + local web client)
-CORS_ORIGIN=http://127.0.0.1:15738,http://localhost:3666,https://app.gryt.chat
+# Allowed origins (desktop app + hosted web client)
+CORS_ORIGIN=http://127.0.0.1:15738,https://app.gryt.chat
 ```
 
 </Step>
@@ -78,20 +84,12 @@ CORS_ORIGIN=http://127.0.0.1:15738,http://localhost:3666,https://app.gryt.chat
 docker compose up -d
 ```
 
-This starts the core services: **Server**, **SFU**, **ScyllaDB**, and **MinIO**.
-Wait about 30–60 seconds for ScyllaDB to initialize, then connect with the
-[Gryt desktop app](https://github.com/Gryt-chat/gryt/releases) or [app.gryt.chat](https://app.gryt.chat).
+This starts the core services: **Server**, **SFU**, and **MinIO**.
+Connect with the [Gryt desktop app](https://github.com/Gryt-chat/gryt/releases) or
+the hosted web client at [app.gryt.chat](https://app.gryt.chat).
 
 **Invite-only**: the **first user** to join a brand-new server becomes the **owner/admin** automatically.
 After that, the server is **invite-only**. Create invite links in **Server settings → Invites** and share them.
-
-To also run the web client (optional):
-
-```bash
-docker compose --profile web up -d
-```
-
-The web client will be available at [http://localhost:3666](http://localhost:3666).
 
 </Step>
 
@@ -103,13 +101,12 @@ The web client will be available at [http://localhost:3666](http://localhost:366
 graph TD
   Desktop["Gryt Desktop App"] --> Server["Server :5000"]
   Desktop --> SFU["SFU :5005"]
+  WebClient["app.gryt.chat"] --> Server
   subgraph Docker Network
-    Client["Client :3666 (optional)"] --> Server
     Server --> SFU
-    Server --> Scylla["ScyllaDB :9042"]
+    Server --> SQLite["SQLite (embedded)"]
     Server --> MinIO["MinIO :9000"]
-    ImageWorker["Image Worker"] -->|"poll jobs"| Scylla
-    ImageWorker -->|"read/write images"| MinIO
+    ImageWorker["Image Worker"] -->|"read/write images"| MinIO
   end
 ```
 
@@ -123,7 +120,6 @@ Images default to `latest`. Pin a specific version for reproducible deploys:
 SERVER_VERSION=x.y.z
 SFU_VERSION=x.y.z
 IMAGE_WORKER_VERSION=x.y.z  # only if running image-worker
-CLIENT_VERSION=x.y.z        # only if using --profile web
 ```
 
 Browse available tags at [github.com/orgs/gryt-chat/packages](https://github.com/orgs/gryt-chat/packages).
@@ -140,7 +136,6 @@ Browse available tags at [github.com/orgs/gryt-chat/packages](https://github.com
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `SERVER_PORT` | `5000` | Signaling API + WebSocket |
-| `CLIENT_PORT` | `3666` | Web UI (only with `--profile web`) |
 | `SFU_PORT` | `5005` | SFU WebSocket |
 | `ICE_UDP_MUX_PORT` | `443` | **Recommended**: run WebRTC over a single UDP port (open UDP 443) |
 | `SFU_UDP_MIN` | `10000` | WebRTC UDP range start (if not using `ICE_UDP_MUX_PORT`) |
@@ -161,7 +156,7 @@ Browse available tags at [github.com/orgs/gryt-chat/packages](https://github.com
 | `VOICE_MAX_USERS` | *(auto)* | Optional voice seat limit override |
 | `REFRESH_TOKEN_TTL_DAYS` | `7` | Refresh token lifetime (days) |
 | `JWT_SECRET` | `change-me-in-production` | Session token secret |
-| `CORS_ORIGIN` | see below | Allowed origins (comma-separated). Always include `http://127.0.0.1:15738` (desktop app) and `https://app.gryt.chat` (web client) |
+| `CORS_ORIGIN` | see below | Allowed origins (comma-separated). Always include `http://127.0.0.1:15738` (desktop app). Include `https://app.gryt.chat` if you want users to connect via the hosted web client. |
 
 If you set `SERVER_PASSWORD`, keep it stable. Changing it may require restarting the SFU, because the SFU caches the password per server ID.
 
@@ -207,7 +202,7 @@ docker compose exec server node dist/admin/setOwner.js --grytUserId <keycloak_su
 - [ ] Open **UDP 443** for the SFU (recommended), or open UDP `10000-10019` if using the high-port range
 - [ ] Set `SFU_ADVERTISE_IP` if behind NAT
 - [ ] Set `SFU_PUBLIC_HOST` to your public `wss://` URL
-- [ ] Ensure `CORS_ORIGIN` includes `http://127.0.0.1:15738` (desktop app), `https://app.gryt.chat` (web client), and your production domain
+- [ ] Ensure `CORS_ORIGIN` includes `http://127.0.0.1:15738` (desktop app) and `https://app.gryt.chat` (hosted web client)
 - [ ] Put a reverse proxy (Caddy, Nginx, Traefik) in front for TLS
 - [ ] Pin image versions instead of `latest`
 </Callout>
@@ -240,10 +235,6 @@ volumes:
 And create a `Caddyfile`:
 
 ```
-gryt.example.com {
-    reverse_proxy client:80
-}
-
 api.example.com {
     reverse_proxy server:5000
 }
@@ -256,9 +247,8 @@ sfu.example.com {
 Then update your `.env`:
 
 ```bash
-CORS_ORIGIN=http://127.0.0.1:15738,https://app.gryt.chat,https://gryt.example.com
+CORS_ORIGIN=http://127.0.0.1:15738,https://app.gryt.chat
 SFU_PUBLIC_HOST=wss://sfu.example.com
-CLIENT_PORT=8080  # Caddy takes over port 80/443
 
 # Multi-network example (LAN party + public):
 # SFU_PUBLIC_HOST=wss://sfu.example.com,ws://192.168.1.100:5005
@@ -301,9 +291,6 @@ docker compose restart server
 # Update to latest images
 docker compose pull && docker compose up -d
 
-# Same, but include the web client
-docker compose --profile web pull && docker compose --profile web up -d
-
 # Update a single service to a specific version
 SFU_VERSION=x.y.z docker compose up -d sfu
 
@@ -321,7 +308,6 @@ All services expose health endpoints. Check the stack health:
 ```bash
 curl http://localhost:5000/health   # server
 curl http://localhost:5005/health   # sfu
-curl http://localhost:3666/health   # client (only with --profile web)
 ```
 
 The image worker's health endpoint (`GET /` on port 8080) is internal-only — it's used by Docker's built-in healthcheck and is not exposed to the host.
@@ -359,25 +345,19 @@ To upgrade to specific versions, edit the `*_VERSION` vars in `.env`:
 ```bash
 SERVER_VERSION=x.y.z
 SFU_VERSION=x.y.z
-CLIENT_VERSION=x.y.z  # only if using --profile web
 ```
 
 Then run `docker compose up -d`.
 
-## Using external S3 / database
+## Using external S3
 
-To use an external S3-compatible provider (AWS, Cloudflare R2, etc.) or an external ScyllaDB/Cassandra cluster, remove the
-`scylla`, `minio`, and `minio-init` services from `docker-compose.yml` and set the appropriate environment variables on the
+To use an external S3-compatible provider (AWS, Cloudflare R2, etc.) instead of the bundled MinIO, remove the
+`minio` and `minio-init` services from `docker-compose.yml` and set the appropriate environment variables on the
 `server` service directly:
 
 ```yaml
 server:
   environment:
-    # External ScyllaDB
-    SCYLLA_CONTACT_POINTS: "your-scylla-host:9042"
-    SCYLLA_KEYSPACE: gryt
-
-    # External S3 (e.g. Cloudflare R2)
     S3_ENDPOINT: "https://<account-id>.r2.cloudflarestorage.com"
     S3_REGION: auto
     S3_ACCESS_KEY_ID: "<your-key>"
