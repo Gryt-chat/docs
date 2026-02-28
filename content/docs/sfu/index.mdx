@@ -4,11 +4,13 @@ description: Go SFU — WebRTC media forwarding with Pion
 icon: Zap
 ---
 
-The Gryt SFU (Selective Forwarding Unit) is a Go-based WebRTC media server built with [Pion WebRTC v4](https://github.com/pion/webrtc). It receives audio tracks from each participant and forwards them to every other peer in the room without transcoding.
+The Gryt SFU (Selective Forwarding Unit) is a Go-based WebRTC media server built with [Pion WebRTC v4](https://github.com/pion/webrtc). It receives audio, video, and screen-share tracks from each participant and forwards them to every other peer in the room without transcoding.
 
 ## Features
 
-- **Selective forwarding**: Routes audio streams with no transcoding
+- **Selective forwarding**: Routes audio, video, and screen-share streams with no transcoding
+- **RTCP relay**: Relays receiver feedback (PLI, FIR, REMB) back to senders so their congestion controllers can adapt bitrate in real time
+- **VP9 codec preference**: Registers VP9 before VP8 in SDP offers for better screen-content coding
 - **Pion WebRTC v4**: ICE handling, STUN support, multi-IP NAT mapping, connection recovery
 - **Multi-network support**: Comma-separated `ICE_ADVERTISE_IP` for LAN + WAN setups — clients automatically select the fastest path
 - **Thread-safe**: Concurrent handling of multiple connections
@@ -82,10 +84,11 @@ Or with the start script:
 
 ## Track lifecycle
 
-1. Client joins room — peer connection created
+1. Client joins room — peer connection created with recvonly transceivers for audio, video, screen-share video, and screen-share audio
 2. Client sends offer — SFU processes and creates answer
-3. Client adds audio track — SFU forwards to other peers
-4. Client leaves — tracks and connections cleaned up
+3. Client adds tracks (audio, camera, screen share) — SFU forwards to other peers
+4. For each forwarded video track, receiver RTCP (PLI/REMB) is relayed back to the sender's peer connection
+5. Client leaves — tracks and connections cleaned up
 
 ## Debug endpoints
 

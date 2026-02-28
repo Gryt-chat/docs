@@ -4,22 +4,23 @@ description: System architecture and design decisions
 icon: Building
 ---
 
-Gryt follows a microservices architecture with four components:
+Gryt follows a microservices architecture:
 
 ```mermaid
 graph TB
-  subgraph Client Layer
+  subgraph clientLayer [Client Layer]
     WC["Web Client\n(React / TypeScript)"]
   end
 
-  subgraph Backend
+  subgraph backend [Backend]
     GS["Signaling Server\n(Node.js / Socket.IO)"]
     SFU["SFU Server\n(Go / Pion WebRTC)"]
+    IW["Image Worker\n(Node.js / sharp)"]
     DB["ScyllaDB"]
     S3["MinIO\n(S3-compatible)"]
   end
 
-  subgraph Identity
+  subgraph identity [Identity]
     Auth["Keycloak\n(OIDC / PKCE)"]
     IS["Identity Service\n(certificate signing)"]
   end
@@ -32,6 +33,8 @@ graph TB
   GS <-->|"WS — room mgmt"| SFU
   GS --> DB
   GS --> S3
+  IW -->|"poll jobs"| DB
+  IW -->|"read/write images"| S3
   GS -->|"JWKS certificate verification"| IS
 ```
 
@@ -87,7 +90,7 @@ packages/server/src/
 ├── db/            # ScyllaDB access layer (users, messages, roles, invites, ...)
 ├── auth/          # Identity certificate & assertion verification (JWKS)
 ├── storage/       # S3/MinIO integration
-├── jobs/          # background workers (media sweep, emoji queue)
+├── jobs/          # background workers (media sweep, emoji queue; image compression runs in the separate image-worker service)
 ├── sfu/           # SFU client (server↔SFU sync)
 └── utils/         # jwt, rate limiter, profanity filter, server ID helpers
 ```
@@ -133,6 +136,22 @@ func (r *Room) ForwardTrack(track *Track) {
     }
 }
 ```
+
+## Image Worker
+
+A standalone service that handles image compression and thumbnail generation, keeping `sharp` (native image processing) out of the signaling server so that a corrupt image cannot crash the main process.
+
+```
+packages/image-worker/
+├── src/
+│   ├── index.ts         # Entry point, polling loop, health server
+│   ├── processImage.ts  # sharp compression + AVIF thumbnail generation
+│   ├── storage.ts       # S3 client (get / put / delete)
+│   └── db.ts            # ScyllaDB queries (image jobs, file records)
+└── Dockerfile
+```
+
+The worker polls the `image_jobs` table for queued entries. For each job it fetches the raw upload from S3, compresses to AVIF when it exceeds the server size limit, generates a 320 px thumbnail, writes the results back to S3, and updates the file record in the database.
 
 ## Authentication
 

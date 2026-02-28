@@ -19,6 +19,7 @@ GitHub Container Registry — no need to clone any repos or build anything.
 | **SFU** | `ghcr.io/gryt-chat/sfu` | WebRTC media forwarding | Yes |
 | **ScyllaDB** | `scylladb/scylla` | Message & user storage | Yes |
 | **MinIO** | `minio/minio` | S3-compatible file storage | Yes |
+| **Image Worker** | `ghcr.io/gryt-chat/image-worker` | Background image compression + thumbnailing | Optional (recommended) |
 | **Client** | `ghcr.io/gryt-chat/client` | Web UI (React + Nginx) | Optional |
 | **Prometheus** | `prom/prometheus` | Metrics collection | Optional |
 | **Grafana** | `grafana/grafana` | Metrics dashboards | Optional |
@@ -107,6 +108,8 @@ graph TD
     Server --> SFU
     Server --> Scylla["ScyllaDB :9042"]
     Server --> MinIO["MinIO :9000"]
+    ImageWorker["Image Worker"] -->|"poll jobs"| Scylla
+    ImageWorker -->|"read/write images"| MinIO
   end
 ```
 
@@ -119,10 +122,18 @@ Images default to `latest`. Pin a specific version for reproducible deploys:
 ```bash
 SERVER_VERSION=x.y.z
 SFU_VERSION=x.y.z
-CLIENT_VERSION=x.y.z  # only if using --profile web
+IMAGE_WORKER_VERSION=x.y.z  # only if running image-worker
+CLIENT_VERSION=x.y.z        # only if using --profile web
 ```
 
 Browse available tags at [github.com/orgs/gryt-chat/packages](https://github.com/orgs/gryt-chat/packages).
+
+### Image Worker
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `IMAGE_WORKER_CONCURRENCY` | `2` | Max images processed in parallel |
+| `IMAGE_WORKER_POLL_MS` | `1000` | Poll interval for queued jobs (ms) |
 
 ### Ports
 
@@ -312,6 +323,8 @@ curl http://localhost:5000/health   # server
 curl http://localhost:5005/health   # sfu
 curl http://localhost:3666/health   # client (only with --profile web)
 ```
+
+The image worker's health endpoint (`GET /` on port 8080) is internal-only — it's used by Docker's built-in healthcheck and is not exposed to the host.
 
 Or use `docker compose ps` to see the health status of all containers.
 
