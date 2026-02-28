@@ -20,7 +20,7 @@ Gryt is a self-hosted, open-source voice chat platform with text chat and file u
 
 Gryt intentionally separates **identity** from **server data**:
 
-- **Identity** is used to prove "this is the same user as last time."
+- **Identity** is used to prove "this is the same user as last time".
 - **Server data** is everything that belongs to a server: channels, roles, membership, messages, and uploads.
 
 When you join a server, you prove your identity through a [challenge-response protocol](/docs/guide/security) — the server never receives a reusable token it could replay. The server you join can still store and process the content you send to it (messages and uploads), because that's how server-hosted communication works.
