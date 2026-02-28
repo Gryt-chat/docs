@@ -16,7 +16,7 @@ graph TB
     GS["Signaling Server\n(Node.js / Socket.IO)"]
     SFU["SFU Server\n(Go / Pion WebRTC)"]
     IW["Image Worker\n(Node.js / sharp)"]
-    DB["ScyllaDB"]
+    DB["SQLite"]
     S3["MinIO\n(S3-compatible)"]
   end
 
@@ -87,7 +87,7 @@ packages/server/src/
 │   ├── middleware/# accessToken validation + role enforcement
 │   └── utils/     # server details, client sync helpers
 ├── routes/        # REST API endpoints (messages, uploads, members, emojis, etc.)
-├── db/            # ScyllaDB access layer (users, messages, roles, invites, ...)
+├── db/            # SQLite access layer (users, messages, roles, invites, ...)
 ├── auth/          # Identity certificate & assertion verification (JWKS)
 ├── storage/       # S3/MinIO integration
 ├── jobs/          # background workers (media sweep, emoji queue; image compression runs in the separate image-worker service)
@@ -147,7 +147,7 @@ packages/image-worker/
 │   ├── index.ts         # Entry point, polling loop, health server
 │   ├── processImage.ts  # sharp compression + AVIF thumbnail generation
 │   ├── storage.ts       # S3 client (get / put / delete)
-│   └── db.ts            # ScyllaDB queries (image jobs, file records)
+│   └── db.ts            # SQLite queries (image jobs, file records)
 └── Dockerfile
 ```
 
@@ -222,5 +222,5 @@ See the [Deployment](/docs/deployment) section for details.
 
 - **SFU**: Multiple instances behind a load balancer
 - **Signaling server**: Multiple instances with session affinity
-- **Database**: ScyllaDB with per-server keyspaces
+- **Database**: SQLite (single-file database per server data directory)
 - **Storage**: S3-compatible object storage

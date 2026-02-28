@@ -48,8 +48,8 @@ Then start the server:
 docker compose up -d
 ```
 
-This starts the core backend: **signaling server**, **SFU media server**, **ScyllaDB**, and **MinIO**.
-Wait ~30 seconds for the database to initialize.
+This starts the core backend: **signaling server**, **SFU media server**, and **MinIO**.
+The server uses an embedded SQLite database in its data directory, so no separate database container is required.
 
 ### Connecting
 
