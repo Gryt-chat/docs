@@ -10,13 +10,13 @@ Custom emojis let members express themselves with images unique to your server. 
 
 | Format | Extension | Animated | Notes |
 |--------|-----------|----------|-------|
-| PNG | `.png` | No | Converted to 128x128 with transparency |
-| JPEG | `.jpg` / `.jpeg` | No | Converted to 128x128 PNG |
-| WebP | `.webp` | Yes | Animated WebP is preserved |
-| GIF | `.gif` | Yes | Resized to 128x128, animation preserved |
+| PNG | `.png` | No | Resized to 128px height, converted to PNG |
+| JPEG | `.jpg` / `.jpeg` | No | Resized to 128px height, converted to PNG |
+| WebP | `.webp` | Yes | Animated WebP is preserved, resized to 128px height |
+| GIF | `.gif` | Yes | Resized to 128px height, animation preserved |
 | SVG | `.svg` | No | Stored as-is (no resize) |
 
-All raster images are resized to **128x128 pixels** (contain fit, transparent background). The maximum file size per image is **5 MB**.
+All raster images are resized to **128 pixels tall** (aspect ratio preserved, no enlargement). The maximum file size per image is configurable per server (default **5 MB**).
 
 ## Naming rules
 

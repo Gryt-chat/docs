@@ -165,22 +165,20 @@ sequenceDiagram
     participant S as Server
     participant SFU as SFU
 
-    C->>S: join(channelID)
-    S->>SFU: join(roomID, userInfo)
-    SFU->>S: offer
-    S->>C: offer
-    C->>S: answer
-    S->>SFU: answer
+    C->>S: voice:room:request(roomId)
+    S-->>C: voice:room:granted (join_token, sfu_url)
+    C->>SFU: WebSocket connect
+    C->>SFU: client_join (join_token)
+    SFU-->>C: room_joined
+    SFU-->>C: offer (SDP)
+    C->>SFU: answer (SDP)
 
     loop ICE
-        C->>S: ice-candidate
-        S->>SFU: ice-candidate
-        SFU->>S: ice-candidate
-        S->>C: ice-candidate
+        C->>SFU: candidate
+        SFU->>C: candidate
     end
 
-    SFU->>S: connected
-    S->>C: user-updated(connected)
+    Note over C,SFU: Media flows directly via UDP (DTLS-SRTP)
 ```
 
 ## Health and metrics

@@ -81,7 +81,7 @@ Type `:smile:` or any other standard shortcode in the chat input and it will be 
 
 ### Custom Server Emojis
 
-Server admins can upload custom emojis (PNG, JPEG, WebP, GIF, or SVG). Animated GIFs are preserved as GIFs; all other formats are converted to 128px-height PNG. Multiple images can be selected at once, and `.zip` archives containing images are automatically extracted. Shortcodes are derived from filenames and deduplicated against existing server emojis. Custom emojis are used with the same `:shortcode:` syntax and render as inline images in messages.
+Server admins can upload custom emojis (PNG, JPEG, WebP, GIF, or SVG). Animated GIFs are preserved as GIFs; all other formats are resized to 128px height and converted to PNG. Multiple images can be selected at once, and `.zip` archives containing images are automatically extracted. Shortcodes are derived from filenames and deduplicated against existing server emojis. Custom emojis are used with the same `:shortcode:` syntax and render as inline images in messages.
 
 Each emoji shows an individual upload progress bar during upload, which is especially useful for larger GIF files. After uploading, admins can rename any emoji by clicking the edit icon in the emoji list.
 
