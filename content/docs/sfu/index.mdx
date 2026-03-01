@@ -56,7 +56,7 @@ Or with the start script:
 | `ICE_UDP_PORT_MIN` | — | Min UDP port for WebRTC media |
 | `ICE_UDP_PORT_MAX` | — | Max UDP port for WebRTC media |
 | `ICE_ADVERTISE_IP` | — | Public IP(s) to advertise in ICE candidates (comma-separated for multi-network) |
-| `DISABLE_STUN` | `false` | Disable STUN servers (useful for LAN-only setups) |
+| `DISABLE_STUN` | `false` | Disable server-side STUN. Only safe with host networking or 1:1 NAT (see [Troubleshooting](#troubleshooting)) |
 | `MAX_PEERS` | `200` (mux) / port range size | Max concurrent peers |
 | `DEBUG` | `true` | Enable debug logging |
 | `VERBOSE_LOG` | `false` | Enable verbose logging (very noisy) |
@@ -106,3 +106,20 @@ go mod download
 go test ./...
 go run -race ./cmd/sfu   # with race detection
 ```
+
+## Troubleshooting
+
+### External users stuck on "connecting" (ICE failure)
+
+If users outside your local network can reach the signaling server but voice never connects, the most likely cause is a **UDP source-port mismatch**. This happens when there is a NAT layer (Docker bridge, cloud VPC, etc.) between the SFU's UDP socket and the public internet that rewrites the source port.
+
+**Diagnosis** — look for the SFU's ICE candidate log lines:
+
+```
+ICE candidate for <peer>: type=host  protocol=udp address=203.0.113.10:443
+ICE candidate for <peer>: type=srflx protocol=udp address=203.0.113.10:57599
+```
+
+If the `srflx` port (57599) differs from `ICE_UDP_MUX_PORT` (443), the NAT is remapping the port. The rewritten `host` candidate advertises `:443`, but external peers actually need to reach `:57599`. Without the `srflx` candidate, ICE checks will never succeed.
+
+**Fix** — keep `DISABLE_STUN=false` (the default) so the SFU discovers and advertises the correct external port. `DISABLE_STUN=true` is only safe when the SFU has a direct, port-preserving path to the internet (host networking, bare metal, or a 1:1 NAT that preserves UDP source ports).
