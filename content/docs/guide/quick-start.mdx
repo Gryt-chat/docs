@@ -32,15 +32,20 @@ wget -O .env https://raw.githubusercontent.com/Gryt-chat/gryt/main/ops/deploy/co
 </Tab>
 </Tabs>
 
-Open `.env` in your editor and review the key settings:
+Open `.env` in your editor and configure:
 
 ```bash
-SERVER_NAME=My Gryt Server       # display name shown to users
-JWT_SECRET=change-me-in-production  # IMPORTANT: run `openssl rand -base64 48` for a real secret
+SERVER_NAME=My Gryt Server              # display name shown to users
+JWT_SECRET=<run: openssl rand -base64 48>  # IMPORTANT: generate a real secret
+
+# Public URL(s) of the SFU that browsers connect to (ws:// or wss://)
+SFU_PUBLIC_HOST=wss://sfu.example.com   # or ws://<your-ip>:5005 for non-TLS
+
+# Public IP of the SFU host (required if behind NAT)
+SFU_ADVERTISE_IP=203.0.113.10
 ```
 
-For remote/production deployments you'll also need to set `SFU_PUBLIC_HOST`, `CORS_ORIGIN`, and
-`SFU_ADVERTISE_IP` — see the [Configuration](/docs/guide/configuration) page for details.
+See the [Configuration](/docs/guide/configuration) page for all `.env` options.
 
 Then start the server:
 
@@ -54,8 +59,7 @@ The server uses an embedded SQLite database in its data directory, so no separat
 ### Connecting
 
 Connect to your server using the [Gryt desktop app](https://github.com/Gryt-chat/gryt/releases) or
-[app.gryt.chat](https://app.gryt.chat) — both work with local and remote servers.
-Enter your server address (e.g. `localhost` for local, or your public IP/domain for remote).
+[app.gryt.chat](https://app.gryt.chat). Enter your server address (e.g. `gryt.example.com` or your public IP).
 
 **Invite-only**: the **first user** to join a brand-new server automatically becomes the **owner/admin**.
 After that, the server is **invite-only**. Create invite links in **Server settings → Invites** and share them.
@@ -82,8 +86,8 @@ Make sure the following ports are accessible (forwarded in your router / open in
 These are configurable via `SERVER_PORT`, `SFU_PORT`, `ICE_UDP_MUX_PORT`, `SFU_UDP_MIN`, and `SFU_UDP_MAX` in `.env`.
 
 <Callout type="info">
-See the full [Docker Compose guide](/docs/deployment/docker-compose) for all configuration options,
-production hardening, and TLS setup.
+See the full [Docker Compose guide](/docs/deployment/docker-compose) for TLS setup, monitoring,
+upgrades, and advanced configuration.
 </Callout>
 
 ## Docker (development — from source)
@@ -128,7 +132,7 @@ helm install gryt ./ops/helm/gryt \
 
 ## Configuration
 
-All services work out-of-the-box for local use. For production, see the [Configuration](/docs/guide/configuration) page.
+See the [Configuration](/docs/guide/configuration) page for all environment variables, authentication, CORS, and networking options.
 
 ## Next steps
 
