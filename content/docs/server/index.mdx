@@ -149,10 +149,13 @@ Point client/server configs to `http://localhost:8080/realms/gryt`.
 
 ### Messages
 - `GET /api/messages/:conversationId?limit=50&before=<ISO>` — returns `{ items: Message[] }`
-- `POST /api/messages/:conversationId` — body `{ senderId, text?, attachments? }`
+
+Messages are **created** via the WebSocket `chat:send` event, not REST.
 
 ### Uploads
 - `POST /api/uploads` (multipart) — stores file in S3, generates thumbnail if image, returns `{ fileId, key, thumbnailKey }`
+
+See the [API Reference](/docs/server/api-reference) for the full list of endpoints.
 
 ## Signaling flow
 
@@ -180,12 +183,9 @@ sequenceDiagram
     S->>C: user-updated(connected)
 ```
 
-## Debug endpoints (development)
+## Health and metrics
 
 | Endpoint | Description |
 |----------|-------------|
 | `GET /health` | Health check |
 | `GET /metrics` | Prometheus metrics |
-| `GET /debug/rooms` | Room states |
-| `GET /debug/users` | Connected users |
-| `GET /debug/connections` | WebSocket connections |

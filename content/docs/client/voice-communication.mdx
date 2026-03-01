@@ -16,9 +16,9 @@ Real-time voice communication with noise suppression, echo cancellation, and voi
 
 ### Voice Controls
 - **Mute/Unmute**: Server-synchronized microphone control with visual feedback
-- **Deafen**: Local audio output control (mutes incoming audio)
-- **Push-to-Talk**: Coming soon - hands-free voice activation
-- **Voice Activation**: Automatic transmission based on voice activity
+- **Deafen**: Mutes incoming audio; state is synced to the server
+- **Push-to-Talk**: Hold a configurable key to transmit (global hotkey in desktop app, keyboard in browser)
+- **Voice Activity**: Automatic transmission based on voice level (default mode)
 
 ### Real-time Feedback
 - **Voice Activity Detection**: Visual indicators showing who's speaking
@@ -28,93 +28,19 @@ Real-time voice communication with noise suppression, echo cancellation, and voi
 
 ## Voice Controls
 
-### Mute Control
+### Mute / Deafen
 
-The mute button provides server-synchronized microphone control:
-
-```typescript
-// Mute state management
-interface MuteState {
-  isMuted: boolean;
-  serverSynchronized: boolean;
-  visualFeedback: 'muted' | 'unmuted' | 'connecting';
-}
-
-// Toggle mute with server sync
-const toggleMute = async () => {
-  const newMuteState = !currentMuteState;
-  
-  // Update local state immediately for responsive UI
-  setLocalMuteState(newMuteState);
-  
-  // Send to server for synchronization
-  await socket.emit('updateMute', newMuteState);
-  
-  // Update audio pipeline
-  updateAudioPipeline({ muted: newMuteState });
-};
-```
-
-**Visual Feedback:**
-- 🔴 **Red**: Microphone is muted
-- 🟢 **Green**: Microphone is active
-- 🟡 **Yellow**: Mute state is syncing with server
-
-### Deafen Control
-
-Deafen provides local audio output control:
+Toggling mute or deafen updates the local audio pipeline immediately and emits a `voice:state:update` event to the signaling server:
 
 ```typescript
-// Deafen state management
-interface DeafenState {
-  isDeafened: boolean;
-  localOnly: boolean; // Doesn't affect server state
-  audioOutput: 'muted' | 'active';
-}
-
-// Toggle deafen (local only)
-const toggleDeafen = () => {
-  const newDeafenState = !currentDeafenState;
-  
-  // Update local audio output
-  setAudioOutputMuted(newDeafenState);
-  
-  // Update visual state
-  setDeafenState(newDeafenState);
-};
+socket.emit("voice:state:update", { isMuted, isDeafened, isAFK });
 ```
 
-**Visual Feedback:**
-- 🟠 **Orange**: Audio output is deafened
-- 🟢 **Green**: Audio output is active
-- **Note**: Others still see you as connected when deafened
+Other participants see the updated state in the member list within milliseconds.
 
-### Push-to-Talk (Coming Soon)
+### Push-to-Talk
 
-Push-to-talk will provide hands-free voice activation:
-
-```typescript
-// Push-to-talk configuration
-interface PushToTalkConfig {
-  enabled: boolean;
-  keyBinding: string; // e.g., 'Space', 'Ctrl+Space'
-  activationThreshold: number; // Voice level threshold
-  releaseDelay: number; // Delay before deactivation
-}
-
-// Push-to-talk handler
-const handlePushToTalk = (pressed: boolean) => {
-  if (pressed) {
-    // Activate microphone
-    setMicrophoneActive(true);
-  } else {
-    // Deactivate after delay
-    setTimeout(() => {
-      setMicrophoneActive(false);
-    }, config.releaseDelay);
-  }
-};
-```
+Push-to-talk is available in both the browser (keyboard key) and the desktop app (global hotkey via `uiohook-napi`). The PTT key is configurable in **Settings > Audio**. When PTT is active, the mic is unmuted only while the key is held. Per-channel PTT can also be enforced by admins via the channel setting `requirePushToTalk`.
 
 ## Server Restart Resilience
 
@@ -200,12 +126,8 @@ Real-time visual feedback for all participants:
 - Adjust the AGC target level slider
 - Combine with the microphone volume slider for fine control
 
-## Performance Metrics
+## Audio Metrics
 
-### Audio Quality Metrics
-
-- **Latency**: < 50 ms end-to-end (< 5 ms without RNNoise)
-- **Packet Loss**: < 0.1 % under normal conditions
-- **Jitter**: < 10 ms variation
-- **Bitrate**: Configurable per channel (32–510 kbps presets; eSports mode caps at 128 kbps)
-- **Sample Rate**: 48 kHz
+- **Sample Rate**: 48 kHz (Opus)
+- **Bitrate**: Configurable per channel (32–510 kbps presets)
+- **Pipeline latency**: ~20 ms with RNNoise enabled; negligible without it

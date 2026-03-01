@@ -61,28 +61,28 @@ Or with the start script:
 | `DEBUG` | `true` | Enable debug logging |
 | `VERBOSE_LOG` | `false` | Enable verbose logging (very noisy) |
 
-## WebSocket events
+## WebSocket protocol
+
+The SFU uses raw WebSocket (not Socket.IO). All messages use a JSON envelope: `{ "event": "<name>", "data": "<json_string>" }`.
 
 ### Client to SFU
 
-| Event | Payload | Description |
-|-------|---------|-------------|
-| `join` | `JoinMessage` | Join a room |
-| `leave` | `LeaveMessage` | Leave room |
-| `offer` | `RTCSessionDescription` | WebRTC offer |
-| `answer` | `RTCSessionDescription` | WebRTC answer |
-| `ice-candidate` | `RTCIceCandidate` | ICE candidate |
+| Event | Data | Description |
+|-------|------|-------------|
+| `client_join` | `{ room_id, server_id, server_password, user_token, user_id }` | Join a room |
+| `answer` | SDP answer string | WebRTC answer |
+| `candidate` | RTCIceCandidateInit JSON | ICE candidate |
+| `renegotiate` | — | Request renegotiation (e.g. to add tracks) |
+| `keep_alive` | `{ timestamp }` | Keep-alive ping (every 15s) |
 
 ### SFU to Client
 
-| Event | Payload | Description |
-|-------|---------|-------------|
-| `joined` | `JoinedMessage` | Room join confirmation |
-| `user-joined` | `UserJoinedMessage` | Peer joined |
-| `user-left` | `UserLeftMessage` | Peer left |
-| `offer` | `RTCSessionDescription` | WebRTC offer |
-| `answer` | `RTCSessionDescription` | WebRTC answer |
-| `ice-candidate` | `RTCIceCandidate` | ICE candidate |
+| Event | Data | Description |
+|-------|------|-------------|
+| `room_joined` | — | Join success |
+| `room_error` | Error string | Join or room error |
+| `offer` | SDP offer string | WebRTC offer |
+| `candidate` | RTCIceCandidateInit JSON | ICE candidate |
 
 ## Track lifecycle
 
@@ -92,15 +92,12 @@ Or with the start script:
 4. For each forwarded video track, receiver RTCP (PLI/REMB) is relayed back to the sender's peer connection
 5. Client leaves — tracks and connections cleaned up
 
-## Debug endpoints
+## HTTP endpoints
 
 | Endpoint | Description |
 |----------|-------------|
-| `GET /health` | Health check |
+| `GET /health` | Health check: `{ status, service, version, timestamp }` |
 | `GET /metrics` | Prometheus metrics |
-| `GET /debug/rooms` | Active rooms |
-| `GET /debug/peers` | Peer connections |
-| `GET /debug/tracks` | Media tracks |
 
 ## Development
 

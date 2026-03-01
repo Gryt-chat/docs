@@ -15,18 +15,15 @@ icon: Heart
 ```bash
 git clone --recurse-submodules https://github.com/YOUR_USERNAME/gryt.git
 cd gryt
-
-cd packages/client && yarn install && cd ../..
-cd packages/server && yarn install && cd ../..
-cd packages/sfu && go mod download && cd ../..
-cd packages/docs && npm install && cd ../..
 ```
 
-Start everything:
+Install dependencies and start everything with the dev script:
 
 ```bash
 ops/start_dev.sh
 ```
+
+The script installs dependencies for all packages and starts the client, server, and SFU in development mode.
 
 ## Workflow
 
@@ -59,13 +56,6 @@ const useMicrophone = (shouldAccess: boolean): MicrophoneState => {
 - Follow `gofmt` formatting
 - Add godoc comments for exported functions
 - Handle errors explicitly
-
-```go
-// ProcessAudio applies the processing pipeline to the buffer.
-func (p *AudioProcessor) ProcessAudio(buffer AudioBuffer) (AudioBuffer, error) {
-    // ...
-}
-```
 
 ## Testing
 

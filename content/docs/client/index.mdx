@@ -44,10 +44,10 @@ Open [http://localhost:3666](http://localhost:3666).
 ### `useMicrophone`
 
 ```typescript
-const { microphoneBuffer, isRecording } = useMicrophone(shouldAccess);
+const { microphoneBuffer, isLoaded, devices } = useMicrophone(shouldAccess);
 ```
 
-Provides raw and final analysers, gain nodes, and device management. Feeds into the audio processing pipeline.
+Provides the full audio buffer chain (raw and processed analysers, gain nodes, RNNoise worklet), device list, and pipeline controls. Feeds into the audio processing pipeline.
 
 ### `useSFU`
 
@@ -65,7 +65,7 @@ Manages the WebRTC connection to the SFU with automatic reconnection and track l
 ```typescript
 const {
   sockets, clients,
-  serverDetailsList, currentConnection
+  serverDetailsList, memberLists
 } = useSockets();
 ```
 
@@ -87,6 +87,6 @@ Audio settings (volume, noise gate, device) are configured through the UI.
 ```bash
 yarn build       # production bundle
 yarn preview     # preview locally
-yarn type-check
+yarn typecheck
 yarn lint
 ```

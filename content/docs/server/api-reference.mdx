@@ -4,661 +4,263 @@ description: WebSocket events, REST endpoints, and data structures
 icon: Book
 ---
 
-Complete API documentation for the Gryt signaling server.
+API reference for the Gryt signaling server. Authentication uses Keycloak OIDC via `auth.gryt.chat` and a challenge-response flow with identity certificates from `id.gryt.chat`. There are no custom auth REST endpoints on the server itself.
 
-## Web Client API
+## REST Endpoints
 
-### Audio Processing Hooks
+All REST endpoints are served by the signaling server (default port 5000). Endpoints marked **Bearer** require an `Authorization: Bearer <accessToken>` header.
 
-#### `useMicrophone`
+### Public
 
-Manages microphone input and audio processing.
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/health` | Health check. Returns `{ status, service, serverName, timestamp }` |
+| GET | `/metrics` | Prometheus metrics (text/plain) |
+| GET | `/info` | Public server preview: `{ name, description, members, version }` |
+| GET | `/icon` | Server icon image (404 if none set) |
+| GET | `/.well-known/jwks.json` | JWKS for built-in identity verification |
 
-```typescript
-const { 
-  microphoneBuffer, 
-  isRecording, 
-  analyser, 
-  gainNode 
-} = useMicrophone(shouldAccess: boolean);
-```
+### Messages
 
-**Parameters:**
-- `shouldAccess` (boolean): Whether to request microphone access
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/api/messages/:conversationId` | Bearer | Fetch messages. Query: `?limit=` (max 200), `?before=` (ISO date) |
 
-**Returns:**
-- `microphoneBuffer` (AudioBuffer): Raw microphone audio buffer
-- `isRecording` (boolean): Whether microphone is currently recording
-- `analyser` (AnalyserNode): Audio analyser for visualization
-- `gainNode` (GainNode): Volume control node
+Messages are **created** via the WebSocket `chat:send` event, not via REST.
 
-#### `useSFU`
+### Uploads
 
-Manages SFU connection and WebRTC handling.
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/api/uploads` | Bearer | Upload a file (multipart `file`) |
+| POST | `/api/uploads/avatar` | Bearer | Upload avatar image |
+| DELETE | `/api/uploads/avatar` | Bearer | Remove avatar |
+| GET | `/api/uploads/files/:fileId` | No | Download file. `?thumb=1` for thumbnail, `?download=1` for attachment header |
 
-```typescript
-const { 
-  connect, 
-  disconnect, 
-  isConnected, 
-  isConnecting,
-  streamSources,
-  connectionState 
-} = useSFU();
-```
+### Server
 
-**Returns:**
-- `connect()` (function): Connect to SFU server
-- `disconnect()` (function): Disconnect from SFU server
-- `isConnected` (boolean): Connection status
-- `isConnecting` (boolean): Connection in progress
-- `streamSources` (Map): Active audio streams
-- `connectionState` (string): Current connection state
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/api/server/icon` | Bearer | Upload server icon (owner only, multipart `file`) |
+| DELETE | `/api/server/icon` | Bearer | Remove server icon (owner only) |
 
-#### `useSockets`
+### Members
 
-Manages WebSocket connections to signaling servers.
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/api/members` | Bearer | List members: `{ items: [{ serverUserId, nickname, lastSeen }] }` |
 
-```typescript
-const { 
-  sockets, 
-  clients, 
-  serverDetailsList,
-  currentConnection 
-} = useSockets();
-```
+### Emojis
 
-**Returns:**
-- `sockets` (Map): Active WebSocket connections
-- `clients` (Map): Connected clients per server
-- `serverDetailsList` (Array): Available servers
-- `currentConnection` (string): Current server ID
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/api/emojis` | No | List all emojis: `[{ name, file_id }]` |
+| GET | `/api/emojis/img/:name` | No | Emoji image bytes (cached) |
+| POST | `/api/emojis` | Bearer | Upload emoji (admin/owner). Multipart `file` + `name`, or `files` + `names` JSON for batch |
+| PATCH | `/api/emojis/:name` | Bearer | Rename emoji (admin/owner). Body: `{ name }` |
+| DELETE | `/api/emojis/:name` | Bearer | Delete emoji (admin/owner) |
 
-## Server API
+### BetterTTV Import
 
-### WebSocket Events
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/api/emojis/bttv/user/:userId` | No | Fetch channel/shared emotes for a BTTV user |
+| GET | `/api/emojis/bttv/emote/:emoteId` | No | BTTV emote metadata |
+| GET | `/api/emojis/bttv/file/:emoteId` | No | BTTV emote image bytes |
+| POST | `/api/emojis/bttv/import` | Bearer | Import BTTV emotes as server emojis (admin/owner, max 200 per request) |
+
+### Link Preview and Media
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/api/link-preview?url=` | Bearer | Fetch Open Graph metadata for a URL |
+| GET | `/api/oembed?url=` | Bearer | Fetch oEmbed data (X/Twitter, SoundCloud, Spotify, TikTok) |
+| GET | `/api/media/metadata?url=` | Bearer | Fetch media dimensions and MIME type |
+
+## WebSocket Events (Socket.IO)
+
+### Connection and Join Flow
 
 #### Client → Server
 
 | Event | Payload | Description |
 |-------|---------|-------------|
-| `server:join` | `{ nickname?: string; identityToken: string; inviteCode?: string }` | Join the server (invite-only unless existing member / bootstrap owner) |
-| `server:leave` | `{}` | Leave the server (deactivate membership) |
-| `server:details` | `{}` | Fetch server details (requires joined session) |
-| `server:info` | `{}` | Fetch public server preview (no join required) |
-| `token:refresh` | `{ refreshToken?: string; identityToken?: string; accessToken?: string }` | Refresh an access token |
-| `voice:room:request` | `roomId: string` | Request SFU room credentials (join token + URL(s)) |
-| `voice:stream:set` | `streamID: string` | Mark voice join/leave and enable device-switch handling |
-| `voice:state:update` | `{ isMuted: boolean; isDeafened: boolean; isAFK: boolean }` | Update voice state flags |
-| `voice:camera:state` | `{ enabled: boolean; streamId?: string }` | Update camera sharing state |
-| `voice:screen:state` | `{ enabled: boolean; videoStreamId?: string; audioStreamId?: string }` | Update screen share state |
+| `server:info` | — | Request public server preview |
+| `server:join` | `{ nickname?, inviteCode? }` | Start join flow; server responds with `server:challenge` |
+| `server:verify` | `{ certificate, assertion }` | Complete join with signed identity assertion |
+| `server:leave` | — | Leave the server |
+| `server:details` | — | Request full server state |
+| `token:refresh` | `{ refreshToken? }` or `{ accessToken? }` | Refresh access token |
 
 #### Server → Client
 
 | Event | Payload | Description |
 |-------|---------|-------------|
-| `server:joined` | `{ accessToken: string; refreshToken?: string; nickname: string; avatarFileId?: string \| null; isOwner: boolean; setupRequired: boolean }` | Join success |
-| `server:error` | `{ error: string; message?: string; retryAfterMs?: number; canReapply?: boolean }` | Join/auth errors (including `invite_required`, `invalid_invite`, rate limits) |
-| `server:details` | `serverDetails` | Full server state for the UI |
-| `server:info` | `{ name?: string; description?: string; members?: string; version?: string }` | Public server preview |
-| `token:refreshed` | `{ accessToken: string }` | New access token |
-| `token:error` | `{ error: string; message?: string }` | Refresh/token errors |
-| `token:revoked` | `{ reason?: string; message?: string }` | Session revoked; client must rejoin |
-| `voice:room:granted` | `{ room_id: string; join_token: string; sfu_url: string; sfu_urls?: string[]; timestamp: number }` | SFU room credentials |
-| `voice:room:error` | `string \| { error: string; message?: string; retryAfterMs?: number }` | Voice join errors |
-| `voice:peer:joined` | `{ clientId: string; nickname: string }` | Voice peer joined |
-| `voice:peer:left` | `{ clientId: string; nickname: string }` | Voice peer left |
+| `server:info` | `{ name, description, members, version }` | Public preview |
+| `server:challenge` | `{ nonce, serverHost }` | Identity challenge (response to `server:join`) |
+| `server:joined` | `{ accessToken, refreshToken, nickname, avatarFileId, isOwner, setupRequired }` | Join success |
+| `server:error` | `{ error, message?, retryAfterMs?, canReapply? }` | Error (e.g. `invite_required`, `invalid_invite`, `rate_limited`) |
+| `server:details` | Full server state | Channels, sidebar, clients, SFU hosts, STUN config |
+| `server:left` | `{ message }` | Leave confirmation |
+| `token:refreshed` | `{ accessToken }` | New access token |
+| `token:error` | `{ error, message? }` | Token error |
+| `token:revoked` | `{ reason, message }` | Session revoked |
 
-### REST Endpoints
+### Voice
 
-#### Messages
-
-**GET** `/api/messages/:conversationId`
-
-Get messages for a conversation.
-
-**Query Parameters:**
-- `limit` (number, optional): Number of messages to return (default: 50)
-- `before` (string, optional): ISO timestamp to get messages before
-
-**Response:**
-```json
-{
-  "items": [
-    {
-      "id": "msg_123",
-      "senderId": "user_456",
-      "text": "Hello world",
-      "attachments": ["file_789"],
-      "created_at": "2024-01-15T10:30:00Z"
-    }
-  ]
-}
-```
-
-**POST** `/api/messages/:conversationId`
-
-Create a new message.
-
-**Request Body:**
-```json
-{
-  "senderId": "user_456",
-  "text": "Hello world",
-  "attachments": ["file_789"]
-}
-```
-
-**Response:**
-```json
-{
-  "id": "msg_123",
-  "senderId": "user_456",
-  "text": "Hello world",
-  "attachments": ["file_789"],
-  "created_at": "2024-01-15T10:30:00Z"
-}
-```
-
-#### Uploads
-
-**POST** `/api/uploads`
-
-Upload a file.
-
-**Request:** `multipart/form-data`
-- `file`: The file to upload
-
-**Response:**
-```json
-{
-  "fileId": "file_789",
-  "key": "uploads/file_789.jpg",
-  "thumbnailKey": "thumbnails/file_789_320.jpg"
-}
-```
-
-#### Custom Emojis
-
-**GET** `/api/emojis`
-
-List all custom server emojis. No authentication required.
-
-**Response:**
-```json
-[
-  { "name": "pepehappy", "file_id": "abc-123" },
-  { "name": "catjam", "file_id": "def-456" }
-]
-```
-
-**GET** `/api/emojis/img/:name`
-
-Serve a custom emoji image by name. GIFs are preserved as animated GIFs; all other formats are served as 128x128 PNG. Long-lived cache headers (`Cache-Control: public, max-age=604800, immutable`).
-
-**POST** `/api/emojis`
-
-Upload a custom emoji. Requires `admin` or `owner` role.
-
-**Request:** `multipart/form-data`
-- `file`: Image file (PNG, JPEG, WebP, GIF, or SVG; GIFs are resized and kept as animated GIF, all others are converted to 128x128 PNG)
-- `name`: Emoji shortcode name (2-32 lowercase alphanumeric/underscore chars)
-
-Batch upload is also supported by sending multiple files under the `files` field with a JSON `names` array.
-
-**Response:**
-```json
-{ "name": "pepehappy", "file_id": "abc-123" }
-```
-
-**PATCH** `/api/emojis/:name`
-
-Rename a custom emoji. Requires `admin` or `owner` role.
-
-**Request Body:**
-```json
-{ "name": "new_shortcode" }
-```
-
-**Response:**
-```json
-{ "ok": true, "name": "new_shortcode" }
-```
-
-**DELETE** `/api/emojis/:name`
-
-Delete a custom emoji. Requires `admin` or `owner` role.
-
-**Response:**
-```json
-{ "ok": true }
-```
-
-#### BetterTTV Import
-
-**GET** `/api/emojis/bttv/user/:userId`
-
-Fetch emotes for a BetterTTV user. The `userId` is the hex ID from a BetterTTV profile URL (`https://betterttv.com/users/<userId>`). No authentication required (acts as a proxy to the BetterTTV API).
-
-**Response:**
-```json
-{
-  "username": "forsen",
-  "channelEmotes": [
-    { "id": "5f3eb452b2efd65d77e867ed", "code": "forsenBlunder", "imageType": "png", "animated": false }
-  ],
-  "sharedEmotes": [
-    { "id": "578bfabf78f4d09f44986499", "code": "forsenShuffle", "imageType": "gif", "animated": true }
-  ]
-}
-```
-
-**POST** `/api/emojis/bttv/import`
-
-Import selected BetterTTV emotes as server emojis. Requires `admin` or `owner` role. The server downloads each emote from the BetterTTV CDN, processes it (128x128 resize, GIF animation preserved), and stores it. Maximum 200 emotes per request.
-
-**Request Body:**
-```json
-{
-  "emotes": [
-    { "id": "5f3eb452b2efd65d77e867ed", "code": "forsenBlunder", "imageType": "png", "name": "forsenblunder" },
-    { "id": "578bfabf78f4d09f44986499", "code": "forsenShuffle", "imageType": "gif", "name": "forsenshuffle" }
-  ]
-}
-```
-
-**Response:**
-```json
-{
-  "results": [
-    { "name": "forsenblunder", "file_id": "abc-123", "ok": true },
-    { "name": "forsenshuffle", "file_id": "def-456", "ok": true }
-  ]
-}
-```
-
-### Data Structures
-
-#### ServerInfo
-
-```typescript
-interface ServerInfo {
-  name: string;
-  members: string;
-  channels: Channel[];
-}
-```
-
-#### Channel
-
-```typescript
-interface Channel {
-  id: string;
-  name: string;
-  type: 'voice' | 'text';
-}
-```
-
-#### UserInfo
-
-```typescript
-interface UserInfo {
-  id: string;
-  nickname: string;
-  isMuted: boolean;
-  hasJoinedChannel: boolean;
-  isConnectedToVoice: boolean;
-  streamID?: string;
-}
-```
-
-## SFU API
-
-### WebSocket Events
-
-#### Client → SFU
+#### Client → Server
 
 | Event | Payload | Description |
 |-------|---------|-------------|
-| `join` | `JoinMessage` | Join a room with user information |
-| `leave` | `LeaveMessage` | Leave current room |
-| `offer` | `RTCSessionDescription` | WebRTC offer from client |
-| `answer` | `RTCSessionDescription` | WebRTC answer from client |
-| `ice-candidate` | `RTCIceCandidate` | ICE candidate from client |
+| `voice:room:request` | `roomId` | Request SFU room credentials |
+| `voice:stream:set` | `streamID` | Set active stream (empty string to clear) |
+| `voice:state:update` | `{ isMuted, isDeafened, isAFK }` | Update voice state flags |
+| `voice:channel:joined` | `boolean` | Notify channel join/leave |
+| `voice:camera:state` | `{ enabled, streamId? }` | Update camera state |
+| `voice:screen:state` | `{ enabled, videoStreamId?, audioStreamId? }` | Update screen share state |
+| `voice:peer:connected` | `streamId` | Notify peer stream connected |
+| `voice:peer:disconnected` | `streamId` | Notify peer stream disconnected |
+| `voice:latency:report` | `{ estimatedOneWayMs?, networkRttMs?, jitterMs?, codec?, bitrateKbps? }` | Report latency metrics |
 
-#### SFU → Client
+#### Server → Client
 
 | Event | Payload | Description |
 |-------|---------|-------------|
-| `joined` | `JoinedMessage` | Confirmation of room join |
-| `user-joined` | `UserJoinedMessage` | Another user joined the room |
-| `user-left` | `UserLeftMessage` | User left the room |
-| `offer` | `RTCSessionDescription` | WebRTC offer from SFU |
-| `answer` | `RTCSessionDescription` | WebRTC answer from SFU |
-| `ice-candidate` | `RTCIceCandidate` | ICE candidate from SFU |
+| `voice:room:granted` | `{ room_id, join_token, sfu_url, sfu_urls?, timestamp }` | SFU room credentials |
+| `voice:room:error` | `string` or `{ error, message?, retryAfterMs? }` | Voice join error |
+| `voice:peer:joined` | `{ clientId, nickname, channelId }` | Peer joined voice |
+| `voice:peer:left` | `{ clientId, nickname, channelId }` | Peer left voice |
+| `voice:kicked` | `{ reason }` | Force disconnected from voice |
+| `voice:device:disconnect` | `{ type, message }` | Device switch notification |
+| `voice:latency:update` | `{ clientId, latency }` | Peer latency update |
 
-### Message Types
+### Chat
 
-#### JoinMessage
+#### Client → Server
 
-```go
-type JoinMessage struct {
-    RoomID   string `json:"roomId"`
-    UserID   string `json:"userId"`
-    UserInfo struct {
-        Nickname string `json:"nickname"`
-        IsMuted  bool   `json:"isMuted"`
-    } `json:"userInfo"`
-}
+| Event | Payload | Description |
+|-------|---------|-------------|
+| `chat:send` | `{ conversationId, accessToken, text?, attachments?, replyToMessageId?, nonce? }` | Send a message |
+| `chat:fetch` | `{ conversationId, limit?, before? }` | Fetch message history |
+| `chat:react` | `{ conversationId, messageId, reactionSrc, accessToken }` | Toggle reaction |
+| `chat:edit` | `{ conversationId, messageId, text, accessToken }` | Edit a message |
+| `chat:delete` | `{ conversationId, messageId, accessToken }` | Delete a message |
+
+#### Server → Client
+
+| Event | Payload | Description |
+|-------|---------|-------------|
+| `chat:new` | `MessageRecord` | New message broadcast |
+| `chat:history` | `{ conversation_id, items, hasMore, before? }` | Message history response |
+| `chat:reaction` | `MessageRecord` | Reaction update broadcast |
+| `chat:edited` | `MessageRecord` | Edited message broadcast |
+| `chat:deleted` | `{ conversation_id, message_id }` | Deletion broadcast |
+| `chat:error` | `{ error, retryAfterMs?, message }` | Chat error (including rate limits) |
+
+### Admin Events
+
+Admin events require `accessToken` in the payload and appropriate role (`admin` or `owner`).
+
+| Event (Client → Server) | Description |
+|--------------------------|-------------|
+| `server:settings:update` | Update server settings (owner) |
+| `server:invites:create` | Create invite code |
+| `server:invites:revoke` | Revoke invite code |
+| `server:kick` | Kick a user |
+| `server:ban` | Ban a user |
+| `server:unban` | Unban a user |
+| `server:roles:set` | Set user role (owner) |
+| `server:channels:upsert` | Create or update a channel |
+| `server:channels:delete` | Delete a channel |
+| `server:channels:reorder` | Reorder channels |
+| `server:sidebar:item:upsert` | Create or update sidebar item |
+| `server:sidebar:item:delete` | Delete sidebar item |
+| `server:sidebar:reorder` | Reorder sidebar |
+| `voice:disconnect:user` | Force disconnect a user from voice |
+
+## SFU WebSocket Protocol
+
+The SFU uses raw WebSocket (not Socket.IO). All messages use a JSON envelope:
+
+```json
+{ "event": "<event_name>", "data": "<json_string>" }
 ```
 
-#### JoinedMessage
+### Client → SFU
 
-```go
-type JoinedMessage struct {
-    RoomID    string   `json:"roomId"`
-    UserID    string   `json:"userId"`
-    Peers     []string `json:"peers"`
-    Success   bool     `json:"success"`
-    Message   string   `json:"message,omitempty"`
-}
-```
+| Event | Data | Description |
+|-------|------|-------------|
+| `client_join` | `{ room_id, server_id, server_password, user_token, user_id }` | Join a voice room |
+| `answer` | SDP answer string | WebRTC answer |
+| `candidate` | RTCIceCandidateInit JSON | ICE candidate |
+| `renegotiate` | — | Request renegotiation (e.g. to add tracks) |
+| `keep_alive` | `{ timestamp }` | Keep-alive ping (every 15s) |
 
-### Debug Endpoints
+### SFU → Client
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/health` | GET | Health check |
+| Event | Data | Description |
+|-------|------|-------------|
+| `room_joined` | — | Join success |
+| `room_error` | Error string | Join or room error |
+| `offer` | SDP offer string | WebRTC offer |
+| `candidate` | RTCIceCandidateInit JSON | ICE candidate |
+
+### SFU HTTP Endpoints
+
+| Path | Method | Description |
+|------|--------|-------------|
+| `/health` | GET | Health check: `{ status, service, version, timestamp }` |
 | `/metrics` | GET | Prometheus metrics |
-| `/debug/rooms` | GET | Active rooms |
-| `/debug/peers` | GET | Peer connections |
-| `/debug/tracks` | GET | Media tracks |
 
-## Auth Service API
+## Data Types
 
-### Authentication Endpoints
+### MessageRecord
 
-#### User Registration
-
-**POST** `/api/register`
-
-Register a new user account.
-
-**Request Body:**
-```json
-{
-  "email": "user@example.com",
-  "password": "securepassword",
-  "nickname": "UserNickname"
+```typescript
+interface MessageRecord {
+  conversation_id: string;
+  message_id: string;
+  sender_server_id: string;
+  text: string;
+  created_at: string;
+  edited_at?: string;
+  attachments?: string[];
+  reactions?: Reaction[];
+  reply_to_message_id?: string;
+  sender_nickname?: string;
+  sender_avatar_file_id?: string;
+  enriched_attachments?: EnrichedAttachment[];
 }
 ```
 
-**Response:**
-```json
-{
-  "success": true,
-  "message": "Registration successful. Please check your email for verification.",
-  "userId": "user_123456789"
+### Channel
+
+```typescript
+interface ServerChannelRecord {
+  channel_id: string;
+  name: string;
+  type: "text" | "voice";
+  position: number;
+  description?: string;
+  require_push_to_talk?: boolean;
+  disable_rnnoise?: boolean;
+  max_bitrate?: number;
+  esports_mode?: boolean;
+  text_in_voice?: boolean;
 }
 ```
 
-#### User Login
+### Server Roles
 
-**POST** `/api/login`
+Roles in order of permission: `owner` > `admin` > `mod` > `member`.
 
-Authenticate user and get access token.
+## Error Format
 
-**Request Body:**
-```json
-{
-  "email": "user@example.com",
-  "password": "securepassword"
-}
-```
+Errors are emitted as string-based codes, not numeric. Common error values:
 
-**Response:**
-```json
-{
-  "success": true,
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "refreshToken": "refresh_token_here",
-  "user": {
-    "id": "user_123456789",
-    "email": "user@example.com",
-    "nickname": "UserNickname",
-    "verified": true
-  }
-}
-```
-
-#### Token Validation
-
-**GET** `/api/validate`
-
-Validate an authentication token.
-
-**Headers:**
-- `Authorization: Bearer <token>`
-
-**Response:**
-```json
-{
-  "valid": true,
-  "user": {
-    "id": "user_123456789",
-    "email": "user@example.com",
-    "nickname": "UserNickname",
-    "verified": true
-  }
-}
-```
-
-#### Refresh Token
-
-**POST** `/api/refresh`
-
-Get a new access token using refresh token.
-
-**Request Body:**
-```json
-{
-  "refreshToken": "refresh_token_here"
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "token": "new_jwt_token_here",
-  "refreshToken": "new_refresh_token_here"
-}
-```
-
-### User Management Endpoints
-
-#### Get User Profile
-
-**GET** `/api/user/profile`
-
-Get current user's profile information.
-
-**Headers:**
-- `Authorization: Bearer <token>`
-
-**Response:**
-```json
-{
-  "id": "user_123456789",
-  "email": "user@example.com",
-  "nickname": "UserNickname",
-  "avatar": "https://example.com/avatar.jpg",
-  "verified": true,
-  "created_at": "2024-01-15T10:30:00Z"
-}
-```
-
-#### Update User Profile
-
-**PUT** `/api/user/profile`
-
-Update user profile information.
-
-**Headers:**
-- `Authorization: Bearer <token>`
-
-**Request Body:**
-```json
-{
-  "nickname": "NewNickname",
-  "avatar": "https://example.com/new-avatar.jpg"
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "user": {
-    "id": "user_123456789",
-    "email": "user@example.com",
-    "nickname": "NewNickname",
-    "avatar": "https://example.com/new-avatar.jpg",
-    "verified": true
-  }
-}
-```
-
-#### Change Password
-
-**PUT** `/api/user/password`
-
-Change user password.
-
-**Headers:**
-- `Authorization: Bearer <token>`
-
-**Request Body:**
-```json
-{
-  "currentPassword": "oldpassword",
-  "newPassword": "newpassword"
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "message": "Password changed successfully"
-}
-```
-
-## Error Codes
-
-### Server Error Codes
-
-| Code | Description | Solution |
-|------|-------------|----------|
-| `AUTH_001` | Invalid credentials | Check email/password |
-| `AUTH_002` | Token expired | Use refresh token |
-| `AUTH_003` | Rate limit exceeded | Wait and retry |
-| `AUTH_004` | Account not verified | Check email for verification |
-| `AUTH_005` | Account suspended | Contact support |
-
-### WebSocket Error Codes
-
-| Code | Description | Solution |
-|------|-------------|----------|
-| `WS_001` | Connection failed | Check server status |
-| `WS_002` | Authentication required | Provide valid token |
-| `WS_003` | Room not found | Check room ID |
-| `WS_004` | User already in room | Leave current room first |
-| `WS_005` | Room full | Wait for space |
-
-### SFU Error Codes
-
-| Code | Description | Solution |
-|------|-------------|----------|
-| `SFU_001` | WebRTC connection failed | Check STUN servers and SFU UDP media port range |
-| `SFU_002` | Track not found | Check track ID |
-| `SFU_003` | Room not found | Check room ID |
-| `SFU_004` | Peer connection failed | Check network connectivity |
-
-## SDK Examples
-
-### JavaScript SDK
-
-```javascript
-import { GrytClient } from '@gryt/client-sdk';
-
-const client = new GrytClient({
-  serverUrl: 'wss://server.example.com',
-  authToken: 'your-auth-token'
-});
-
-// Connect to server
-await client.connect();
-
-// Join a voice channel
-await client.joinChannel('general');
-
-// Update mute state
-await client.setMuted(true);
-
-// Leave channel
-await client.leaveChannel();
-```
-
-### Go SDK
-
-```go
-package main
-
-import (
-    "github.com/gryt/sfu-go"
-    "log"
-)
-
-func main() {
-    client := sfu.NewClient("ws://localhost:5005")
-    
-    // Connect to SFU
-    err := client.Connect()
-    if err != nil {
-        log.Fatal(err)
-    }
-    
-    // Join room
-    err = client.JoinRoom("test-room", "user-123")
-    if err != nil {
-        log.Fatal(err)
-    }
-    
-    // Handle incoming tracks
-    client.OnTrack(func(track *webrtc.TrackRemote) {
-        log.Printf("Received track: %s", track.ID())
-    })
-}
-```
-
-## Rate Limits
-
-### Authentication Service
-
-- **Login attempts**: 5 per 15 minutes per IP
-- **Registration**: 3 per hour per IP
-- **API calls**: 1000 per hour per user
-- **Password reset**: 3 per hour per email
-
-### Signaling Server
-
-- **WebSocket messages**: 100 per minute per connection
-- **Room joins**: 10 per minute per user
-- **File uploads**: 10 per hour per user
-
-### SFU Server
-
-- **WebRTC connections**: 50 per minute per IP
-- **Track additions**: 100 per minute per connection
-- **ICE candidates**: 200 per minute per connection
+- `invite_required` — server is invite-only
+- `invalid_invite` — invite code is wrong or expired
+- `rate_limited` — too many requests (includes `retryAfterMs`)
+- `auth_required` — missing or invalid access token
+- `token_invalid` — access token is expired or malformed
+- `not_owner` / `not_admin` — insufficient permissions

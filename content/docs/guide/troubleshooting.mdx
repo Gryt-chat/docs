@@ -167,15 +167,11 @@ DEBUG=gryt:audio:* npm run dev    # audio only
 DEBUG=gryt:websocket:* npm run dev
 ```
 
-## Debug endpoints (development only)
+## Health and metrics endpoints
 
 | Endpoint | Service | Description |
 |----------|---------|-------------|
 | `GET /health` | server, SFU | Health check |
-| `GET /debug/rooms` | server | Room states |
-| `GET /debug/users` | server | Connected users |
-| `GET /debug/peers` | SFU | Peer connections |
-| `GET /debug/tracks` | SFU | Media tracks |
 | `GET /metrics` | server, SFU | Prometheus metrics |
 
 ## Reporting issues

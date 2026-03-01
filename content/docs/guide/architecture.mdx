@@ -44,32 +44,31 @@ graph TB
 packages/client/src/
 ├── packages/
 │   ├── audio/          # Audio processing and device management
-│   │   ├── hooks/      # useMicrophone, useAudioDevices
-│   │   ├── processors/ # Noise gate, volume control
-│   │   └── visualization/
+│   │   └── hooks/      # useMicrophone, usePushToTalk, usePipelineControls
 │   ├── webRTC/         # SFU connection and WebRTC handling
-│   │   ├── hooks/      # useSFU, usePeerConnection
-│   │   ├── connection/
-│   │   └── signaling/
+│   │   └── hooks/      # useSFU, sfuConnection, sfuConnectFlow
 │   ├── socket/         # Server communication
-│   │   ├── hooks/      # useSockets, useServerState
-│   │   ├── components/ # Server list, user list
-│   │   └── types/
-│   └── settings/       # Configuration and preferences
-├── components/         # Shared UI components (Radix UI)
-├── hooks/              # Global React hooks
-└── types/              # TypeScript type definitions
+│   │   ├── hooks/      # useSockets, useServerState, useServerManagement
+│   │   └── components/ # Server list, member sidebar
+│   ├── settings/       # Configuration, theme, server management
+│   ├── common/         # Auth (Keycloak), shared hooks, utils
+│   └── dialogues/      # Dialog components
+├── components/         # Shared UI components (Radix Themes)
+├── lib/                # Utility modules (electron, theme, etc.)
+└── assets/             # Fonts, images
 ```
 
 ### Audio processing pipeline
 
 ```mermaid
 graph LR
-  Mic["Microphone"] --> NG["Noise Gate"]
-  NG --> Vol["Volume Control"]
-  Vol --> Mute["Mute"]
-  Mute --> Analyser
-  Analyser --> SFU
+  Mic["Microphone"] --> Vol["Volume"]
+  Vol --> RNN["RNNoise"]
+  RNN --> AGC["AGC"]
+  AGC --> Comp["Compressor"]
+  Comp --> Gate["Noise Gate"]
+  Gate --> Mute["Mute"]
+  Mute --> SFU
 ```
 
 State management uses React hooks and context. Audio settings (volume, noise gate, device) are stored in `localStorage` and synced via custom hooks.
@@ -97,14 +96,7 @@ packages/server/src/
 
 ### Room management
 
-Rooms are created on first join and cleaned up when empty. Room IDs are prefixed with the server name to prevent cross-server collisions:
-
-```typescript
-const createRoomId = (serverName: string, channelId: string): string => {
-  const prefix = serverName.split('.')[0];
-  return `${prefix}_${channelId}`;
-};
-```
+Rooms are created on first join and cleaned up when empty. Room IDs are constructed from the server name, port, and channel ID to prevent cross-server collisions in the SFU.
 
 ## SFU Server
 
@@ -122,20 +114,7 @@ packages/sfu/
 
 ### Selective forwarding
 
-The SFU receives audio tracks from each participant and forwards them to every other peer in the room -- no transcoding, minimal latency:
-
-```go
-func (r *Room) ForwardTrack(track *Track) {
-    r.mutex.RLock()
-    defer r.mutex.RUnlock()
-
-    for peerID, peer := range r.Peers {
-        if peerID != track.PeerID {
-            peer.ForwardTrack(track)
-        }
-    }
-}
-```
+The SFU receives audio, video, and screen-share tracks from each participant and forwards them to every other peer in the room without transcoding. Track management lives in `internal/track/manager.go`. Receiver RTCP feedback (PLI, REMB) is relayed back to senders so their congestion controllers can adapt bitrate in real time.
 
 ## Image Worker
 
