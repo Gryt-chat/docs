@@ -32,7 +32,7 @@ Here's the honest version of the trust model:
 - **If you join someone else's server**, you are trusting that server operator with the data their server stores. You are **not** trusting them with your identity — they can't impersonate you.
 - **If you self-host**, that operator is you.
 - **Voice uses WebRTC encryption in transit (DTLS-SRTP)**, but media is routed through infrastructure operated by the server owner (the SFU).
-- **By default, login uses the hosted identity provider** at `auth.gryt.chat`. It issues certificates that servers can verify cryptographically (JWKS). Your Keycloak token never reaches a community server.
+- **By default, login uses the hosted auth provider** at `auth.gryt.chat` (Keycloak). A separate Identity Service at `id.gryt.chat` issues certificates that servers can verify cryptographically (JWKS). Your Keycloak token is only sent to the Identity Service, never to a community server.
 
 If you use the hosted web client at `app.gryt.chat`, also see the [Privacy Policy](https://gryt.chat/privacy) on the site.
 
