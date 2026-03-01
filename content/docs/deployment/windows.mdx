@@ -54,6 +54,9 @@ PORT=5000
 SFU_PORT=5005
 SFU_WS_HOST=ws://127.0.0.1:5005
 SFU_PUBLIC_HOST=127.0.0.1:5005
+
+# STUN servers for automatic NAT traversal (voice/video)
+STUN_SERVERS=stun:stun.l.google.com:19302,stun:stun1.l.google.com:19302
 ```
 
 For LAN-only use, the defaults work out of the box. If you want users to connect over the internet,
@@ -111,8 +114,11 @@ If other devices need to connect, allow these ports through Windows Firewall:
 
 To open a port: **Windows Security → Firewall → Advanced settings → Inbound Rules → New Rule → Port**.
 
-<Callout type="warn">
-If you're hosting for users outside your local network, you also need to forward these ports in your router.
+<Callout type="info">
+For remote users, STUN is enabled by default and will automatically discover your public IP and attempt
+NAT hole-punching. On most home routers this means voice/video works without manual port forwarding.
+If remote users still can't connect to voice, forward the ports above in your router and set
+`SFU_PUBLIC_HOST` to your public IP in `config.env`.
 </Callout>
 
 ## Configuration reference
@@ -162,8 +168,10 @@ Some antivirus software flags unsigned executables. Add an exception for the Gry
 Another process is using port 5000 or 5005. Either close that process or change the ports in `config.env`.
 
 **Voice not working (remote users)**
-Make sure the SFU ports (TCP 5005 + UDP 10000–10019) are open in your firewall and forwarded in your router.
-Set `SFU_PUBLIC_HOST` to your public IP.
+The server uses STUN to automatically discover your public IP and punch through most home NATs — in many
+cases voice will work for remote users without manual port forwarding. If it still doesn't connect,
+open TCP 5005 + UDP 10000–10019 in your firewall and forward them in your router, then set
+`SFU_PUBLIC_HOST` to your public IP.
 
 **Can't connect from another device on the network**
 Check Windows Firewall allows inbound connections on port 5000. Try connecting with `your-local-ip:5000` (find your IP with `ipconfig`).
