@@ -16,7 +16,7 @@ All REST endpoints are served by the signaling server (default port 5000). Endpo
 |--------|------|-------------|
 | GET | `/health` | Health check. Returns `{ status, service, serverName, timestamp }` |
 | GET | `/metrics` | Prometheus metrics (text/plain) |
-| GET | `/info` | Public server preview: `{ name, description, members, version }` |
+| GET | `/info` | Public server preview: `{ name, description, members, version, lanOpen }` |
 | GET | `/icon` | Server icon image (404 if none set) |
 | GET | `/.well-known/jwks.json` | JWKS for built-in identity verification |
 
@@ -96,7 +96,7 @@ Messages are **created** via the WebSocket `chat:send` event, not via REST.
 
 | Event | Payload | Description |
 |-------|---------|-------------|
-| `server:info` | `{ name, description, members, version }` | Public preview |
+| `server:info` | `{ name, description, members, version, lanOpen }` | Public preview |
 | `server:challenge` | `{ nonce, serverHost }` | Identity challenge (response to `server:join`) |
 | `server:joined` | `{ accessToken, refreshToken, nickname, avatarFileId, isOwner, setupRequired }` | Join success |
 | `server:error` | `{ error, message?, retryAfterMs?, canReapply? }` | Error (e.g. `invite_required`, `invalid_invite`, `rate_limited`) |
@@ -163,7 +163,7 @@ Admin events require `accessToken` in the payload and appropriate role (`admin` 
 
 | Event (Client → Server) | Description |
 |--------------------------|-------------|
-| `server:settings:update` | Update server settings (owner) |
+| `server:settings:update` | Update server settings (owner). Fields: `displayName`, `description`, `avatarMaxBytes`, `uploadMaxBytes`, `emojiMaxBytes`, `profanityMode`, `profanityCensorStyle`, `systemChannelId`, `lanOpen` |
 | `server:invites:create` | Create invite code |
 | `server:invites:revoke` | Revoke invite code |
 | `server:kick` | Kick a user |

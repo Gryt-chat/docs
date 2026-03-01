@@ -290,6 +290,23 @@ with `curl` or a modified client. For real authentication, enable
 [Gryt Auth](/docs/guide/configuration#authentication) (`GRYT_AUTH_MODE=required`).
 </Callout>
 
+## Dynamic server settings
+
+The following settings are managed in the UI at **Server Settings → Overview** and take effect immediately without a server restart:
+
+- **Display name** and **description**
+- **Server icon**
+- **Upload limits** (avatar, file, emoji)
+- **Profanity filter** (off / flag / censor / block) and censor style
+- **System messages channel**
+- **LAN open join** — allow anyone on the local network to join without an invite code (see below)
+
+### LAN open join
+
+Enable **Allow anyone on LAN to join** in Server Settings → Overview. When enabled, clients connecting from private IP ranges (`10.x.x.x`, `172.16–31.x.x`, `192.168.x.x`, localhost, IPv6 link-local/unique-local) can join without an invite code. Connections from public IPs still require an invite.
+
+This is ideal for LAN parties and local events where you want frictionless access for everyone on the network while keeping the server invite-only for remote users.
+
 ## Security best practices
 
 - Never commit `.env` files to version control
@@ -297,4 +314,5 @@ with `curl` or a modified client. For real authentication, enable
 - Configure CORS origins to match your domain
 - Use `GRYT_AUTH_MODE=required` if you need account-based access control
 - Use invite links to control membership (Server settings → Invites)
+- For LAN events, enable **LAN open join** in Server Settings instead of creating mass invite codes
 - Run containers as non-root users

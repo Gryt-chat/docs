@@ -139,7 +139,7 @@ Point client/server configs to `http://localhost:8080/realms/gryt`.
 | `server:joined` | `{ accessToken, refreshToken?, nickname, avatarFileId?, isOwner, setupRequired }` | Join success. |
 | `server:error` | `{ error, message?, retryAfterMs?, canReapply? }` | Includes `invite_required`, `invalid_invite`, rate limits, etc. |
 | `server:details` | `serverDetails` | Full server state for the UI. |
-| `server:info` | `{ name, description?, members?, version? }` | Public preview. |
+| `server:info` | `{ name, description?, members?, version?, lanOpen? }` | Public preview. |
 | `token:refreshed` | `{ accessToken }` | New access token. |
 | `token:error` / `token:revoked` | `{ error, message? }` | Token invalid/revoked. |
 | `voice:room:granted` | `{ room_id, join_token, sfu_url, sfu_urls?, timestamp }` | SFU join credentials. |
