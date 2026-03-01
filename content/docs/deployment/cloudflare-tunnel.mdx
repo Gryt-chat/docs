@@ -23,7 +23,7 @@ Your actual voice traffic (ICE + DTLS + SRTP) still flows **directly over UDP** 
 That means:
 
 - `SFU_PUBLIC_HOST` can point to a tunneled/proxied hostname (e.g. `wss://sfu.example.com`) because it’s only used for the WebSocket.
-- Your ICE candidates must advertise **real, reachable IPs** for the SFU host (set `ICE_ADVERTISE_IP` / `SFU_ADVERTISE_IP`).
+- Your ICE candidates must advertise **real, reachable IPs** for the SFU host (set `ICE_ADVERTISE_IP`).
 - You must open the corresponding UDP ports on the SFU host firewall / security group (see below).
 
 If `dig AAAA sfu.example.com` returns Cloudflare anycast IPs (often starting with `2606:4700:...`), that’s expected for a proxied hostname — but it is **not** where WebRTC UDP will go.
@@ -130,7 +130,7 @@ Alternative:
 
 - `SFU_UDP_MIN..SFU_UDP_MAX/udp` (default `10000-10019/udp`)
 
-If the SFU host is behind NAT or has multiple interfaces, set `SFU_ADVERTISE_IP` so it advertises the correct public IP in ICE candidates. For multi-network setups (e.g. LAN + public), both `SFU_ADVERTISE_IP` and `SFU_PUBLIC_HOST` accept comma-separated values — the client automatically pings each endpoint and picks the fastest one.
+If the SFU host is behind NAT or has multiple interfaces, set `ICE_ADVERTISE_IP` so it advertises the correct public IP in ICE candidates. For multi-network setups (e.g. LAN + public), both `ICE_ADVERTISE_IP` and `SFU_PUBLIC_HOST` accept comma-separated values — the client automatically pings each endpoint and picks the fastest one.
 
-For IPv6-heavy client networks (common on mobile), make sure the SFU host has IPv6 and include the public IPv6 in `SFU_ADVERTISE_IP` / `ICE_ADVERTISE_IP`, and allow inbound **IPv6 UDP** on the same media port(s).
+For IPv6-heavy client networks (common on mobile), make sure the SFU host has IPv6 and include the public IPv6 in `ICE_ADVERTISE_IP`, and allow inbound **IPv6 UDP** on the same media port(s).
 

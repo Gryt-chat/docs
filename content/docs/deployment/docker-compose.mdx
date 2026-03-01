@@ -186,7 +186,7 @@ docker compose exec server node admin-setOwner.js --grytUserId <keycloak_sub>
 |----------|---------|-------------|
 | `STUN_SERVERS` | Google STUN | Comma-separated STUN URIs |
 | `SFU_PUBLIC_HOST` | `ws://localhost:5005` | Public SFU URL(s) for browsers (comma-separated for multi-network) |
-| `SFU_ADVERTISE_IP` | *(auto)* | Public IP(s) to advertise in ICE candidates (comma-separated for multi-network) |
+| `ICE_ADVERTISE_IP` | *(auto)* | Public IP(s) to advertise in ICE candidates (comma-separated for multi-network) |
 
 ### Storage
 
@@ -202,7 +202,7 @@ docker compose exec server node admin-setOwner.js --grytUserId <keycloak_sub>
 - [ ] Set a strong `JWT_SECRET` — generate with `openssl rand -base64 48`
 - [ ] Change `MINIO_ROOT_USER` and `MINIO_ROOT_PASSWORD`
 - [ ] Open **UDP 443** for the SFU (recommended), or open UDP `10000-10019` if using the high-port range
-- [ ] Set `SFU_ADVERTISE_IP` if behind NAT
+- [ ] Set `ICE_ADVERTISE_IP` if behind NAT
 - [ ] Set `SFU_PUBLIC_HOST` to your public `wss://` URL
 - [ ] Ensure `CORS_ORIGIN` includes `http://127.0.0.1:15738` (desktop app) and `https://app.gryt.chat` (hosted web client)
 - [ ] Put a reverse proxy (Caddy, Nginx, Traefik) in front for TLS
@@ -254,19 +254,19 @@ SFU_PUBLIC_HOST=wss://sfu.example.com
 
 # Multi-network example (LAN party + public):
 # SFU_PUBLIC_HOST=wss://sfu.example.com,ws://192.168.1.100:5005
-# SFU_ADVERTISE_IP=203.0.113.10,192.168.1.100
+# ICE_ADVERTISE_IP=203.0.113.10,192.168.1.100
 ```
 
 ## LAN optimization
 
 <Callout type="info" title="Hosting for a LAN party or local network?">
-Add your server's LAN IP to `SFU_ADVERTISE_IP` and `SFU_PUBLIC_HOST` so clients on the same
+Add your server's LAN IP to `ICE_ADVERTISE_IP` and `SFU_PUBLIC_HOST` so clients on the same
 network connect directly — skipping external STUN entirely for near-zero-latency voice.
 </Callout>
 
 ```bash
 # Your server's LAN IP (find it with: hostname -I | awk '{print $1}')
-SFU_ADVERTISE_IP=192.168.1.100
+ICE_ADVERTISE_IP=192.168.1.100
 SFU_PUBLIC_HOST=ws://192.168.1.100:5005
 ```
 
@@ -274,7 +274,7 @@ For mixed setups where some users are on the LAN and others connect over the int
 comma-separated values. The client automatically pings each SFU endpoint and picks the fastest:
 
 ```bash
-SFU_ADVERTISE_IP=203.0.113.10,192.168.1.100
+ICE_ADVERTISE_IP=203.0.113.10,192.168.1.100
 SFU_PUBLIC_HOST=wss://sfu.example.com,ws://192.168.1.100:5005
 ```
 

@@ -42,12 +42,12 @@ JWT_SECRET=<run: openssl rand -base64 48>  # IMPORTANT: generate a real secret
 SFU_PUBLIC_HOST=wss://sfu.example.com   # or ws://<your-ip>:5005 for non-TLS
 
 # Public IP of the SFU host (required if behind NAT)
-SFU_ADVERTISE_IP=203.0.113.10
+ICE_ADVERTISE_IP=203.0.113.10
 
 # Single UDP port for WebRTC media (open this in your firewall)
 ICE_UDP_MUX_PORT=443
 
-# No need for STUN when SFU_ADVERTISE_IP and ICE_UDP_MUX_PORT are set
+# No need for STUN when ICE_ADVERTISE_IP and ICE_UDP_MUX_PORT are set
 DISABLE_STUN=true
 ```
 

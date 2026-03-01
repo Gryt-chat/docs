@@ -59,7 +59,7 @@ wscat -c ws://localhost:5005
 - Verify STUN servers are reachable: `dig stun.l.google.com`
 - If using ICE UDP mux (`ICE_UDP_MUX_PORT`), ensure **UDP 443** (or your chosen mux port) is open
 - Otherwise, ensure the SFU UDP port range is open (`ICE_UDP_PORT_MIN` / `ICE_UDP_PORT_MAX`)
-- If you use Cloudflare Tunnel / Cloudflare proxy for the SFU WebSocket, remember WebRTC media is still **direct UDP** to the SFU host — set `SFU_ADVERTISE_IP` / `ICE_ADVERTISE_IP` to your real public IPs and open the UDP port(s) there
+- If you use Cloudflare Tunnel / Cloudflare proxy for the SFU WebSocket, remember WebRTC media is still **direct UDP** to the SFU host — set `ICE_ADVERTISE_IP` to your real public IPs and open the UDP port(s) there
 - Verify the SFU hostname DNS record is set to **Proxied** (orange cloud) in Cloudflare — a grey-cloud (DNS-only) record won't route through the tunnel
 - Review SFU logs: `docker compose logs sfu`
 
