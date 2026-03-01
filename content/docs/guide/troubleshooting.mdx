@@ -25,6 +25,18 @@ chmod +x Gryt-Chat-*.AppImage
 ./Gryt-Chat-*.AppImage
 ```
 
+## Update issues
+
+### Profile resets on every launch or update
+
+If you have to set up your profile every time you launch or update Gryt, the likely cause is a stale installation from before version **1.0.122**. In that release the Electron package name was changed from `client` to `gryt-chat`, which moved the install directory from `C:\Users\<user>\AppData\Local\Programs\client` to `C:\Users\<user>\AppData\Local\Programs\gryt-chat`. The old installation still exists at the previous path and conflicts with the new one, so profile and settings data does not persist between launches.
+
+To fix this:
+
+1. Fully **uninstall** the Gryt client (Settings → Apps → Gryt Chat → Uninstall).
+2. Delete any leftover `C:\Users\<user>\AppData\Local\Programs\client` folder if it still exists.
+3. **Download and install** the latest version from [gryt.chat](https://gryt.chat).
+
 ## Connection issues
 
 ### WebSocket connection fails
