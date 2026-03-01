@@ -16,7 +16,16 @@ The Gryt signaling server is a Node.js/TypeScript application that manages WebRT
 - **Auth**: JWT validation via Keycloak JWKS (hosted at `auth.gryt.chat`)
 - **Metrics**: Prometheus endpoint (`/metrics`) with HTTP, Socket.IO, and Node.js runtime metrics
 
-## Getting started
+## Deployment
+
+Looking to run a Gryt server? See the deployment guide for your platform:
+
+- [Docker Compose](/docs/deployment/docker-compose) (recommended for Linux/VPS)
+- [Windows (no Docker)](/docs/deployment/windows)
+- [Cloudflare Tunnel](/docs/deployment/cloudflare-tunnel)
+- [Kubernetes with Helm](/docs/deployment/kubernetes)
+
+## Getting started (development)
 
 ```bash
 cd packages/server
@@ -95,6 +104,8 @@ When running in Docker Compose:
 ```bash
 docker compose exec server node admin-setOwner.js --grytUserId <keycloak_sub>
 ```
+
+`<keycloak_sub>` is your Gryt user ID. You can find it in the desktop app or web client by going to **Settings → Profile** and scrolling to the bottom.
 
 ### Local Keycloak (dev)
 

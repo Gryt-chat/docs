@@ -96,7 +96,7 @@ docker compose exec server node admin-setOwner.js --grytUserId <keycloak_sub>
 docker exec gryt-server node admin-setOwner.js --grytUserId <keycloak_sub>
 ```
 
-`<keycloak_sub>` is the user's Gryt ID (OIDC subject). The target user should already be a **member** of the server (has joined before), otherwise they may be unable to join an invite-only server.
+`<keycloak_sub>` is the user's Gryt ID (OIDC subject). You can find it in the desktop app or web client by going to **Settings → Profile** and scrolling to the bottom. The target user should already be a **member** of the server (has joined before), otherwise they may be unable to join an invite-only server.
 
 ### MinIO (self-hosted S3)
 
