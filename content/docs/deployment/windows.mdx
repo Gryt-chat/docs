@@ -1,0 +1,170 @@
+---
+title: Windows (no Docker)
+description: Run a Gryt server on Windows without Docker — just extract and start
+icon: Monitor
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+
+The Windows self-hosted bundle lets you run a Gryt server on any Windows machine without Docker.
+Everything is included in a single zip: the signaling server, SFU media server, and image worker.
+
+<Callout type="info">
+This is ideal for LAN parties, local teams, or anyone who wants a simple server on a Windows PC.
+For production deployments on a VPS or cloud server, see the [Docker Compose guide](/docs/deployment/docker-compose).
+</Callout>
+
+## Prerequisites
+
+- **Windows 10 or later** (x64)
+- **[Node.js](https://nodejs.org/) 20 or later** — download the LTS installer from [nodejs.org](https://nodejs.org/)
+
+Verify Node.js is installed:
+
+```bash
+node --version
+```
+
+## Setup
+
+<Steps>
+<Step>
+### Download the bundle
+
+Download the latest `gryt-server-windows-x64-v*.zip` from the
+[GitHub releases page](https://github.com/Gryt-chat/server/releases).
+
+Extract it to a folder of your choice (e.g. `C:\Gryt`).
+
+</Step>
+<Step>
+### Configure
+
+Open `config.env` in a text editor and customize:
+
+```bash
+# Give your server a name
+SERVER_NAME=My Gryt Server
+
+# Port for the signaling server (API + WebSocket)
+PORT=5000
+
+# Port for the SFU (voice/video media)
+SFU_PORT=5005
+SFU_WS_HOST=ws://127.0.0.1:5005/ws
+SFU_PUBLIC_HOST=127.0.0.1:5005
+```
+
+For LAN-only use, the defaults work out of the box. If you want users to connect over the internet,
+set `SFU_PUBLIC_HOST` and `EXTERNAL_HOST` to your public IP or domain:
+
+```bash
+EXTERNAL_HOST=http://your-public-ip:5000
+SFU_PUBLIC_HOST=your-public-ip:5005
+SFU_WS_HOST=ws://your-public-ip:5005/ws
+```
+
+See the [Configuration](/docs/guide/configuration) page for all available options.
+
+</Step>
+<Step>
+### Start the server
+
+Double-click **`start.bat`** or run it from a terminal.
+
+On first launch, it will download native modules for your Node.js version (this takes a few seconds and only happens once).
+
+```
+First-time setup: building native modules for your Node.js version...
+Setup complete.
+
+Starting Gryt Image Worker...
+Starting Gryt SFU...
+Starting Gryt Server...
+```
+
+</Step>
+<Step>
+### Connect
+
+Connect to your server using the [Gryt desktop app](https://github.com/Gryt-chat/gryt/releases) or
+the hosted web client at [app.gryt.chat](https://app.gryt.chat).
+
+Enter your server address: `localhost:5000` (same machine) or `your-ip:5000` (from another device on the network).
+
+The **first user** to join becomes the **owner/admin**. After that, the server is **invite-only** —
+create invite links in **Server settings → Invites**.
+
+</Step>
+</Steps>
+
+## Firewall
+
+If other devices need to connect, allow these ports through Windows Firewall:
+
+| Port | Protocol | Service |
+|------|----------|---------|
+| `5000` | TCP | Signaling server (API + WebSocket) |
+| `5005` | TCP | SFU WebSocket |
+| `10000–10019` | UDP | WebRTC media (voice/video) |
+
+To open a port: **Windows Security → Firewall → Advanced settings → Inbound Rules → New Rule → Port**.
+
+<Callout type="warn">
+If you're hosting for users outside your local network, you also need to forward these ports in your router.
+</Callout>
+
+## Configuration reference
+
+All settings are in `config.env`. Key options:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SERVER_NAME` | `My Gryt Server` | Display name shown to users |
+| `PORT` | `5000` | Signaling server port |
+| `SFU_PORT` | `5005` | SFU media server port |
+| `SFU_WS_HOST` | `ws://127.0.0.1:5005/ws` | SFU WebSocket URL (used by the server internally) |
+| `SFU_PUBLIC_HOST` | `127.0.0.1:5005` | SFU address given to clients |
+| `DATA_DIR` | `./data` | Where SQLite database and file uploads are stored |
+| `STORAGE_BACKEND` | `filesystem` | File storage mode (`filesystem` for self-hosted) |
+| `IDENTITY_MODE` | `builtin` | Authentication mode (`builtin` for self-hosted) |
+| `JWT_SECRET` | *(auto-generated)* | Session token secret — set a strong value for production |
+
+## Stopping the server
+
+Close the terminal window, or press `Ctrl+C` in the terminal where `start.bat` is running.
+
+To kill background processes from a previous run that didn't shut down cleanly:
+
+```bash
+taskkill /IM gryt_sfu.exe /F
+taskkill /IM node.exe /F
+```
+
+## Data and backups
+
+All server data is stored in the `data/` directory:
+
+- `data/gryt.db` — SQLite database (users, channels, messages, settings)
+- `data/uploads/` — uploaded files and images
+
+To back up your server, copy the entire `data/` directory.
+
+## Troubleshooting
+
+**"node" is not recognized**
+Node.js is not installed or not on your PATH. Download it from [nodejs.org](https://nodejs.org/) and restart your terminal.
+
+**Antivirus blocks `gryt_sfu.exe`**
+Some antivirus software flags unsigned executables. Add an exception for the Gryt server folder.
+
+**Port already in use**
+Another process is using port 5000 or 5005. Either close that process or change the ports in `config.env`.
+
+**Voice not working (remote users)**
+Make sure the SFU ports (TCP 5005 + UDP 10000–10019) are open in your firewall and forwarded in your router.
+Set `SFU_PUBLIC_HOST` to your public IP.
+
+**Can't connect from another device on the network**
+Check Windows Firewall allows inbound connections on port 5000. Try connecting with `your-local-ip:5000` (find your IP with `ipconfig`).

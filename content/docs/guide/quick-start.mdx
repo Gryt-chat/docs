@@ -96,6 +96,21 @@ See the full [Docker Compose guide](/docs/deployment/docker-compose) for TLS set
 upgrades, and advanced configuration.
 </Callout>
 
+## Windows (no Docker)
+
+Run Gryt on any Windows PC without Docker. Just Node.js and a zip file.
+
+1. Install [Node.js 20+](https://nodejs.org/)
+2. Download `gryt-server-windows-x64-v*.zip` from the [releases page](https://github.com/Gryt-chat/server/releases)
+3. Extract and open `config.env` — set your `SERVER_NAME`
+4. Double-click `start.bat`
+
+Connect with the desktop app or [app.gryt.chat](https://app.gryt.chat) at `localhost:5000`.
+
+<Callout type="info">
+See the full [Windows deployment guide](/docs/deployment/windows) for firewall setup, remote access, and troubleshooting.
+</Callout>
+
 ## Docker (development — from source)
 
 If you want to hack on Gryt itself:

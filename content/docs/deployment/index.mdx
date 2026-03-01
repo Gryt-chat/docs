@@ -16,6 +16,11 @@ import { Card, Cards } from 'fumadocs-ui/components/card';
     href="/docs/deployment/docker-compose"
   />
   <Card
+    title="Windows (no Docker)"
+    description="Run on any Windows PC — extract a zip, edit one file, double-click start."
+    href="/docs/deployment/windows"
+  />
+  <Card
     title="Cloudflare Tunnel"
     description="Self-host with automatic HTTPS tunnels — no port forwarding for HTTP."
     href="/docs/deployment/cloudflare-tunnel"
@@ -42,6 +47,7 @@ These apply to **all** deployment methods.
 | Method | Best for | TLS | Needs open ports? |
 |--------|----------|-----|-------------------|
 | [Docker Compose](/docs/deployment/docker-compose) | Self-hosting on a VPS or bare metal | Add Caddy/Nginx | Yes (443 TCP + UDP) |
+| [Windows (no Docker)](/docs/deployment/windows) | LAN parties, local teams, Windows PCs | Manual / reverse proxy | Yes |
 | [Cloudflare Tunnel](/docs/deployment/cloudflare-tunnel) | Hosting behind NAT / no static IP | Automatic | UDP only |
 | Kubernetes (Helm) | Scaled / multi-node clusters | cert-manager | Yes |
 
