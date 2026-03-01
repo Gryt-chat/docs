@@ -13,7 +13,7 @@ The Gryt desktop client is available for Windows, macOS, and Linux.
 |----------|---------|
 | **Windows** | [GitHub Releases](https://github.com/Gryt-chat/gryt/releases/latest) |
 | **macOS** | [GitHub Releases](https://github.com/Gryt-chat/gryt/releases/latest) |
-| **Linux** | [Snap Store](https://snapcraft.io/gryt-chat) · [Flathub](https://flathub.org/apps/com.gryt.Chat) · [AUR](https://aur.archlinux.org/packages/gryt-chat-bin) · [GitHub Releases](https://github.com/Gryt-chat/gryt/releases/latest) |
+| **Linux** | [Snap Store](https://snapcraft.io/gryt-chat) · [AUR](https://aur.archlinux.org/packages/gryt-chat-bin) · [GitHub Releases](https://github.com/Gryt-chat/gryt/releases/latest) |
 | **Web** | [app.gryt.chat](https://app.gryt.chat) |
 
 <Tabs items={["Windows", "macOS", "Linux"]}>
@@ -70,15 +70,6 @@ sudo snap install gryt-chat
 
 Auto-updates are handled by snapd.
 
-### Flatpak (Flathub)
-
-Install from [Flathub](https://flathub.org/apps/com.gryt.Chat):
-
-```bash
-flatpak install flathub com.gryt.Chat
-flatpak run com.gryt.Chat
-```
-
 ### Arch Linux (AUR)
 
 Install [`gryt-chat-bin`](https://aur.archlinux.org/packages/gryt-chat-bin) with your preferred AUR helper:
@@ -113,9 +104,6 @@ AppImages are self-contained and run on most distributions without installation.
 ```bash
 # Snap
 sudo snap remove gryt-chat
-
-# Flatpak
-flatpak uninstall com.gryt.Chat
 
 # AUR
 sudo pacman -R gryt-chat-bin
