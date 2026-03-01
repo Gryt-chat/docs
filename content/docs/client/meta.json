@@ -4,6 +4,7 @@
   "icon": "Monitor",
   "pages": [
     "index",
+    "installation",
     "build-from-source",
     "voice-communication",
     "audio-processing",

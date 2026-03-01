@@ -1,0 +1,113 @@
+---
+title: Installation
+description: Download and install the Gryt desktop client on Windows, macOS, or Linux
+icon: Download
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+
+The Gryt desktop client is available for Windows, macOS, and Linux. Download the latest release from the [GitHub Releases page](https://github.com/Gryt-chat/gryt/releases) or from [gryt.chat](https://gryt.chat).
+
+<Tabs items={["Windows", "macOS", "Linux"]}>
+<Tab value="Windows">
+
+### Download
+
+Download **Gryt-Chat-Setup-x.x.x.exe** from the [releases page](https://github.com/Gryt-chat/gryt/releases).
+
+### Install
+
+1. Run the `.exe` installer
+2. If Windows SmartScreen shows **"Windows protected your PC"**, click **More info** then **Run anyway**. This happens because the app is not yet signed with an EV code signing certificate.
+3. Follow the installer prompts
+4. Gryt will launch automatically after installation
+
+The app installs to `C:\Users\<user>\AppData\Local\Programs\gryt-chat\` and auto-updates when new versions are released.
+
+### Uninstall
+
+Go to **Settings → Apps → Gryt Chat → Uninstall**, or run the uninstaller from the install directory.
+
+</Tab>
+<Tab value="macOS">
+
+### Download
+
+Download **Gryt-Chat-x.x.x-mac.zip** from the [releases page](https://github.com/Gryt-chat/gryt/releases).
+
+### Install
+
+1. Extract the `.zip` file (double-click it in Finder)
+2. Drag **Gryt Chat.app** into your **Applications** folder
+3. On first launch, macOS may show **"Gryt Chat can't be opened because Apple cannot check it for malicious software."** To bypass this:
+   - Right-click (or Control-click) the app
+   - Select **Open**
+   - Click **Open** in the confirmation dialog
+4. This only needs to be done once. Future launches work normally.
+
+### Uninstall
+
+Drag **Gryt Chat.app** from Applications to the Trash.
+
+</Tab>
+<Tab value="Linux">
+
+### AppImage (all distros)
+
+Download **Gryt-Chat-x.x.x.AppImage** from the [releases page](https://github.com/Gryt-chat/gryt/releases).
+
+```bash
+chmod +x Gryt-Chat-*.AppImage
+./Gryt-Chat-*.AppImage
+```
+
+AppImages are self-contained and run on most distributions without installation. To integrate with your desktop environment (application menu, file associations), use [AppImageLauncher](https://github.com/TheAssassin/AppImageLauncher) or create a `.desktop` file manually.
+
+### .deb package (Debian / Ubuntu)
+
+Download **gryt-chat_x.x.x_amd64.deb** from the [releases page](https://github.com/Gryt-chat/gryt/releases).
+
+```bash
+sudo dpkg -i gryt-chat_*.deb
+```
+
+Launch from your application menu or run `gryt-chat` from the terminal.
+
+### Uninstall
+
+```bash
+# AppImage — just delete the file
+rm Gryt-Chat-*.AppImage
+
+# .deb
+sudo apt remove gryt-chat
+```
+
+</Tab>
+</Tabs>
+
+## Connecting to a server
+
+1. Open the Gryt desktop app
+2. Click **Add Server**
+3. Enter the server address (e.g. `gryt.example.com` or `192.168.1.100:5000`)
+4. Sign in with your Gryt account
+
+Servers on your local network are discovered automatically via mDNS and will appear in the server list without manual entry.
+
+<Callout type="info">
+The first user to join a brand-new server becomes the owner/admin. After that, the server is invite-only. Ask the server owner for an invite link, or if you're on the same LAN and the owner has enabled **LAN open join**, you can join without an invite.
+</Callout>
+
+## Web client
+
+If you don't want to install anything, you can use the hosted web client at [app.gryt.chat](https://app.gryt.chat). Note that some features (global push-to-talk, LAN server discovery, auto-updates) are only available in the desktop app.
+
+## Prefer to build from source?
+
+See the [Build from Source](/docs/client/build-from-source) guide to compile the client yourself.
+
+## Troubleshooting
+
+See [Troubleshooting](/docs/guide/troubleshooting) for common installation issues, including OS security warnings and update problems.
