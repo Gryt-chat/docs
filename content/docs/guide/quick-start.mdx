@@ -43,6 +43,12 @@ SFU_PUBLIC_HOST=wss://sfu.example.com   # or ws://<your-ip>:5005 for non-TLS
 
 # Public IP of the SFU host (required if behind NAT)
 SFU_ADVERTISE_IP=203.0.113.10
+
+# Single UDP port for WebRTC media (open this in your firewall)
+ICE_UDP_MUX_PORT=443
+
+# No need for STUN when SFU_ADVERTISE_IP and ICE_UDP_MUX_PORT are set
+DISABLE_STUN=true
 ```
 
 See the [Configuration](/docs/guide/configuration) page for all `.env` options.
