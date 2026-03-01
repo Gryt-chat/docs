@@ -90,10 +90,10 @@ If you need to change the owner later (recovery, transfers), run the one-shot ad
 
 ```bash
 # Docker Compose
-docker compose exec server node dist/admin/setOwner.js --grytUserId <keycloak_sub>
+docker compose exec server node admin-setOwner.js --grytUserId <keycloak_sub>
 
 # Or plain Docker
-docker exec gryt-server node dist/admin/setOwner.js --grytUserId <keycloak_sub>
+docker exec gryt-server node admin-setOwner.js --grytUserId <keycloak_sub>
 ```
 
 `<keycloak_sub>` is the user's Gryt ID (OIDC subject). The target user should already be a **member** of the server (has joined before), otherwise they may be unable to join an invite-only server.
@@ -186,10 +186,12 @@ Keycloak and point your server/client to your issuer.
 
 See: [Self-host Authentication (Keycloak / OIDC)](/docs/guide/self-hosted-oidc)
 
-To disable authentication:
+### Locking the server
+
+To reject **all** join attempts (temporarily lock the server):
 
 ```bash
-GRYT_AUTH_MODE=disabled  # nobody can join (server lock)
+GRYT_AUTH_MODE=disabled  # server locked — all joins rejected
 ```
 
 See the [Server docs](/docs/server) for more on auth integration.

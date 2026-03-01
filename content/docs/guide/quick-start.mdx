@@ -76,9 +76,10 @@ Make sure the following ports are accessible (forwarded in your router / open in
 |------|----------|---------|
 | `5000` | TCP | Signaling server (API + WebSocket) |
 | `5005` | TCP | SFU WebSocket |
-| `10000–10019` | UDP | WebRTC media (voice traffic) |
+| `443` | UDP | WebRTC media — recommended single-port mode (`ICE_UDP_MUX_PORT`) |
+| `10000–10019` | UDP | WebRTC media — alternative high-port range (if not using UDP mux) |
 
-These are configurable via `SERVER_PORT`, `SFU_PORT`, `SFU_UDP_MIN`, and `SFU_UDP_MAX` in `.env`.
+These are configurable via `SERVER_PORT`, `SFU_PORT`, `ICE_UDP_MUX_PORT`, `SFU_UDP_MIN`, and `SFU_UDP_MAX` in `.env`.
 
 <Callout type="info">
 See the full [Docker Compose guide](/docs/deployment/docker-compose) for all configuration options,

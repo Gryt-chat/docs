@@ -167,14 +167,14 @@ The **first user** to join a brand-new server becomes the **owner/admin** automa
 To change the owner later, run:
 
 ```bash
-docker compose exec server node dist/admin/setOwner.js --grytUserId <keycloak_sub>
+docker compose exec server node admin-setOwner.js --grytUserId <keycloak_sub>
 ```
 
 ### Authentication
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `GRYT_AUTH_MODE` | `disabled` | `disabled` or `required` |
+| `GRYT_AUTH_MODE` | `required` | `required` (users sign in with a Gryt account) or `disabled` (server locked — all joins rejected) |
 | `GRYT_OIDC_ISSUER` | `https://auth.gryt.chat/realms/gryt` | OIDC issuer URL |
 | `GRYT_OIDC_AUDIENCE` | `gryt-web` | OIDC audience |
 

@@ -47,12 +47,14 @@ These apply to **all** deployment methods.
 
 ## Docker Compose (recommended)
 
-Download two files and run `docker compose up -d` — no repo clone needed:
+Download two files, edit `.env`, and run `docker compose up -d` — no repo clone needed:
 
 ```bash
 mkdir gryt && cd gryt
 curl -Lo docker-compose.yml https://raw.githubusercontent.com/Gryt-chat/gryt/main/ops/deploy/compose/prod.yml
 curl -Lo .env https://raw.githubusercontent.com/Gryt-chat/gryt/main/ops/deploy/compose/.env.example
+# Edit .env — at minimum set a real JWT_SECRET:
+#   openssl rand -base64 48
 docker compose up -d
 ```
 

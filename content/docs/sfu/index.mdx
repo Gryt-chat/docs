@@ -56,8 +56,10 @@ Or with the start script:
 | `ICE_UDP_PORT_MIN` | — | Min UDP port for WebRTC media |
 | `ICE_UDP_PORT_MAX` | — | Max UDP port for WebRTC media |
 | `ICE_ADVERTISE_IP` | — | Public IP(s) to advertise in ICE candidates (comma-separated for multi-network) |
-| `LOG_LEVEL` | `info` | `debug`, `info`, `warn`, `error` |
-| `MAX_CONNECTIONS` | `1000` | Max concurrent connections |
+| `DISABLE_STUN` | `false` | Disable STUN servers (useful for LAN-only setups) |
+| `MAX_PEERS` | `200` (mux) / port range size | Max concurrent peers |
+| `DEBUG` | `true` | Enable debug logging |
+| `VERBOSE_LOG` | `false` | Enable verbose logging (very noisy) |
 
 ## WebSocket events
 
