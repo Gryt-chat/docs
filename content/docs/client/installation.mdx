@@ -7,7 +7,14 @@ icon: Download
 import { Callout } from 'fumadocs-ui/components/callout';
 import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
 
-The Gryt desktop client is available for Windows, macOS, and Linux. Download the latest release from the [GitHub Releases page](https://github.com/Gryt-chat/gryt/releases) or from [gryt.chat](https://gryt.chat).
+The Gryt desktop client is available for Windows, macOS, and Linux.
+
+| Platform | Options |
+|----------|---------|
+| **Windows** | [GitHub Releases](https://github.com/Gryt-chat/gryt/releases/latest) |
+| **macOS** | [GitHub Releases](https://github.com/Gryt-chat/gryt/releases/latest) |
+| **Linux** | [Snap Store](https://snapcraft.io/gryt-chat) · [Flathub](https://flathub.org/apps/com.gryt.Chat) · [AUR](https://aur.archlinux.org/packages/gryt-chat-bin) · [GitHub Releases](https://github.com/Gryt-chat/gryt/releases/latest) |
+| **Web** | [app.gryt.chat](https://app.gryt.chat) |
 
 <Tabs items={["Windows", "macOS", "Linux"]}>
 <Tab value="Windows">
@@ -53,35 +60,71 @@ Drag **Gryt Chat.app** from Applications to the Trash.
 </Tab>
 <Tab value="Linux">
 
-### AppImage (all distros)
+### Snap Store (recommended)
 
-Download **Gryt-Chat-x.x.x.AppImage** from the [releases page](https://github.com/Gryt-chat/gryt/releases).
+Install from the [Snap Store](https://snapcraft.io/gryt-chat):
 
 ```bash
-chmod +x Gryt-Chat-*.AppImage
-./Gryt-Chat-*.AppImage
+sudo snap install gryt-chat
 ```
 
-AppImages are self-contained and run on most distributions without installation. To integrate with your desktop environment (application menu, file associations), use [AppImageLauncher](https://github.com/TheAssassin/AppImageLauncher) or create a `.desktop` file manually.
+Auto-updates are handled by snapd.
+
+### Flatpak (Flathub)
+
+Install from [Flathub](https://flathub.org/apps/com.gryt.Chat):
+
+```bash
+flatpak install flathub com.gryt.Chat
+flatpak run com.gryt.Chat
+```
+
+### Arch Linux (AUR)
+
+Install [`gryt-chat-bin`](https://aur.archlinux.org/packages/gryt-chat-bin) with your preferred AUR helper:
+
+```bash
+yay -S gryt-chat-bin
+```
 
 ### .deb package (Debian / Ubuntu)
 
-Download **gryt-chat_x.x.x_amd64.deb** from the [releases page](https://github.com/Gryt-chat/gryt/releases).
+Download **Gryt-Chat-x.x.x-linux-amd64.deb** from the [releases page](https://github.com/Gryt-chat/gryt/releases/latest).
 
 ```bash
-sudo dpkg -i gryt-chat_*.deb
+sudo dpkg -i Gryt-Chat-*-linux-amd64.deb
 ```
 
 Launch from your application menu or run `gryt-chat` from the terminal.
 
+### AppImage (all distros)
+
+Download **Gryt-Chat-x.x.x-linux-x86_64.AppImage** from the [releases page](https://github.com/Gryt-chat/gryt/releases/latest).
+
+```bash
+chmod +x Gryt-Chat-*-linux-x86_64.AppImage
+./Gryt-Chat-*-linux-x86_64.AppImage
+```
+
+AppImages are self-contained and run on most distributions without installation. To integrate with your desktop environment (application menu, file associations), use [AppImageLauncher](https://github.com/TheAssassin/AppImageLauncher) or create a `.desktop` file manually.
+
 ### Uninstall
 
 ```bash
-# AppImage — just delete the file
-rm Gryt-Chat-*.AppImage
+# Snap
+sudo snap remove gryt-chat
+
+# Flatpak
+flatpak uninstall com.gryt.Chat
+
+# AUR
+sudo pacman -R gryt-chat-bin
 
 # .deb
 sudo apt remove gryt-chat
+
+# AppImage — just delete the file
+rm Gryt-Chat-*.AppImage
 ```
 
 </Tab>
