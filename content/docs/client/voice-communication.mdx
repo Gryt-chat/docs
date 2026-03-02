@@ -75,6 +75,17 @@ The voice architecture separates the **signaling server** (session management, m
 
 The desktop app uses OS-native per-process audio capture to exclude Gryt's own audio from screen share streams. On Windows this uses WASAPI process loopback exclusion; on macOS it uses ScreenCaptureKit's `excludesCurrentProcessAudio`. Other participants hear only your game or application audio, not the voices of people already in the call. See [Audio Processing — Native Capture](/docs/client/audio-processing#screen-share-audio--native-capture) for technical details.
 
+### Screen Share Quality and Gaming Mode
+
+Gaming mode (on by default) optimizes screen sharing for fast-moving content like games and video. It hides the mouse cursor from the stream, tells the encoder to prioritize framerate over resolution, and applies a 1.5x bitrate boost. Toggle it in the screen share dialog before starting a share.
+
+The **Advanced** panel in the screen share dialog gives you control over:
+
+- **Codec** — Auto (H.264), H.264, VP9, or AV1. Auto prefers H.264 for universal hardware encoding via NVENC (NVIDIA), Quick Sync (Intel), and AMF (AMD). AV1 offers better compression but requires newer GPUs (RTX 40+, Intel Arc, AMD RX 7000+) for hardware encode.
+- **Max bitrate** — Override the auto-estimated bitrate with a fixed value from 1 to 50 Mbps.
+
+For detailed tuning information, see [Performance Tuning — Screen share video quality](/docs/guide/troubleshooting).
+
 ### RNNoise Noise Reduction
 
 AI-powered noise suppression via an `AudioWorkletNode` running RNNoise compiled to WebAssembly. Processes 480-sample frames off the main thread with ~20 ms added latency. Toggle in **Settings → Audio → Noise Reduction (RNNoise)**.

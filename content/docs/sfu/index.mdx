@@ -10,7 +10,7 @@ The Gryt SFU (Selective Forwarding Unit) is a Go-based WebRTC media server built
 
 - **Selective forwarding**: Routes audio, video, and screen-share streams with no transcoding
 - **RTCP relay**: Relays receiver feedback (PLI, FIR, REMB) back to senders so their congestion controllers can adapt bitrate in real time
-- **VP9 codec preference**: Registers VP9 before VP8 in SDP offers for better screen-content coding
+- **Multi-codec support**: Registers H.264, VP9, VP8, and AV1 codecs. The client controls codec preference via `setCodecPreferences` — H.264 is the default for universal hardware encoding (NVENC, Quick Sync, AMF), with AV1 available for newer GPUs. The SFU forwards whichever codec is negotiated without transcoding
 - **Pion WebRTC v4**: ICE handling, STUN support, multi-IP NAT mapping, connection recovery
 - **Multi-network support**: Comma-separated `ICE_ADVERTISE_IP` for LAN + WAN setups — clients automatically select the fastest path
 - **Thread-safe**: Concurrent handling of multiple connections
@@ -86,7 +86,7 @@ The SFU uses raw WebSocket (not Socket.IO). All messages use a JSON envelope: `{
 
 ## Track lifecycle
 
-1. Client joins room — peer connection created with recvonly transceivers for audio, video, screen-share video, and screen-share audio
+1. Client joins room — peer connection created with recvonly transceivers for audio, video, screen-share video, and screen-share audio. Supported video codecs: H.264, VP9, VP8, AV1
 2. Client sends offer — SFU processes and creates answer
 3. Client adds tracks (audio, camera, screen share) — SFU forwards to other peers
 4. For each forwarded video track, receiver RTCP (PLI/REMB) is relayed back to the sender's peer connection

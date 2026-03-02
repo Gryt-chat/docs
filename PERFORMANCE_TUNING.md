@@ -53,13 +53,37 @@ These aren't universal; they're a good first pass:
 
 ## Screen share video quality
 
-Screen sharing uses several optimizations to keep fast-moving content smooth:
+### Gaming mode
 
-- **`contentHint = "motion"`**: Set on the captured video track to tell the encoder to prioritize framerate over sharpness. Without this, browsers default to `"detail"` mode which drops FPS to maintain resolution — fine for static text, bad for video or fast scrolling.
-- **`degradationPreference = "maintain-framerate"`**: Set on the RTP sender so WebRTC drops resolution rather than framerate when bandwidth is constrained.
-- **Bitrate scaling**: Base bitrates per resolution (e.g. 6 Mbps for 1080p @ 30 fps) scale linearly with framerate. These are applied via `RTCRtpSender.setParameters`.
-- **RTCP relay**: The SFU relays receiver RTCP feedback (REMB, PLI) back to the sender so the browser's congestion controller can adapt bitrate in real time. Without this the sender is blind to downstream conditions.
-- **VP9 preference**: The SFU registers VP9 before VP8 in SDP offers. VP9 has a dedicated screen-content coding mode that is significantly more efficient for screen sharing than VP8.
+Gaming mode is enabled by default and optimizes encoding for fast-moving content (games, video playback). When active it applies:
+
+- **`cursor: "never"`**: Hides the mouse cursor from the captured stream (Electron only), preventing the sharer's cursor from appearing over full-screen games that hide it.
+- **`contentHint = "motion"`**: Tells the encoder to prioritize framerate over sharpness. Without this, browsers default to `"detail"` mode which drops FPS to maintain resolution — fine for static text, bad for video or fast scrolling.
+- **`degradationPreference = "maintain-framerate"`**: WebRTC drops resolution rather than framerate when bandwidth is constrained.
+- **1.5x bitrate multiplier**: Auto-estimated bitrate is scaled up by 50 % (capped at 20 Mbps) to give the encoder more headroom for high-motion content.
+
+When gaming mode is off, the encoder uses `contentHint = "detail"` and `degradationPreference = "maintain-resolution"`, which is better for static presentations and text-heavy content.
+
+### Codec selection
+
+The client uses `RTCRtpTransceiver.setCodecPreferences` to control which video codec is negotiated for screen sharing. Available options (configurable in the screen share Advanced panel):
+
+| Codec | Default | Hardware encode | Notes |
+|-------|---------|-----------------|-------|
+| **H.264** | Yes (Auto) | NVENC (NVIDIA), Quick Sync (Intel), AMF (AMD) | Universal hardware encode — works on virtually all GPUs |
+| **VP9** | No | Limited | Good compression, screen-content coding mode, but rarely hardware-accelerated on consumer GPUs |
+| **AV1** | No | RTX 40+, Intel Arc, AMD RX 7000+ | Best compression efficiency; falls back to slow software encode on older hardware |
+
+The "Auto" setting prefers H.264 for the widest hardware encode compatibility. Users with newer GPUs can manually select AV1 for better compression at the same bitrate.
+
+### Bitrate control
+
+- **Auto mode** (default): Bitrate is estimated from the selected quality preset and FPS (e.g. 6 Mbps for 1080p @ 30 fps), scaling linearly with framerate. Gaming mode applies a 1.5x multiplier on top.
+- **Manual override**: Users can set a fixed max bitrate (1–50 Mbps) in the Advanced panel. When set, the gaming mode multiplier does not apply — the chosen value is used directly via `RTCRtpSender.setParameters`.
+
+### RTCP relay
+
+The SFU relays receiver RTCP feedback (REMB, PLI) back to the sender so the browser's congestion controller can adapt bitrate in real time. Without this the sender is blind to downstream conditions.
 
 ## Debug overlay metrics
 
