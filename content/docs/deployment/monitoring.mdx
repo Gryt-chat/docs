@@ -14,10 +14,20 @@ rest of the stack.
 ## Quick start
 
 The `docker-compose.yml` includes an optional **monitoring** profile.
-Everything is self-contained — no extra config files needed:
+Enable it to spin up Prometheus and Grafana alongside the rest of the stack:
 
 ```bash
 docker compose --profile monitoring up -d
+```
+
+If you downloaded only the compose file (as in the
+[Docker Compose quick start](/docs/deployment/docker-compose#quick-start)), you
+also need the monitoring config directory. Grab it with:
+
+```bash
+# Run from the same directory as your docker-compose.yml
+curl -L https://github.com/Gryt-chat/gryt/tarball/main \
+  | tar xz --strip-components=4 --include='*/ops/deploy/compose/monitoring'
 ```
 
 This starts two extra containers:
@@ -27,9 +37,9 @@ This starts two extra containers:
 | **Prometheus** | [http://localhost:9090](http://localhost:9090) | *(none)* |
 | **Grafana** | [http://localhost:3000](http://localhost:3000) | `admin` / `admin` |
 
-Grafana is pre-configured with Prometheus as its default datasource — no manual
-setup needed. Open Grafana and start building dashboards, or import community
-ones (see below).
+Grafana ships with a **Gryt Overview** dashboard as the home page — it covers
+all custom metrics from the server and SFU, plus process-level health for both
+services. No manual setup needed.
 
 ## Configuration
 
@@ -91,9 +101,26 @@ go_memstats_alloc_bytes{job="gryt-sfu"}
 nodejs_eventloop_lag_seconds{quantile="0.99"}
 ```
 
-## Recommended dashboards
+## Built-in dashboard
 
-Grafana has a large library of community dashboards you can import by ID:
+The **Gryt Overview** dashboard is provisioned automatically and set as the
+Grafana home page. It includes:
+
+| Row | Panels |
+|-----|--------|
+| **Overview** | Server / SFU up status, Socket.IO connections, SFU peers, rooms, media tracks, SFU WebSockets |
+| **HTTP** | Request rate by route, request rate by status, latency percentiles (P50 / P95 / P99), error rate (4xx / 5xx) |
+| **Server Process (Node.js)** | Memory (RSS, heap used, heap total), CPU usage, event loop lag |
+| **SFU Process (Go)** | Memory (RSS, heap alloc, heap in-use), CPU usage, goroutines |
+
+The dashboard JSON lives at `monitoring/grafana/provisioning/dashboards/gryt-overview.json`
+relative to the compose file. You can edit it or add more JSON files to the same
+directory — Grafana picks them up automatically.
+
+## Community dashboards
+
+Grafana has a large library of community dashboards you can import by ID for
+deeper runtime visibility:
 
 | Dashboard | Grafana ID | Covers |
 |-----------|-----------|--------|
