@@ -105,6 +105,12 @@ The SVC setting is configurable in the Advanced panel of the screen share dialog
 
 The SFU relays receiver RTCP feedback (REMB, PLI) back to the sender so the browser's congestion controller can adapt bitrate in real time. Without this the sender is blind to downstream conditions.
 
+## Data persistence (desktop app)
+
+The desktop app backs all `localStorage` data with a JSON file (`gryt-global.json`) in the Electron `userData` directory. On startup the file store is loaded and restored into `localStorage`; every subsequent `localStorage` write is automatically synced back to the file via IPC. This means auth tokens, theme settings, server tokens, and other preferences survive even if the browser storage is cleared.
+
+On first launch after upgrading to this version, a one-time migration copies all existing `localStorage` entries into the file store. The migration runs before React renders, so the app starts with all data intact. Web (non-Electron) clients continue to use `localStorage` directly.
+
 ## Debug overlay metrics
 
 Enable **Debug Settings → Show Microphone Debug Overlay** to see:
