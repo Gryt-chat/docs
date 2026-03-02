@@ -81,6 +81,26 @@ The "Auto" setting prefers H.264 for the widest hardware encode compatibility. U
 - **Auto mode** (default): Bitrate is estimated from the selected quality preset and FPS (e.g. 6 Mbps for 1080p @ 30 fps), scaling linearly with framerate. Gaming mode applies a 1.5x multiplier on top.
 - **Manual override**: Users can set a fixed max bitrate (1–50 Mbps) in the Advanced panel. When set, the gaming mode multiplier does not apply — the chosen value is used directly via `RTCRtpSender.setParameters`.
 
+### Scalable Video Coding (SVC)
+
+SVC lets the encoder produce temporal layers in a single stream. With L1T3 (the default for screen sharing), the encoder outputs three framerate tiers (T0 = 7.5fps, T0+T1 = 15fps, T0+T1+T2 = 30fps) in one RTP stream. The SFU parses the Dependency Descriptor (DD) RTP header extension on each packet to determine which temporal layer it belongs to, then selectively drops higher layers for bandwidth-constrained receivers.
+
+| Scalability mode | Layers | Framerate tiers | Use case |
+|------------------|--------|-----------------|----------|
+| **L1T1** | 1 | 30fps only | No SVC — all receivers get identical stream |
+| **L1T2** | 2 | 15fps / 30fps | Light adaptation |
+| **L1T3** | 3 | 7.5fps / 15fps / 30fps | Full temporal scalability (default) |
+
+The SFU auto-adapts each receiver's layer based on REMB feedback:
+
+- REMB < 1 Mbps → T0 only (7.5fps)
+- REMB < 3 Mbps → T0+T1 (15fps)
+- REMB >= 3 Mbps → all layers (30fps)
+
+Clients can also manually set the layer via the `set_layer` WebSocket event for a quality selector UI.
+
+The SVC setting is configurable in the Advanced panel of the screen share dialog. Hardware encoders (NVENC, Quick Sync, AMF) support temporal SVC natively for VP9/AV1 and H.264, so there is no measurable CPU impact on the client.
+
 ### RTCP relay
 
 The SFU relays receiver RTCP feedback (REMB, PLI) back to the sender so the browser's congestion controller can adapt bitrate in real time. Without this the sender is blind to downstream conditions.

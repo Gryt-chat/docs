@@ -9,7 +9,8 @@ The Gryt SFU (Selective Forwarding Unit) is a Go-based WebRTC media server built
 ## Features
 
 - **Selective forwarding**: Routes audio, video, and screen-share streams with no transcoding
-- **RTCP relay**: Relays receiver feedback (PLI, FIR, REMB) back to senders so their congestion controllers can adapt bitrate in real time
+- **SVC layer-aware forwarding**: Parses the Dependency Descriptor (DD) RTP header extension to extract temporal layer IDs, then selectively drops higher layers for bandwidth-constrained receivers. Falls back to blind relay for non-SVC streams
+- **RTCP relay + SVC adaptation**: Relays receiver feedback (PLI, FIR, REMB) back to senders, and uses REMB bitrate to auto-adapt each receiver's temporal layer subscription
 - **Multi-codec support**: Registers H.264, VP9, VP8, and AV1 codecs. The client controls codec preference via `setCodecPreferences` — H.264 is the default for universal hardware encoding (NVENC, Quick Sync, AMF), with AV1 available for newer GPUs. The SFU forwards whichever codec is negotiated without transcoding
 - **Pion WebRTC v4**: ICE handling, STUN support, multi-IP NAT mapping, connection recovery
 - **Multi-network support**: Comma-separated `ICE_ADVERTISE_IP` for LAN + WAN setups — clients automatically select the fastest path
@@ -25,6 +26,7 @@ sfu/
 ├── internal/
 │   ├── config/        # Environment-based configuration
 │   ├── metrics/       # Prometheus metrics
+│   ├── svc/           # SVC: DD header parser, per-receiver LayerForwarder
 │   ├── websocket/     # Thread-safe WebSocket wrapper + handler
 │   ├── webrtc/        # Peer connection management
 │   ├── track/         # Media track lifecycle
@@ -73,6 +75,7 @@ The SFU uses raw WebSocket (not Socket.IO). All messages use a JSON envelope: `{
 | `answer` | SDP answer string | WebRTC answer |
 | `candidate` | RTCIceCandidateInit JSON | ICE candidate |
 | `renegotiate` | — | Request renegotiation (e.g. to add tracks) |
+| `set_layer` | `{ track_id, max_temporal_layer }` | Set max temporal layer for a track (-1 = all, 0 = T0, 1 = T0+T1, 2 = all) |
 | `keep_alive` | `{ timestamp }` | Keep-alive ping (every 15s) |
 
 ### SFU to Client
@@ -88,9 +91,10 @@ The SFU uses raw WebSocket (not Socket.IO). All messages use a JSON envelope: `{
 
 1. Client joins room — peer connection created with recvonly transceivers for audio, video, screen-share video, and screen-share audio. Supported video codecs: H.264, VP9, VP8, AV1
 2. Client sends offer — SFU processes and creates answer
-3. Client adds tracks (audio, camera, screen share) — SFU forwards to other peers
-4. For each forwarded video track, receiver RTCP (PLI/REMB) is relayed back to the sender's peer connection
-5. Client leaves — tracks and connections cleaned up
+3. Client adds tracks (audio, camera, screen share) — SFU creates a LayerForwarder per track that parses the Dependency Descriptor header extension and fans out to per-receiver tracks
+4. For each forwarded video track, receiver RTCP (PLI/REMB) is relayed back to the sender and used to auto-adapt temporal layer subscriptions
+5. Clients can send `set_layer` to manually override their temporal layer for a track
+6. Client leaves — tracks, forwarders, and connections cleaned up
 
 ## HTTP endpoints
 

@@ -83,6 +83,7 @@ The **Advanced** panel in the screen share dialog gives you control over:
 
 - **Codec** — Auto (H.264), H.264, VP9, or AV1. Auto prefers H.264 for universal hardware encoding via NVENC (NVIDIA), Quick Sync (Intel), and AMF (AMD). AV1 offers better compression but requires newer GPUs (RTX 40+, Intel Arc, AMD RX 7000+) for hardware encode.
 - **Max bitrate** — Override the auto-estimated bitrate with a fixed value from 1 to 50 Mbps.
+- **SVC layers** — Scalable Video Coding temporal layers. L1T3 (default) enables 3 framerate tiers (7.5/15/30fps) so the SFU can send lower framerate to bandwidth-constrained receivers instead of degrading quality for everyone. L1T2 gives 2 tiers, and L1T1 disables SVC.
 
 For detailed tuning information, see [Performance Tuning — Screen share video quality](/docs/guide/troubleshooting).
 
