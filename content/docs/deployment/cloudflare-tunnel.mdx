@@ -4,12 +4,11 @@ description: Host Gryt behind Cloudflare Tunnel (HTTP) + direct UDP (WebRTC medi
 icon: Cloud
 ---
 
-This setup uses Cloudflare Tunnel for **HTTPS/WSS** (client, server, SFU websocket) while keeping WebRTC **media UDP** direct-to-host.
+This setup uses Cloudflare Tunnel for **HTTPS/WSS** (server, SFU websocket) while keeping WebRTC **media UDP** direct-to-host.
 
 ## What Cloudflare can and can’t proxy
 
 - **OK via Tunnel**:
-  - Client HTTP (static site)
   - Server HTTP + WebSocket (Socket.IO)
   - SFU websocket (HTTP upgraded to WSS at the edge)
 - **Not OK via Tunnel**:
@@ -47,7 +46,7 @@ Edit `ops/deploy/host/.env` (minimum):
 ```bash
 JWT_SECRET="replace-me" # openssl rand -base64 48
 SFU_PUBLIC_HOST="wss://sfu.example.com"
-CORS_ORIGIN="http://127.0.0.1:15738,https://app.gryt.chat,https://gryt.example.com"
+CORS_ORIGIN="http://127.0.0.1:15738,https://app.gryt.chat"
 ```
 
 ## Start
@@ -60,7 +59,6 @@ docker compose -f ops/deploy/host/compose.yml up -d --build
 
 Map hostnames to localhost origins:
 
-- `gryt.example.com` → `http://127.0.0.1:8080`
 - `api.gryt.example.com` → `http://127.0.0.1:5000` (WebSocket upgrade required)
 - `sfu.example.com` → `http://127.0.0.1:5005` (WebSocket upgrade required)
 
@@ -73,8 +71,6 @@ tunnel: <your-tunnel-id>
 credentials-file: /etc/cloudflared/<your-tunnel-id>.json
 
 ingress:
-  - hostname: gryt.example.com
-    service: http://127.0.0.1:8080
   - hostname: api.gryt.example.com
     service: http://127.0.0.1:5000
     originRequest:
@@ -106,7 +102,6 @@ Every hostname routed through the tunnel **must** have its DNS record set to **P
 
 | Hostname | Type | Content | Proxy status |
 |---|---|---|---|
-| `gryt.example.com` | CNAME | `<tunnel-id>.cfargotunnel.com` | **Proxied** (orange) |
 | `api.gryt.example.com` | CNAME | `<tunnel-id>.cfargotunnel.com` | **Proxied** (orange) |
 | `sfu.example.com` | CNAME | `<tunnel-id>.cfargotunnel.com` | **Proxied** (orange) |
 
