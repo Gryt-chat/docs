@@ -33,14 +33,21 @@ LAN discovery only works in the desktop (Electron) app. Browsers cannot perform 
 
 #### How mDNS works
 
-- The server uses the `bonjour-service` library to publish a `_gryt._tcp` service on startup
-- The service includes the server name and port as metadata
+- The server publishes a `_gryt._tcp` mDNS service on startup
+- On Linux with avahi-daemon (default on Debian/Ubuntu), it writes a service file to `/etc/avahi/services/` — this is the most reliable method
+- If avahi is not available, it falls back to the `bonjour-service` npm package
 - The Electron client browses for `_gryt._tcp` services and displays any it finds
-- When a server shuts down, it unpublishes the service and the client removes it from the list
+- When a server shuts down, it removes the service
 
 #### Server configuration
 
 mDNS advertisement uses the existing `SERVER_NAME` environment variable. The name shown during discovery is whatever you set as `SERVER_NAME` in your server config.
+
+For Docker deployments with avahi (recommended):
+
+1. Ensure `avahi-daemon` is running on the host
+2. Run `chmod o+w /etc/avahi/services` on the host (one-time)
+3. The compose file mounts `/etc/avahi/services` into the container automatically
 
 ### LAN open join (skip invite codes on LAN)
 
