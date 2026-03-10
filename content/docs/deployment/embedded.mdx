@@ -1,0 +1,94 @@
+---
+title: Embedded Server (Desktop App)
+description: Host a Gryt server directly from the desktop app — one click, all platforms
+icon: Monitor
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+The Gryt desktop app can host a full server locally. No separate install, no Docker, no command line — just click **Create server** and go.
+
+## How it works
+
+The desktop app bundles the same Gryt signaling server and SFU media server used in Docker and standalone deployments. When you create an embedded server, the app:
+
+1. Generates a configuration with auto-detected free ports and a random JWT secret
+2. Spawns the SFU (Go binary) and signaling server (Node.js) as child processes
+3. Stores all data (SQLite database, uploads) in your app data directory
+4. Optionally advertises the server via mDNS for automatic LAN discovery
+
+## Creating a server
+
+1. Open the Gryt desktop app
+2. Click **Add Server** (the `+` button in the server sidebar)
+3. Under **Host a server**, enter a server name
+4. Toggle **Discoverable on LAN** if you want other Gryt users on your network to find it automatically
+5. Click **Create server**
+6. Once the status shows **Running**, click **Connect**
+
+The server is now live and you're connected to it.
+
+## Managing your server
+
+After creation, the embedded server panel shows:
+
+- **Status** — Running (green) or Stopped (gray)
+- **Address** — `127.0.0.1:<port>` and the LAN address if discoverable
+- **Start / Stop** — manually control the server
+- **Start automatically with app** — enable to resume hosting every time you launch Gryt
+- **Connect** — join your server with one click
+
+## LAN party mode
+
+With mDNS discovery enabled:
+
+1. **You** create a server with **Discoverable on LAN** enabled
+2. **Friends** open Gryt — your server appears automatically under **Local servers** in the Add Server dialog
+3. They click **Connect** — joined instantly, no invite codes or URLs needed
+
+This works on the same Wi-Fi or wired LAN. No internet, port forwarding, or configuration required.
+
+<Callout type="info">
+For the best LAN party experience, also enable **Allow anyone on LAN to join** in your server settings after connecting. This lets LAN users skip invite codes entirely.
+</Callout>
+
+## Data storage
+
+All server data is stored in your operating system's app data directory:
+
+| Platform | Path |
+|----------|------|
+| Windows | `%APPDATA%\gryt-chat\gryt-server\` |
+| macOS | `~/Library/Application Support/gryt-chat/gryt-server/` |
+| Linux | `~/.config/gryt-chat/gryt-server/` |
+
+Inside this directory:
+
+- `config.env` — server configuration (ports, JWT secret, settings)
+- `data/` — SQLite database and filesystem uploads
+
+## Remote access
+
+By default, the embedded server listens on `0.0.0.0`, making it accessible from other devices on your LAN. The LAN IP is shown in the server panel.
+
+For internet access, you would need port forwarding and TLS. For production internet-facing deployments, consider [Docker Compose](/docs/deployment/docker-compose) or the [Windows standalone](/docs/deployment/windows) bundle instead.
+
+## Platform support
+
+The embedded server works on all platforms supported by the Gryt desktop app:
+
+- **Windows** (x64) — may prompt for Windows Firewall access for incoming connections
+- **macOS** (Apple Silicon + Intel) — SFU binary is code-signed and notarized with the app
+- **Linux** (x64) — works in AppImage, deb, and Snap packages
+
+<Callout type="warn">
+On Snap, the `network-bind` plug is required for the server to accept incoming connections. This is included in the Gryt Snap package.
+</Callout>
+
+## Troubleshooting
+
+**Server won't start**: Check if ports 5000 and 5005 are already in use. The app auto-detects free ports, but if that fails, stop any conflicting services.
+
+**Other users can't connect**: Ensure your firewall allows incoming TCP connections on the server port and UDP on the SFU port range (10000–10019).
+
+**mDNS discovery not working**: Both devices must be on the same LAN subnet. Some corporate networks block mDNS traffic.

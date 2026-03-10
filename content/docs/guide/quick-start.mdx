@@ -11,9 +11,24 @@ import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
 Want to try Gryt without setting anything up? Visit [app.gryt.chat](https://app.gryt.chat) to use the web client instantly. Note: some desktop-only features like global push-to-talk are not available in the browser.
 </Callout>
 
+## Desktop App (easiest)
+
+The simplest way to host a Gryt server — directly from the desktop app, no separate software needed.
+
+1. Download and install the [Gryt desktop app](https://github.com/Gryt-chat/gryt/releases)
+2. Open the app and click **Add Server**
+3. Under **Host a server**, enter a name and click **Create server**
+4. The server starts automatically — you're connected
+
+Other users on your LAN will see your server automatically via mDNS discovery. Toggle **Discoverable on LAN** to control this. Enable **Start automatically with app** to resume hosting on every launch.
+
+<Callout type="info">
+The embedded server is ideal for LAN parties, local teams, and quick hosting. For internet-facing production deployments, use Docker Compose or Windows standalone instead.
+</Callout>
+
 ## Docker Compose (recommended)
 
-The fastest way to run Gryt. Pre-built images from GitHub Container Registry — no cloning needed.
+The fastest way to run Gryt on a server. Pre-built images from GitHub Container Registry — no cloning needed.
 
 <Tabs items={["curl", "wget"]}>
 <Tab value="curl">

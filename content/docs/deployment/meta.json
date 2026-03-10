@@ -4,6 +4,7 @@
   "icon": "Cloud",
   "pages": [
     "index",
+    "embedded",
     "docker-compose",
     "windows",
     "cloudflare-tunnel",

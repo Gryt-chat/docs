@@ -27,6 +27,7 @@ Have a feature you'd like to see? Check the [feature requests](/docs/guide/featu
 - ✅ eSports mode (low-latency audio visualization)
 - ✅ Mute / deafen (server-synchronized)
 - ✅ Voice activity detection and speaking indicators
+- ✅ Voice state grace period (transient disconnects don't drop you from the channel)
 - ✅ Device hot-swapping
 - ✅ Loopback monitoring
 - ✅ Configurable hotkeys (push-to-talk, disconnect)
@@ -42,12 +43,12 @@ Have a feature you'd like to see? Check the [feature requests](/docs/guide/featu
 ## Video and screen sharing
 
 - ✅ Camera support with device selection
-- ✅ Camera preview, mirroring, quality settings
+- ✅ Camera preview, mirroring, quality, FPS, and codec settings
 - ✅ Screen sharing (video + audio)
 - ✅ Screen share audio isolation (excludes Gryt voices on Windows/macOS desktop)
 - ✅ Per-application audio capture (capture only a specific app's audio on Windows)
-- ✅ Screen quality presets (native, 1080p, 720p, 480p)
-- ✅ FPS settings (15, 30, 60)
+- ✅ Screen quality presets (native, 4K, 1440p, 1080p, 720p, 480p)
+- ✅ FPS settings (30, 60, 90, 120 — experimental: 144, 165, 240)
 - ✅ Focused video view and popout
 - ✅ Popout video with volume control
 - ✅ Drag-and-drop video grid
@@ -56,6 +57,9 @@ Have a feature you'd like to see? Check the [feature requests](/docs/guide/featu
 - ✅ Custom max bitrate control
 - ✅ Advanced screen share settings (codec, bitrate, degradation preference)
 - ✅ SVC temporal scalability (L1T1/L1T2/L1T3 with per-receiver layer-aware forwarding)
+- ✅ Native DXGI screen capture (bypasses Electron IPC, direct WebSocket transport)
+- ✅ Hardware video encoding (H.264 / HEVC via NVENC, AMF, QuickSync — zero-CPU-copy GPU pipeline)
+- ✅ Insertable streams (injects pre-encoded H.264 directly into WebRTC, skipping decode→re-encode)
 - 📋 Virtual backgrounds (blur / image replacement)
 - 📋 Go-live / stream to channel
 - 📋 Video layout options (gallery, spotlight, sidebar)
@@ -100,7 +104,7 @@ Have a feature you'd like to see? Check the [feature requests](/docs/guide/featu
 - ✅ Channel creation, editing, deletion
 - ✅ Voice channel text chat (optional)
 - ✅ Server settings (name, description, icon)
-- ✅ Invite system (single-use, multi-use, expiration, revocation)
+- ✅ Invite system (single-use, multi-use, expiration, revocation, custom invite codes)
 - ✅ Invite link previews (server icon, name, and description on invite pages)
 - ✅ Roles (owner, admin, mod, member)
 - ✅ User identity replacement (owner can migrate a user's data to a new Gryt ID)
@@ -113,6 +117,8 @@ Have a feature you'd like to see? Check the [feature requests](/docs/guide/featu
 - ✅ Welcome screen / onboarding flow
 - ✅ LAN server discovery (mDNS, desktop app only)
 - ✅ LAN open join (skip invite codes for LAN clients — ideal for LAN parties)
+- ✅ Embedded server (host a server directly from the desktop app — one-click create, auto-start, LAN party mode)
+- ✅ Webhooks
 - 📋 Channel categories / folders
 - 📋 Per-channel permissions / role overrides
 - 📋 Forum channels
@@ -120,7 +126,6 @@ Have a feature you'd like to see? Check the [feature requests](/docs/guide/featu
 - 📋 Server templates
 - 📋 Server discovery / browser
 - 📋 Auto-moderation rules
-- 📋 Webhooks
 - 📋 Events (scheduled events with name, description, date/time, and location)
 
 ## Direct messages and social
@@ -172,7 +177,7 @@ Have a feature you'd like to see? Check the [feature requests](/docs/guide/featu
 
 - ✅ Web client
 - ✅ Desktop app (Electron — Linux, macOS, Windows)
-- ✅ Auto-updates (Electron, all platforms)
+- ✅ Auto-updates (Electron, all platforms, with update availability indicator)
 - ✅ Persistent file-backed storage (settings, auth tokens, and theme survive across restarts)
 - ✅ Linux packaging (AppImage, deb, Snap Store, AUR)
 - 🔨 Linux packaging (Flatpak / Flathub)
@@ -198,6 +203,7 @@ Have a feature you'd like to see? Check the [feature requests](/docs/guide/featu
 - ✅ Docker Compose deployment
 - ✅ Kubernetes / Helm charts
 - ✅ Windows self-hosted server (standalone .exe bundle, no Docker required)
+- ✅ Embedded server in desktop app (host from the client on Windows, macOS, and Linux — no separate install)
 - ✅ Cloudflare Tunnel support
 - ✅ S3-compatible storage (AWS S3, MinIO, Cloudflare R2)
 - ✅ SQLite database

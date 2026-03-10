@@ -11,6 +11,11 @@ import { Card, Cards } from 'fumadocs-ui/components/card';
 
 <Cards>
   <Card
+    title="Desktop App (Embedded Server)"
+    description="Host a server directly from the Gryt desktop app — one click, no setup, all platforms."
+    href="/docs/deployment/embedded"
+  />
+  <Card
     title="Docker Compose"
     description="Fastest way to self-host — pre-built images, no cloning, one command."
     href="/docs/deployment/docker-compose"
@@ -46,6 +51,7 @@ These apply to **all** deployment methods.
 
 | Method | Best for | TLS | Needs open ports? |
 |--------|----------|-----|-------------------|
+| [Embedded (desktop app)](/docs/deployment/embedded) | LAN parties, quick hosting, zero setup | N/A (local) | No (LAN only) |
 | [Docker Compose](/docs/deployment/docker-compose) | Self-hosting on a VPS or bare metal | Add Caddy/Nginx | Yes (443 TCP + UDP) |
 | [Windows (no Docker)](/docs/deployment/windows) | LAN parties, local teams, Windows PCs | Manual / reverse proxy | Yes |
 | [Cloudflare Tunnel](/docs/deployment/cloudflare-tunnel) | Hosting behind NAT / no static IP | Automatic | UDP only |
