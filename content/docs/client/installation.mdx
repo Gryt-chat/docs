@@ -93,9 +93,15 @@ Launch from your application menu or run `gryt-chat` from the terminal.
 Download **Gryt-Chat-x.x.x-linux-x86_64.AppImage** from the [releases page](https://github.com/Gryt-chat/gryt/releases/latest).
 
 ```bash
-chmod +x Gryt-Chat-*-linux-x86_64.AppImage
-./Gryt-Chat-*-linux-x86_64.AppImage
+mkdir -p ~/Applications
+mv Gryt-Chat-*-linux-x86_64.AppImage ~/Applications/
+chmod +x ~/Applications/Gryt-Chat-*.AppImage
+~/Applications/Gryt-Chat-*.AppImage
 ```
+
+<Callout type="warn">
+Run the AppImage from a **permanent location** like `~/Applications/`. Running it from `~/Downloads/` or `/tmp/` will break the `gryt://` protocol handler needed for login, since the registered path won't persist between launches.
+</Callout>
 
 AppImages are self-contained and run on most distributions without installation. To integrate with your desktop environment (application menu, file associations), use [AppImageLauncher](https://github.com/TheAssassin/AppImageLauncher) or create a `.desktop` file manually.
 
