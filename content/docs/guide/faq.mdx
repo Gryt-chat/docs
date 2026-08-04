@@ -89,9 +89,9 @@ The repo includes a local Keycloak setup for development (`auth/docker-compose.k
 
 ### Is the security-critical code written by AI?
 
-No. The SFU, the authentication and identity code, the client's key handling, the image worker, and the data layer are written by hand. Documentation, the website, most of the interface, and dev tooling may be AI-assisted.
+AI may be involved, but it never merges unread. The SFU, the authentication and identity code, the client's key handling, the image worker and the data layer can only change through a pull request that gets reviewed line by line — those paths take no direct commits.
 
-Commits made with AI assistance keep their `Co-Authored-By` trailer, so you can verify this in the git history. See the [AI policy](/docs/guide/ai) for the exact paths and the rules for contributors.
+Commits made with AI assistance keep their `Co-Authored-By` trailer, and the review-required paths have public PR history as well, so you can verify both in the git history. See the [AI policy](/docs/guide/ai) for the exact paths and the rules for contributors.
 
 ## Authentication
 

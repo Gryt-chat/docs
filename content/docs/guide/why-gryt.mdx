@@ -83,9 +83,9 @@ No. Servers verify identity certificates by fetching a public key from the Ident
 
 ### Is Gryt written by AI?
 
-Not the parts that matter. The SFU, the authentication and identity code, the client's key handling, and anything that parses untrusted input are written by hand. Documentation, the website, most of the interface, and dev tooling may be AI-assisted.
+AI is used, but nothing security-relevant merges without being read line by line. The SFU, the authentication and identity code, the client's key handling, the image worker and the data layer can only change through a pull request that Sivert reviews in full — no direct commits. Documentation, the website, the interface and tooling get normal review.
 
-Every commit that had AI assistance keeps its `Co-Authored-By` trailer, so you can check this yourself rather than take it on trust. The [AI policy](/docs/guide/ai) has the exact paths.
+Every commit that had AI assistance keeps its `Co-Authored-By` trailer, and the review-required areas have PR history on top of that, so you can check this yourself rather than take it on trust. The [AI policy](/docs/guide/ai) has the exact paths, and is honest about the limits of a one-person review process.
 
 ## Further reading
 

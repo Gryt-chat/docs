@@ -6,19 +6,19 @@ icon: PenTool
 
 ## The short version
 
-Gryt is built by one person, so some AI assistance is the difference between shipping and not shipping. It also means there's nobody around to catch my mistakes, so I'd rather write the rule down than decide case by case at midnight.
+Gryt is built by one person, so some AI assistance is the difference between shipping and not shipping. It also means there's nobody else to catch my mistakes, so the rule has to be about what gets reviewed rather than about what gets typed.
 
 The rule:
 
-- **Gryt's foundation is hand-written.** The SFU, the authentication and identity code, and anything that parses untrusted input. I write all of it by hand and intend to keep doing that.
-- **The tools built on top of it may be AI-assisted.** Documentation, the marketing site, interface code, dev tooling.
-- **Anything that can affect security is reviewed by hand before it's published**, whichever category it came from.
+- **AI may be used anywhere in Gryt**, including the code that matters most.
+- **Code that can affect your security never merges without me reading it line by line.** Those areas can't be committed directly — they go through a pull request, and I review the whole diff before it lands.
+- **Everything else** — docs, the site, interface code, tooling — is reviewed like any normal change.
 
-AI is not used to change core functionality.
+Nothing security-relevant reaches you unread. That's the actual promise.
 
-## Never AI-generated
+## Review-required areas
 
-Everything in these areas is written by hand:
+Changes here always go through a pull request, and I read every line before merging. No direct pushes, no exceptions for small changes.
 
 | Area | Path | Why |
 |------|------|-----|
@@ -29,61 +29,65 @@ Everything in these areas is written by hand:
 | Image processing | `packages/image-worker` | Decodes untrusted uploads. Image parsing has a long history of memory-safety bugs. |
 | Server data layer | `packages/server/src/db`, `src/storage` | Persistence and object storage. |
 
-The image worker probably looks out of place on that list. It compresses avatars and generates thumbnails, which isn't high-stakes work. But it takes a file someone else uploaded and hands it to a decoder, so it handles untrusted input, and I treat it as core.
+The image worker probably looks out of place. It compresses avatars and generates thumbnails, which isn't high-stakes work. But it takes a file someone else uploaded and hands it to a decoder, so it handles untrusted input and I treat it like the rest.
 
-## May be AI-assisted
+## Normal review
 
 - **Documentation** — including this page
 - **The marketing site and blog** — `packages/site`
-- **Interface and presentation code** — components, styling, layout in `packages/client`, but not the auth files listed above
+- **Interface and presentation code** — components, styling, layout in `packages/client`
 - **Dev tooling and ops scripts** — `ops/`, build scripts, CI configuration
 - **Tests, type definitions, and refactors that don't change behaviour**
 
-The split comes down to how much damage a mistake can do. A wrong paragraph in the docs means someone gets confused and opens an issue. A wrong certificate check means someone gets impersonated.
+The difference is how much damage a mistake does. A wrong paragraph in the docs means someone gets confused and opens an issue. A wrong certificate check means someone gets impersonated. Both get reviewed; only one gets read line by line with that in mind.
 
-<Callout type="info">
-Interface code is on this list, but the client's authentication files are not. `identity-keys.ts`, `identity-certificate.ts`, `keycloak.ts`, `electron-auth.ts` and `account-api.ts` live inside the client, and they're hand-written like the rest of the foundation.
+## Why this changed
+
+This policy originally said the review-required areas were hand-written only, with no AI involvement at all. That rule was too blunt, and it broke in a way that made the problem obvious: adding a CI workflow file to the SFU repository was forbidden, because the rule covered the whole repository rather than the code that actually matters. A YAML file that pings a task tracker is not a threat to anyone's security.
+
+The thing worth promising was never "no model touched this." It's "nobody ships security-relevant code to you without a human reading it first." That's what this version says, and it's a rule I can actually hold to.
+
+<Callout type="warn">
+Be clear about what this is worth: I am the only maintainer. Those repositories require an approving review before merge, but I am also the administrator and can override that. So this is not an independent gate — it's my own review discipline, made visible. Judge it on the public record below, not on my say-so.
 </Callout>
 
 ## What this policy is not about
 
 Gryt ships **RNNoise**, a neural network that removes background noise from your microphone. It runs locally on your device and never sends audio anywhere.
 
-That's a different thing from what this page covers. This policy is about who writes Gryt's code, not about which algorithms the code uses. RNNoise is a feature, and the integration around it is hand-written like the rest of the client's audio pipeline.
-
-So "AI is not used to change core functionality" means no model writes the SFU or the auth code. It doesn't mean Gryt refuses to ship useful machine learning where it helps.
+This policy is about who writes and reviews Gryt's code, not about which algorithms the code uses. RNNoise is a feature, and the code around it is reviewed like the rest of the client.
 
 ## How to verify this
 
-Every commit that had AI assistance carries a `Co-Authored-By` trailer naming the model, so you can check this rather than take my word for it:
+Every commit that had AI assistance carries a `Co-Authored-By` trailer naming the model, so you can see exactly where AI was involved:
 
 ```bash
 git log --format='%H %s%n%(trailers:key=Co-Authored-By)'
 ```
 
-If you find that trailer on a commit touching one of the paths in the table above, that's a mistake on my part, and I'd like to know. Open an issue.
+For the review-required areas there's a second trail: every change arrives as a pull request, so you can read the diff, the review and the discussion on GitHub. If you find a direct commit to one of those paths that never went through a PR, that's me breaking my own rule. Open an issue.
 
 ## For contributors
 
-The same rules apply to contributions, with one addition: say so.
+The same rules apply, with one addition: say so.
 
 **You must:**
 
 - Tick the AI-assisted box in the pull request template if any part of your patch was AI-generated or AI-assisted
-- Keep AI out of the paths listed in the table above
+- Expect a slower, closer review if your patch touches a review-required area
 
 **What happens then:**
 
-- Non-core AI-assisted contributions get reviewed normally
-- Contributions to core or security-relevant paths are expected to be hand-written. If an AI-assisted patch touches them, I'll either ask you to rewrite it or rewrite it myself before it lands
-- Undisclosed AI-generated code in a core path is grounds for closing the PR
+- Normal-tier contributions get reviewed normally
+- Review-required contributions get read line by line, and I'll ask questions or rewrite parts before merging
+- Undisclosed AI-generated code in a review-required area is grounds for closing the PR
 
 This isn't meant to make contributing feel adversarial. Disclosure just tells me how closely to read.
 
 ## This policy can change
 
-Gryt is still in early development and my thinking on this will probably shift as the tooling does. The principle underneath it won't: the parts of Gryt that can hurt you if they're wrong are written by a person who understands them.
+It already has once. Gryt is in early development and my thinking will keep shifting as the tooling does. The principle underneath won't: the parts of Gryt that can hurt you if they're wrong get read by a human who understands them, before they ship.
 
-If the policy changes, it changes here, in a commit you can read.
+When the policy changes, it changes here, in a commit you can read.
 
 Questions or concerns — [sivert@gryt.chat](mailto:sivert@gryt.chat) or [Discord](https://discord.gg/Q3JKUGsnHE).

@@ -82,9 +82,9 @@ Quick steps to add a blog post:
 
 ## AI-assisted contributions
 
-You may use AI assistance on documentation, the site, interface code, and tooling — but you have to say so. Tick the AI-assisted box in the pull request template if any part of your patch was AI-generated.
+You may use AI assistance anywhere in Gryt — but you have to say so. Tick the AI-assisted box in the pull request template if any part of your patch was AI-generated.
 
-Gryt's core is different. The SFU, authentication and identity code, the image worker, and the data layer are hand-written, and contributions to them are expected to be too. See the [AI policy](/docs/guide/ai) for the full list of paths and the reasoning.
+Some areas are audited more critically than others. The SFU, authentication and identity code, the client's key handling, the image worker and the data layer are read line by line before anything merges, whoever wrote them. Expect a slower review there, and questions about anything that changes behaviour. See the [AI policy](/docs/guide/ai) for the full list of paths and the reasoning.
 
 ## Pull request checklist
 
@@ -92,7 +92,7 @@ Gryt's core is different. The SFU, authentication and identity code, the image w
 - Code is linted (`yarn lint`, `go fmt ./...`)
 - Documentation is updated if needed
 - No breaking changes (or clearly marked)
-- AI-assisted code is disclosed, and stays out of core paths (see the [AI policy](/docs/guide/ai))
+- AI-assisted code is disclosed (see the [AI policy](/docs/guide/ai))
 
 ## License
 
