@@ -87,6 +87,12 @@ A new keypair is generated automatically on your next sign-in from another devic
 
 The repo includes a local Keycloak setup for development (`auth/docker-compose.keycloak.yml`). Full self-hosted auth documentation is planned. The Identity Service and Keycloak can be self-hosted alongside your servers.
 
+### Is the security-critical code written by AI?
+
+No. The SFU, the authentication and identity code, the client's key handling, the image worker, and the data layer are written by hand. Documentation, the website, most of the interface, and dev tooling may be AI-assisted.
+
+Commits made with AI assistance keep their `Co-Authored-By` trailer, so you can verify this in the git history. See the [AI policy](/docs/guide/ai) for the exact paths and the rules for contributors.
+
 ## Authentication
 
 ### Do I need to set up authentication?

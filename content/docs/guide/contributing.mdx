@@ -80,12 +80,19 @@ Quick steps to add a blog post:
 2. Place images in `packages/site/public/` and reference them as `![alt](/filename.png)`
 3. Run `npm run dev` in `packages/site` to preview
 
+## AI-assisted contributions
+
+You may use AI assistance on documentation, the site, interface code, and tooling — but you have to say so. Tick the AI-assisted box in the pull request template if any part of your patch was AI-generated.
+
+Gryt's core is different. The SFU, authentication and identity code, the image worker, and the data layer are hand-written, and contributions to them are expected to be too. See the [AI policy](/docs/guide/ai) for the full list of paths and the reasoning.
+
 ## Pull request checklist
 
 - Tests pass (`yarn test`, `go test ./...`)
 - Code is linted (`yarn lint`, `go fmt ./...`)
 - Documentation is updated if needed
 - No breaking changes (or clearly marked)
+- AI-assisted code is disclosed, and stays out of core paths (see the [AI policy](/docs/guide/ai))
 
 ## License
 

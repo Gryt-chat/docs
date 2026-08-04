@@ -81,6 +81,12 @@ If you run your own Gryt server, your community's server data (messages, uploads
 
 No. Servers verify identity certificates by fetching a public key from the Identity Service's JWKS endpoint. There is no central directory, no approval process, no "nobody knows my server exists" problem.
 
+### Is Gryt written by AI?
+
+Not the parts that matter. The SFU, the authentication and identity code, the client's key handling, and anything that parses untrusted input are written by hand. Documentation, the website, most of the interface, and dev tooling may be AI-assisted.
+
+Every commit that had AI assistance keeps its `Co-Authored-By` trailer, so you can check this yourself rather than take it on trust. The [AI policy](/docs/guide/ai) has the exact paths.
+
 ## Further reading
 
 - [Security](/docs/guide/security)
@@ -88,4 +94,5 @@ No. Servers verify identity certificates by fetching a public key from the Ident
 - [Quick Start](/docs/guide/quick-start)
 - [Docker Compose deployment](/docs/deployment/docker-compose)
 - [Configuration](/docs/guide/configuration)
+- [AI policy](/docs/guide/ai)
 - [Licensing](/docs/guide/licensing)
