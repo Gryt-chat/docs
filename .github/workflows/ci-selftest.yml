@@ -1,0 +1,42 @@
+name: CI self-test
+
+# Fires the Discord #ci alert path on demand, so it can be proven without
+# waiting for something to genuinely break. An alert nobody has ever seen fire
+# is not yet an alert — if the webhook URL is wrong, the notifier logs a warning
+# and still reports green, so the failure is silent exactly when it matters.
+#
+# Run it from the Actions tab:
+#   outcome: fail -> red embed in #ci
+#   outcome: pass -> green "green again" embed, since the previous run was red
+#
+# Run fail then pass to exercise both messages. It does nothing else, touches
+# nothing, and is safe to run at any time.
+
+on:
+  workflow_dispatch:
+    inputs:
+      outcome:
+        description: Whether this run should fail or pass
+        required: true
+        type: choice
+        default: fail
+        options:
+          - fail
+          - pass
+
+jobs:
+  selftest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Exit with the requested outcome
+        env:
+          OUTCOME: ${{ inputs.outcome }}
+        run: |
+          set -euo pipefail
+
+          if [ "$OUTCOME" = "fail" ]; then
+            echo "Failing on purpose so the Discord #ci notifier has something to report."
+            exit 1
+          fi
+
+          echo "Passing on purpose. If the previous run failed, #ci gets a recovery message."
