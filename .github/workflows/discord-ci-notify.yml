@@ -11,6 +11,7 @@ name: Discord CI notification
 on:
   workflow_run:
     workflows:
+      - CI self-test
       - Discord release notification
       - Sync Vikunja task
     types: [completed]
