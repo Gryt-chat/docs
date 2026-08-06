@@ -50,6 +50,28 @@ curl http://localhost:5005/health    # SFU
 - Check CORS: `CORS_ORIGIN` in `server/.env` must include `http://127.0.0.1:15738` (desktop app), `https://app.gryt.chat` (web client), and any custom client origins
 - In production, ensure WSS (not WS) is used
 
+### "Server identity not recognised"
+
+The server answering at this address presented a different identity key than the one
+pinned when you first joined, so Gryt refused the connection before sending anything.
+
+Almost always this means the server was rebuilt or reinstalled without preserving its
+data directory, so it generated a new identity. Confirm by checking the server's startup
+log, which prints its key on boot:
+
+```bash
+docker compose logs server | grep "identity key"
+# ✔ Server identity key ready (85lc28xWNMb-UkGlcc_kDowxgGHaeLKSYI0jVaKyTq4)
+```
+
+Compare that to the fingerprint under **Settings → You → Server identities**. If it
+matches, unblock the server there and reconnect.
+
+If it does not match, something else is answering at that address. Do not unblock it.
+
+To avoid this when moving or rebuilding a server, keep `server-identity-key.json` from
+the server's `DATA_DIR` — see [Security](/docs/guide/security#authenticating-the-server).
+
 ### SFU connection fails
 
 ```bash
