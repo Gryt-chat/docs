@@ -84,6 +84,17 @@ The same rules apply, with one addition: say so.
 
 This isn't meant to make contributing feel adversarial. Disclosure just tells me how closely to read.
 
+## Tooling in the repo
+
+Two files exist for AI tools rather than for people:
+
+- **`CLAUDE.md`** — the working rules for the repository. Branch naming, which paths are review-required, how the submodules and releases fit together. It's also a reasonable summary if you're new here and not using a model at all.
+- **`.claude/launch.json`** — how to start the client, the marketing site and the docs locally, so a tool can run the project without guessing at commands or ports.
+
+Neither of them grants anything. The review rules above are held up by me reading pull requests, so a tool that ignores both files gets exactly the same review as one that follows them. They're there to stop an agent inventing its own way to run the project, which is usually where the odd behaviour starts.
+
+If you use different tooling, `ops/start_dev.sh` starts everything the same way, and `CLAUDE.md` is worth reading either way.
+
 ## This policy can change
 
 It already has once. Gryt is in early development and my thinking will keep shifting as the tooling does. The principle underneath won't: the parts of Gryt that can hurt you if they're wrong get read by a human who understands them, before they ship.
