@@ -161,8 +161,27 @@ read traffic that was already plaintext over `ws://`.
 Encrypting LAN traffic is a separate, larger question. Over TLS (`wss://`), which is what
 any internet-facing deployment should use, this does not apply.
 
-Deliberate key rotation is not supported yet: rolling a server's key today looks the same
-as an impersonation attempt and has to be unblocked by hand on each client.
+### Rotating a server's key
+
+A server can replace its identity key on purpose without every client treating it as an
+attack:
+
+```bash
+yarn admin:rotate-identity --yes
+```
+
+This generates a new keypair and leaves a **succession statement** signed by the outgoing
+key naming its replacement. The server offers that statement to clients alongside its
+proof, and a client pinned to the old key follows the change automatically. Statements
+last 180 days, so a client that was offline during the rotation still catches up, and a
+client several rotations behind follows the chain forward.
+
+<Callout type="warn">
+  **This is for planned rotation, not for recovering from a compromised key.** The
+  statement is signed by the key being retired, so anyone who already has that key can
+  sign one too. If you believe a key has leaked, rotate it and then have users verify the
+  new fingerprint out of band — the same caveat that applies to SSH's `known_hosts`.
+</Callout>
 
 ## Token refresh
 
