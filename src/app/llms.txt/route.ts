@@ -1,3 +1,4 @@
+import { BASE_URL, SITE_SUMMARY } from '@/lib/llms';
 import { source } from '@/lib/source';
 
 /**
@@ -12,18 +13,16 @@ import { source } from '@/lib/source';
  */
 export const dynamic = 'force-static';
 
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://docs.gryt.chat';
-
 export function GET(): Response {
   const pages = source.getPages();
 
   const lines = [
     '# Gryt',
     '',
-    'Gryt is an open-source WebRTC voice chat platform. Self-hostable, with a',
-    'desktop client, a signalling server and an SFU for media.',
+    SITE_SUMMARY,
     '',
-    `Full documentation as a single file: ${BASE_URL}/llms-full.txt`,
+    `Everything at once: ${BASE_URL}/llms-full.txt`,
+    'Single page: append .md to any docs URL below.',
     '',
     '## Documentation',
     '',
@@ -33,7 +32,7 @@ export function GET(): Response {
     const description = page.data.description
       ? `: ${page.data.description}`
       : '';
-    lines.push(`- [${page.data.title}](${BASE_URL}${page.url})${description}`);
+    lines.push(`- [${page.data.title}](${BASE_URL}${page.url}.md)${description}`);
   }
 
   return new Response(`${lines.join('\n')}\n`, {
