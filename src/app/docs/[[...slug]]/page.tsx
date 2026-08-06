@@ -53,6 +53,13 @@ export async function generateMetadata(
   return {
     title: page.data.title,
     description: page.data.description,
+    alternates: {
+      // Tells anything reading the HTML that a markdown copy exists, so it can
+      // fetch that instead of stripping tags out of the rendered page.
+      types: {
+        'text/markdown': `${page.url}.md`,
+      },
+    },
     openGraph: {
       title: page.data.title,
       description: page.data.description,
