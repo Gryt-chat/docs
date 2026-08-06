@@ -27,11 +27,39 @@ export function stripFrontmatter(raw: string): string {
   return match ? raw.slice(match[0].length) : raw;
 }
 
+/**
+ * Drop the MDX component imports.
+ *
+ * `import { Callout } from 'fumadocs-ui/components/callout'` is scaffolding for
+ * rendering the page. It tells a reader nothing about Gryt, and there are a
+ * couple of dozen of them across the docs.
+ *
+ * The components themselves are left alone — `<Callout type="info">` reads
+ * fine with the tag still around it, and unwrapping them risks mangling the
+ * text inside.
+ */
+function stripImports(raw: string): string {
+  return raw.replace(/^import\s+.*?from\s+['"][^'"]+['"];?\s*$/gm, '').trimStart();
+}
+
+/**
+ * Turn root-relative links into absolute ones.
+ *
+ * Links are authored as `/docs/guide/accessibility`, which the site resolves
+ * against its own origin. In llms-full.txt there is no origin to resolve
+ * against — the file could be read anywhere — so they become dead ends.
+ */
+function absolutiseLinks(raw: string): string {
+  return raw.replace(/\]\(\/(?!\/)/g, `](${BASE_URL}/`);
+}
+
 /** One page as markdown, with a heading and a link back to the real thing. */
 export async function pageToMarkdown(
   page: InferPageType<typeof source>,
 ): Promise<string> {
-  const body = stripFrontmatter(await page.data.getText('raw'));
+  const body = absolutiseLinks(
+    stripImports(stripFrontmatter(await page.data.getText('raw'))),
+  );
 
   return [
     `# ${page.data.title}`,
