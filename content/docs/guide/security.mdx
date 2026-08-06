@@ -47,6 +47,9 @@ sequenceDiagram
     participant S as Community Server
     participant ID as Identity Service
 
+    C->>S: server:identify (client nonce)
+    S-->>C: server:identity (proof signed by server key)
+    C->>C: Check proof against the pinned key
     C->>S: server:join (nickname, invite code)
     S-->>C: server:challenge (nonce, server host)
     C->>C: Sign assertion (aud=server host, nonce)
@@ -55,6 +58,9 @@ sequenceDiagram
     S->>S: Verify certificate, assertion, nonce
     S-->>C: server:joined (access token)
 ```
+
+The first two steps run on every connection, before anything else is sent — see
+[Authenticating the server](#authenticating-the-server).
 
 1. You request to join. The server responds with a **random nonce** and its hostname.
 2. Your client signs an **assertion** — a short-lived JWT containing the server's hostname, the nonce, and your user ID — using your private key.
@@ -85,6 +91,78 @@ Even if a server operator captures everything sent during the join flow:
 - **Cannot replay the assertion.** The nonce is single-use and expires in 60 seconds.
 - **Cannot forge new assertions.** They don't have your private key.
 - **Cannot use your certificate alone.** A certificate is not a bearer token — it only links a public key to an identity. Without the corresponding private key, it's useless.
+- **Cannot pose as a server you already trust.** Servers are pinned by their identity key, so answering at a known address with a different key gets refused before anything is sent. See [Authenticating the server](#authenticating-the-server).
+
+## Authenticating the server
+
+Everything above proves *you* to the server. The other direction matters too: how does
+your client know the server answering at an address is the one you joined before?
+
+On `app.gryt.chat` TLS answers that — a certificate for the domain proves the endpoint.
+On a LAN there is no TLS, no DNS authority, and mDNS advertisements are unauthenticated.
+Anyone on the network can advertise a service with any name and any server ID, so a
+server ID is a **discovery hint and never a credential**.
+
+### Trust on first use
+
+Each server generates a long-lived **ECDSA P-256 identity keypair** on first run and
+stores the private half in its data directory as `server-identity-key.json`. This is
+separate from the identity certificate authority, and separate from the server ID.
+
+The first time you join a server, your client records its public key — the same
+assumption SSH makes on a first connection. On every later connection, before your
+client sends a token, a certificate or anything else:
+
+1. The client sends a random nonce.
+2. The server signs it with its identity key.
+3. The client checks that signature against the key it pinned.
+
+Because the pin is filed under the **key** rather than the address, a server that moves
+to a new host or port is still recognised as the same server. That is what makes
+automatic recovery safe when a server changes port — recognising it by server ID alone
+would let anyone who read that ID over mDNS take its place.
+
+### When a server's identity changes
+
+If a different key answers at an address you have joined before, Gryt refuses the
+connection and records it. Nothing is sent to that server. You will see
+**"Server identity not recognised"**, and the server appears under
+**Settings → You → Server identities**, showing the key that was expected and the one
+that answered.
+
+This is deliberately a refusal rather than a warning you can click through. A dismissable
+warning trains people to dismiss it.
+
+The common innocent cause is that you rebuilt or reinstalled the server and its data
+directory was not preserved, so it generated a new identity. To confirm that is what
+happened, check the server's startup log — it prints its identity key on boot:
+
+```
+✔ Server identity key ready (85lc28xWNMb-UkGlcc_kDowxgGHaeLKSYI0jVaKyTq4)
+```
+
+If that matches the fingerprint shown in settings, unblock it there. Unblocking retires
+the old identity and pins the new one on the next connection.
+
+<Callout type="warn">
+  If you self-host, **back up `server-identity-key.json` along with your data**, and keep
+  it when moving a server to a new machine. Lose it and every client that has joined will
+  refuse to connect until each user unblocks the server by hand.
+</Callout>
+
+### What this does not cover
+
+Pinning stops anyone **forging or impersonating** a server: without the private key they
+cannot produce a valid proof. It does not stop someone **relaying** a genuine server's
+proof in order to sit in the middle of an unencrypted LAN connection. They still cannot
+authenticate as you — your assertion is bound to the address you dialled — but they can
+read traffic that was already plaintext over `ws://`.
+
+Encrypting LAN traffic is a separate, larger question. Over TLS (`wss://`), which is what
+any internet-facing deployment should use, this does not apply.
+
+Deliberate key rotation is not supported yet: rolling a server's key today looks the same
+as an impersonation attempt and has to be unblocked by hand on each client.
 
 ## Token refresh
 
@@ -119,6 +197,8 @@ and it works.
 | Single-use proofs | Random nonce with 60-second TTL |
 | No central server registry | Servers verify certificates via public JWKS |
 | Key compromise recovery | Certificates expire; new keypairs generated per device |
+| Server identity | Long-lived server keypair, pinned by the client on first join |
+| Safe recovery when a server moves | Pins are filed under the key, not the address |
 
 ## Further reading
 
