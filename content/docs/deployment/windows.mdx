@@ -18,13 +18,20 @@ For production deployments on a VPS or cloud server, see the [Docker Compose gui
 ## Prerequisites
 
 - **Windows 10 or later** (x64)
-- **[Node.js](https://nodejs.org/) 20 or later** — download the LTS installer from [nodejs.org](https://nodejs.org/)
+- **[Node.js](https://nodejs.org/) 22.13 or later** — download the LTS installer from [nodejs.org](https://nodejs.org/)
 
-Verify Node.js is installed:
+Verify Node.js is installed, and that it is new enough:
 
 ```bash
 node --version
 ```
+
+<Callout type="warn">
+  Gryt used to run on Node.js 20. It now uses the SQLite support built into
+  Node rather than a compiled module, and that is only available from **22.13**
+  onwards — 22.12 is not enough. If you are upgrading an existing server, update
+  Node.js before you start it, or it will refuse to start and tell you why.
+</Callout>
 
 ## Setup
 
@@ -76,16 +83,14 @@ See the [Configuration](/docs/guide/configuration) page for all available option
 
 Double-click **`start.bat`** or run it from a terminal.
 
-On first launch, it will download native modules for your Node.js version (this takes a few seconds and only happens once).
-
 ```
-First-time setup: building native modules for your Node.js version...
-Setup complete.
-
 Starting Gryt Image Worker...
 Starting Gryt SFU...
 Starting Gryt Server...
 ```
+
+Older versions did a one-time native module build on first launch. That step is
+gone — there is nothing left to compile, so the server starts straight away.
 
 </Step>
 <Step>
@@ -160,6 +165,13 @@ To back up your server, copy the entire `data/` directory.
 
 **"node" is not recognized**
 Node.js is not installed or not on your PATH. Download it from [nodejs.org](https://nodejs.org/) and restart your terminal.
+
+**"Your Node.js is too old" / `No such built-in module: node:sqlite`**
+Gryt needs Node.js 22.13 or later. Install the current LTS from
+[nodejs.org](https://nodejs.org/), close the terminal so the new version is
+picked up, and run `start.bat` again. If you see the raw `node:sqlite` message
+rather than Gryt's own, you are on an older release of the server as well —
+upgrading Node.js still fixes it.
 
 **Antivirus blocks `gryt_sfu.exe`**
 Some antivirus software flags unsigned executables. Add an exception for the Gryt server folder.
