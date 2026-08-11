@@ -1,0 +1,95 @@
+---
+title: Identity
+description: Who can join your server, and what that costs you
+icon: Fingerprint
+---
+
+Every join to a Gryt server is a challenge and a signature. The server sends a nonce, the client signs it with a private key that never leaves the device, and the server checks the signature against a certificate that says which key belongs to whom.
+
+That part is the same however somebody joins. What differs is **who vouches for the key**.
+
+## The two kinds of identity
+
+| | Account | Local |
+|---|---|---|
+| Vouched for by | `id.gryt.chat`, after Keycloak has authenticated somebody | Nobody — the key vouches for itself |
+| Identity is | a Gryt account | the key |
+| Same on every server | yes | no, a separate key per server |
+| Survives losing the device | yes, sign in again | only if the key was saved to a file |
+| A ban holds | until they make a new account | until they make a new key |
+
+An **account** is a durable identity. The `sub` in the certificate is a Keycloak user, so it is the same person on every Gryt server, and losing a device costs nothing — sign in again and the CA certifies a fresh key.
+
+A **local identity** is a keypair on a device and nothing else. There is no sign-up, no email, and no way for anyone including us to connect it to a person. The client generates a separate key per server, so two servers cannot tell they are talking to the same person.
+
+## Choosing what your server accepts
+
+```bash
+# Accept only Gryt accounts (default)
+GRYT_IDENTITY_TIERS=account
+
+# Also accept people with no account
+GRYT_IDENTITY_TIERS=account,local
+
+# Only local identities — nobody needs an account, and an account is no help
+GRYT_IDENTITY_TIERS=local
+```
+
+Anything unrecognised in the list is ignored, and an empty or unparseable value falls back to `account`. A server never becomes easier to get into because of a typo.
+
+Clients read this before joining. The Add Server dialog shows **"No account needed"** or **"Gryt account required"** as soon as it has fetched the server's `/info`, so nobody discovers your policy by being turned away.
+
+<Callout type="warn">
+  **Accepting local identities means bans are soft.** A ban is keyed on the
+  identity, and somebody who can generate a new keypair in two seconds can come
+  back as a new person. Nothing at this layer can prevent that — it is a
+  property of not requiring an account, not a gap in the implementation.
+
+  Be aware that account bans are softer than they look too. Gryt account
+  registration is open, so an account ban costs an attacker one email address.
+  The difference between the tiers is one of degree.
+</Callout>
+
+If bans that stick matter more to you than an easy front door, keep `account` and lean on invites.
+
+## Who gets in
+
+Which identities you accept is a separate question from how hard it is to get in with one. That is the **join policy**, set in **Server settings → Overview → Who can join**:
+
+- **Invite** (default) — everybody who is not already a member needs an invite code, or a private IP if `lan_open` is set
+- **Open** — anyone the server accepts can join without an invite
+
+The two settings compose, which is deliberate. "Accounts walk in, guests need an invite" is not a special case, it is `GRYT_IDENTITY_TIERS=account,local` with the join policy left at invite — the account holder and the guest both need a code, and neither needs the other's tier.
+
+On an open server the first person to arrive still becomes the owner, exactly as on an invite-only one.
+
+## If you are running a server for people in the same room
+
+The desktop app can host a server for you, and it accepts local identities out of the box. Somebody on your network can join from a browser with no account, no sign-up and no round trip to Gryt's servers. Combine it with **LAN access** in server settings if you would rather not hand out invite codes at a LAN party.
+
+## Telling people apart
+
+Nicknames are not unique on a Gryt server and never have been. Anyone can call themselves anything, which is true whether or not they have an account.
+
+Hovering a member shows what they cannot choose:
+
+- **when they joined this server**
+- **whether there is an account behind them**
+- **how many times they have renamed themselves**, and when they last did
+- a **fingerprint**, stable across renames
+
+The fingerprint is specific to your server. The same person shows a different fingerprint elsewhere, so it cannot be used to follow somebody between servers, and it is derived in a way that nobody can grind a key to match. If it matters whether somebody is who they say they are, compare that rather than the name.
+
+## Not losing a local identity
+
+A local identity lives in the browser's storage on one device. Clearing site data deletes it, and with it every server that identity was known on — roles, and any server it owns.
+
+**Settings → You → Security → Save my identity** writes every local identity to a file. Restoring it on another machine, or the same one after a wipe, brings those identities back exactly as they were.
+
+<Callout type="warn">
+  That file *is* the identity. Anyone holding it can be you on the servers it
+  covers, so treat it as you would a password manager export. Restoring one also
+  replaces whatever identity the device is currently using.
+</Callout>
+
+There is no recovery without it. A server owner can move a member to a new identity from **Server settings → Replace User**, which covers somebody losing a key — but not the owner losing theirs, because nobody is left who can act.
