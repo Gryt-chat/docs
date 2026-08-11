@@ -56,7 +56,10 @@ CORS_ORIGIN="http://127.0.0.1:15738,https://app.gryt.chat"
 # SERVER_INVITE_MAX_COOLDOWN_MS=3600000
 # SERVER_INVITE_IP_MAX_RETRIES=20
 
-GRYT_AUTH_API=https://auth.gryt.chat
+# Identity — who this server lets in. See the Identity page.
+# GRYT_IDENTITY_TIERS=account,local   # also accept people with no Gryt account
+# GRYT_OIDC_ISSUER=https://auth.gryt.chat/realms/gryt
+# GRYT_TRUSTED_CERT_ISSUERS=https://id.gryt.chat
 
 # SQLite
 DATA_DIR=./data
