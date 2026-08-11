@@ -53,7 +53,19 @@ CORS_ORIGIN="http://127.0.0.1:15738,https://app.gryt.chat"
 # SERVER_INVITE_IP_MAX_RETRIES=20        # invalid invites before lockout (per IP)
 
 # Authentication
-GRYT_AUTH_API=https://auth.gryt.chat
+# Where accounts come from. Only override these if you run your own auth.
+GRYT_OIDC_ISSUER=https://auth.gryt.chat/realms/gryt
+GRYT_OIDC_AUDIENCE=gryt-web
+# Certificate authorities this server trusts to vouch for a user's key.
+GRYT_TRUSTED_CERT_ISSUERS=https://id.gryt.chat
+
+# Which identities this server admits, comma-separated.
+#   account  a certificate from a trusted CA, which means a Gryt account
+#   local    a certificate signed by the key it describes — no account at all
+# Adding "local" lets people join without signing up for anything. The trade is
+# that a local identity can be regenerated in seconds, so a ban on one holds
+# only until somebody clears their browser data. See the Identity page.
+GRYT_IDENTITY_TIERS=account
 
 # S3 / Object storage
 S3_REGION=auto
