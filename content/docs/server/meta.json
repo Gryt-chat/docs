@@ -4,6 +4,7 @@
   "icon": "Server",
   "pages": [
     "index",
+    "identity",
     "api-reference",
     "rate-limiting",
     "multi-server"
