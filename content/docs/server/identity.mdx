@@ -93,3 +93,17 @@ A local identity lives in the browser's storage on one device. Clearing site dat
 </Callout>
 
 There is no recovery without it. A server owner can move a member to a new identity from **Server settings → Replace User**, which covers somebody losing a key — but not the owner losing theirs, because nobody is left who can act.
+
+## Using a local identity on a second device
+
+Restoring is not the only way onto another machine, and on a machine you do not fully control it is the wrong one — it copies the key onto that device permanently.
+
+**Settings → You → Security → Authorise this device** takes the same file and does something different with it. The key stays in the file. It signs a certificate naming *this* device's own key, and the server accepts that certificate as you.
+
+- The key is never written to the second device
+- The authorisation expires by itself after 30 days
+- Renewing it means picking the file again
+
+Nothing has to be trusted for this to be safe. The identity is derived from the key that did the signing, so a certificate can only ever name the identity of whoever held the file — there is no list of authorised devices to keep, and no decision to get wrong.
+
+Prefer **Restore** on a machine that is yours, and **Authorise** on one that is not.
