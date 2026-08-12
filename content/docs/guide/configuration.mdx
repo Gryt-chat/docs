@@ -196,7 +196,31 @@ GRYT_OIDC_AUDIENCE=gryt-web
 If you want to run a **completely separate** Gryt deployment with your **own** authentication provider, you can self-host
 Keycloak and point your server/client to your issuer.
 
-A guide for self-hosting authentication is planned.
+There are two halves to it, and both are needed. Keycloak says who somebody is; a separate
+identity service turns that into a certificate your servers can check. Running one without
+the other does not work.
+
+On the client, under Settings → Account with advanced settings shown, there are two fields:
+
+- **Auth server** — the address of your Keycloak realm, not the server root. For example
+  `https://auth.example.com/realms/gryt`.
+- **Identity service** — where your certificate authority runs, for example
+  `https://id.example.com`. It cannot be worked out from the address above, because it is a
+  separate service on a separate host.
+
+On each server, name the issuer and trust the certificates your identity service signs:
+
+```bash
+GRYT_OIDC_ISSUER=https://auth.example.com/realms/gryt
+GRYT_OIDC_AUDIENCE=gryt-web
+GRYT_TRUSTED_CERT_ISSUERS=https://id.example.com
+```
+
+Your realm needs a `gryt-web` client whose redirect URIs include the address you serve the
+client from. [`realm/gryt-realm.json`](https://github.com/Gryt-chat/auth/blob/main/realm/gryt-realm.json)
+in the auth repository is the one Gryt runs, and is a reasonable starting point.
+
+A fuller guide, covering running the identity service itself, is still to come.
 
 ### Locking the server
 
