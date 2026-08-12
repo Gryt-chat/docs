@@ -52,6 +52,11 @@ CORS_ORIGIN="http://127.0.0.1:15738,https://app.gryt.chat"
 # SERVER_INVITE_MAX_COOLDOWN_MS=3600000  # escalation cap (1 hour)
 # SERVER_INVITE_IP_MAX_RETRIES=20        # invalid invites before lockout (per IP)
 
+# How many proxies in front of this server may be believed when they say who a
+# client is. Set this to 1 if anything sits in front — a reverse proxy, a load
+# balancer, a Cloudflare tunnel. See "Running behind a proxy" below.
+GRYT_TRUSTED_PROXY_HOPS=0
+
 # Authentication
 # Where accounts come from. Only override these if you run your own auth.
 GRYT_OIDC_ISSUER=https://auth.gryt.chat/realms/gryt
@@ -77,6 +82,39 @@ S3_FORCE_PATH_STYLE=false
 NODE_ENV=development
 DEBUG=gryt:*
 ```
+
+### Running behind a proxy
+
+The server rate-limits by address, and it decides your address from the
+connection it can see. Put a reverse proxy, load balancer or tunnel in front and
+every connection it sees is the proxy's — so everybody shares one bucket, and one
+person tripping a limit throttles the whole server. The per-IP invite lockout
+above becomes server-wide in the same way.
+
+`GRYT_TRUSTED_PROXY_HOPS` is how you fix that. It says how many entries at the
+end of `x-forwarded-for` were written by infrastructure you control:
+
+```bash
+GRYT_TRUSTED_PROXY_HOPS=1
+```
+
+**One is the answer for a single proxy or tunnel**, which is nearly everyone.
+Go higher only if you have genuinely chained them — two, if you run your own
+nginx behind Cloudflare.
+
+The default is `0`, which ignores the header completely and uses the connection's
+own address. That is the right answer for a server exposed directly, and it is
+deliberately the default: `x-forwarded-for` is a header any client can set to
+anything, so a server that believed it without being told to could be handed a
+fresh address per request.
+
+<Callout type="warn">
+Do not set this higher than the number of proxies you actually run. The server
+counts from the **right** of the header, because that end is written by
+infrastructure and the left end is whatever the client claimed. Counting further
+left than your own proxies reach lands on the part a client controls, and the
+per-IP limits stop meaning anything.
+</Callout>
 
 ### Additional signaling server options
 

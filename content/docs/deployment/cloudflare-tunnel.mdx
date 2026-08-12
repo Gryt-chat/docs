@@ -47,7 +47,26 @@ Edit `ops/deploy/host/.env` (minimum):
 JWT_SECRET="replace-me" # openssl rand -base64 48
 SFU_PUBLIC_HOST="wss://sfu.example.com"
 CORS_ORIGIN="http://127.0.0.1:15738,https://app.gryt.chat"
+GRYT_TRUSTED_PROXY_HOPS=1
 ```
+
+### Why the proxy hops setting is in that list
+
+The tunnel is a proxy, so without this every client arrives at the server wearing
+the tunnel's address instead of their own. They all share one rate-limit bucket,
+and the per-IP invite lockout applies to everyone at once — one person tripping a
+limit throttles the server.
+
+`1` is right here. Cloudflare appends the visitor's address to the right of
+`x-forwarded-for`, the tunnel adds nothing after it, and the server counts from
+that end. Anything a client puts in the header stays to the left, where it is
+ignored.
+
+Go to `2` only if you run your own reverse proxy *behind* the tunnel as well.
+Leave it at the default of `0` and the setting does nothing; set it higher than
+the number of proxies you really have and you are trusting a header the client
+can write. There is more on this in
+[Configuration → Running behind a proxy](/docs/guide/configuration).
 
 ## Start
 
