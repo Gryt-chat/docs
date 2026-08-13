@@ -8,6 +8,7 @@
     "docker-compose",
     "windows",
     "cloudflare-tunnel",
+    "tailscale",
     "monitoring"
   ]
 }
