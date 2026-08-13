@@ -1,0 +1,139 @@
+---
+title: Tailscale
+description: Play with friends who are not on your network, without touching your router
+icon: Network
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+
+Gryt on a LAN needs no setup at all: host a server from the app and everyone on
+the same Wi-Fi sees it. The moment one person is somewhere else, you need a route
+between the two machines, and that has historically meant a router page nobody
+enjoys.
+
+Tailscale is the shortcut. It puts every machine you sign in on into one private
+network, whatever building they are in, and Gryt cannot tell the difference
+between that and a real LAN.
+
+## Why this and not a tunnel
+
+A [Cloudflare Tunnel](/docs/deployment/cloudflare-tunnel) carries HTTPS and the
+WebSocket, which is enough for chat and for getting into a server. It cannot
+carry voice. WebRTC media is UDP, and a tunnel is not.
+
+Tailscale is WireGuard, which is UDP, so it carries everything: signalling, chat,
+uploads and voice, over the same connection. That is the reason this page exists
+and the tunnel page does not tell you to do this.
+
+## The short version
+
+<Steps>
+
+<Step>
+### Install Tailscale on both machines
+
+[tailscale.com/download](https://tailscale.com/download), and sign in to the
+same account on each. That is the whole network setup. Nothing to forward,
+nothing to open.
+</Step>
+
+<Step>
+### Host a server in Gryt
+
+The **+** in the server rail, **Create my own**, give it a name, **Create**. It
+starts and puts you in it.
+
+Note the port it chose. It is on the server's card under
+**Settings &rarr; My servers**.
+</Step>
+
+<Step>
+### Find your Tailscale address
+
+```bash
+tailscale ip -4
+```
+
+Something like `100.101.102.103`. The Tailscale app shows it too. Addresses in
+`100.64.0.0/10` are Tailscale's range, and that one is yours on every network
+you ever join.
+</Step>
+
+<Step>
+### Have your friend add it
+
+In their Gryt: **+** &rarr; **Join a server**, and type your Tailscale address
+and port together:
+
+```
+100.101.102.103:5001
+```
+
+A new server is invite-only, so send them a code from
+**Server settings &rarr; Invites**.
+</Step>
+
+</Steps>
+
+That is chat working. Voice needs one more thing.
+
+## Voice needs the SFU address to be right
+
+Your server tells joining clients where to find the media server, and it fills
+that in for you when the server is created, using the address it thinks people
+will reach you on. On a laptop that is also on a home network, it picks the home
+address: something like `192.168.1.20`. Your friend on Tailscale cannot reach
+that, so they join fine, chat fine, and hear nothing.
+
+The fix is to list both. Open the server's config:
+
+```
+<userData>/gryt-servers/<server-id>/config.env
+```
+
+`<userData>` is `~/Library/Application Support/gryt-chat` on macOS,
+`%APPDATA%/gryt-chat` on Windows, `~/.config/gryt-chat` on Linux.
+
+Find `SFU_PUBLIC_HOST` and put your Tailscale address after the existing one,
+separated by a comma:
+
+```bash
+SFU_PUBLIC_HOST=192.168.1.20:5005,100.101.102.103:5005
+```
+
+Both use the SFU port from the same file (`SFU_PORT`), not the server port.
+Restart the server from **Settings &rarr; My servers** and voice works from
+either network: people at home use the first address, people on Tailscale use
+the second.
+
+<Callout type="warn">
+  **Keep the home address first.** Gryt corrects a stored SFU address that looks
+  wrong for the current network, and it treats a Tailscale address in that slot
+  as one to correct. Leaving the home address at the front means it sees nothing
+  to fix and leaves the line alone. Put Tailscale first and the next start
+  overwrites it.
+</Callout>
+
+## What does not carry over
+
+**Servers do not appear on their own.** LAN discovery works by shouting on the
+local link, and that shout does not cross a tailnet. Your friend types the
+address once; after that it is in their rail like any other server.
+
+**Everyone needs Tailscale running.** It is a private network between machines
+signed in to it, so someone who has not installed it cannot reach your server at
+all. That is the trade against a public address: nothing is exposed to the
+internet, and nothing works without the client.
+
+**Your machine still has to be awake.** Hosting from the app means the server
+stops when Gryt closes. For something that should outlive the session, run it
+with [Docker Compose](/docs/deployment/docker-compose) on a machine that stays
+on, and put Tailscale on that instead.
+
+## Firewalls
+
+Tailscale routes the traffic, but the operating system still decides whether to
+accept it. On Windows the first run usually prompts, and you want to allow it on
+private networks. On macOS, hosting a server may prompt for incoming
+connections. Deny either and your friend gets a server that never answers.
