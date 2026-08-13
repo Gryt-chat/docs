@@ -351,6 +351,95 @@ SFU_VERSION=x.y.z
 
 Then run `docker compose up -d`.
 
+## Running more than one server
+
+One compose file can run as many Gryt servers as you like. They are fully separate — their own channels,
+members, invites and roles — and they share the expensive parts of the stack.
+
+What each extra server needs:
+
+| Needs its own | Why |
+|---|---|
+| `DATA_DIR` volume | The SQLite database. This is the one that matters — two servers pointed at one `gryt.db` will corrupt each other's state. |
+| `SERVER_NAME` | It is part of the server's identity on the SFU. See the warning below. |
+| Published port | One port per server on the host. |
+| Image worker | A worker reads exactly one `DATA_DIR`, so it serves exactly one server. |
+
+What they share, safely:
+
+- **One SFU.** Voice rooms are namespaced per server, so a single SFU serves all of them. This is how
+  gryt.chat itself runs — three servers, one SFU.
+- **One MinIO, one bucket.** Every stored object is keyed by a UUID, so two servers writing to the same
+  bucket cannot collide. Give them separate buckets if you would rather keep the storage separable.
+
+<Callout type="warn">
+**Give every server a different `SERVER_NAME`.** A server identifies itself to the SFU as
+`SERVER_NAME_PORT_SERVER_INSTANCE_ID`, and voice rooms are keyed on that. Two servers that produce the same
+string will fight over room registration and the second one's voice will fail to start. On a bridge network
+every container has the same internal `PORT`, so the name is usually the only thing telling them apart — or
+set `SERVER_INSTANCE_ID` explicitly, which is what the bundled dev stack does.
+</Callout>
+
+### Adding a second server
+
+Copy the `server` and `image-worker` blocks, and change four things — the container names, the port, the
+data volume, and the name:
+
+```yaml
+services:
+  server-2:
+    image: ghcr.io/gryt-chat/server:${SERVER_VERSION:-latest}
+    container_name: gryt-prod-server-2
+    network_mode: host
+    extra_hosts:
+      - "sfu:127.0.0.1"
+      - "minio:127.0.0.1"
+    environment:
+      PORT: 5010                      # a free port on the host
+      SERVER_NAME: My Second Server   # must differ from the first
+      DATA_DIR: /data                 # its own volume, mounted below
+      JWT_SECRET: ${JWT_SECRET_2:?Set JWT_SECRET_2 in .env}
+      SFU_WS_HOST: ws://sfu:${SFU_PORT:-5005}   # the same SFU
+      S3_BUCKET: ${S3_BUCKET:-gryt}             # the same bucket
+      IMAGE_WORKER_URL: http://127.0.0.1:8082
+      # …every other variable copied from the first server
+    volumes:
+      - gryt-prod-server-2-data:/data
+
+  image-worker-2:
+    image: ghcr.io/gryt-chat/image-worker:${IMAGE_WORKER_VERSION:-latest}
+    container_name: gryt-prod-image-worker-2
+    ports:
+      - "127.0.0.1:8082:8080"         # a different health port
+    environment:
+      DATA_DIR: /data
+      S3_ENDPOINT: http://minio:9000
+      S3_BUCKET: ${S3_BUCKET:-gryt}
+      # …credentials copied from the first worker
+    volumes:
+      - gryt-prod-server-2-data:/data # the same volume as its own server
+
+volumes:
+  gryt-prod-server-2-data:
+```
+
+`ops/deploy/compose/prod.yml` ships this as a commented-out block, so uncommenting it is usually faster than
+writing it out.
+
+<Callout type="info">
+The image worker is not on the critical path. Uploads succeed whether or not a worker is running — what you
+lose without one is thumbnails, recompression and the dominant colour used to tint voice tiles. If you do not
+care about those on a second server, you can leave its worker out entirely.
+</Callout>
+
+<Callout type="warn">
+The bundled `server` uses `network_mode: host` so it can advertise itself on the LAN through avahi, and the
+avahi service file has a fixed name. Two host-networked servers on one machine will overwrite each other's
+file, and only one of them will be discoverable on the LAN. Both still work normally by address. If LAN
+discovery matters for both, put them on separate machines or move them to the bridge network and drop the
+`/etc/avahi/services` mount.
+</Callout>
+
 ## Using external S3
 
 To use an external S3-compatible provider (AWS, Cloudflare R2, etc.) instead of the bundled MinIO, remove the
