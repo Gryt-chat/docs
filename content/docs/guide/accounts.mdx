@@ -1,0 +1,71 @@
+---
+title: Do I need an account?
+description: No. Here is what you get if you make one anyway, and what it costs you if you don't.
+icon: UserCheck
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+**No.** Download Gryt, open it, and you can host a server and talk to people on
+your network in under a minute. Nobody signs up for anything.
+
+That is not a trial or a limited mode. A guest identity is a real identity: it
+signs the same challenge, gets the same roles, and can own a server. The
+difference is who vouches for it.
+
+## The two ways to be somebody
+
+When you join a server, your client signs a one-time challenge with a private
+key that never leaves your device. The server checks the signature against a
+certificate saying which key belongs to whom. What differs is who signed that
+certificate.
+
+A **guest** identity signs its own. The key vouches for itself, there is no
+sign-up, no email address, and nobody — including us — can connect it to a
+person. Your client makes a separate key for each server, so two servers cannot
+work out they are talking to the same person.
+
+An **account** identity is signed by `id.gryt.chat` after Keycloak has
+authenticated you. The same `sub` appears on every Gryt server, which is what
+makes you recognisably the same person across all of them.
+
+## Which one you want
+
+| | Guest | Account |
+|---|---|---|
+| Sign-up | none | email and password |
+| Same person on other servers | no, deliberately | yes |
+| New device | a new identity, unless you [authorise the device](/docs/guide/quick-start) | sign in |
+| Lost your device | the identity is gone with it | sign in again |
+| Servers that will have you | those accepting `local` | all of them |
+| A ban on you holds | until you make a new key | until you make a new account |
+| Anyone can tell it is you | only that server, only while you keep the key | yes, by design |
+
+**Pick guest** for a LAN party, a game night, one weekend's server, or anything
+you would rather not attach your name to. It is the lower-commitment option in
+every sense, including the one where you lose everything if the laptop dies.
+
+**Pick an account** if you are on servers you intend to stay on, if you use more
+than one device, or if you want people to recognise you when you turn up
+somewhere new. It is also what a server admin needs if bans are supposed to
+mean something.
+
+You are not choosing once. Making an account later
+[keeps the membership you already have](/docs/server/identity) — your roles and
+history come with you rather than starting again.
+
+<Callout type="info">
+  A server tells you which it accepts before you try. The Add Server dialog
+  shows **No account needed** or **Gryt account required** as soon as it has
+  looked the server up, so you never find out by being turned away.
+</Callout>
+
+## For server admins
+
+The tier your server accepts is one setting, and the trade is bans. A guest can
+generate a new keypair in about two seconds, so a ban on a guest identity holds
+until they bother to. Servers accepting guests lean on the door instead —
+invites, approval, LAN-only — rather than on bans.
+
+The full picture, including how to set it, is in
+[Server → Identity](/docs/server/identity).

@@ -1,94 +1,114 @@
 ---
-title: Embedded Server (Desktop App)
-description: Host a Gryt server directly from the desktop app — one click, all platforms
+title: Hosting from the app
+description: The desktop client ships with a server in it. Run one, or several, without a terminal.
 icon: Monitor
 ---
 
 import { Callout } from 'fumadocs-ui/components/callout';
 
-The Gryt desktop app can host a full server locally. No separate install, no Docker, no command line — just click **Create server** and go.
+The Gryt desktop app has a full server inside it. Not a demo mode or a cut-down
+build — the same signalling server, SFU and image worker that a Docker
+deployment runs. Open the app, create a server, and people on your network can
+join it.
 
-## How it works
+If you ever ran a Minecraft server off your own machine so your friends could
+join, this is that. Download, host, play. The part that used to need Hamachi is
+handled by [LAN discovery](/docs/server/multi-server), and the part that used to
+need port forwarding is what a
+[Cloudflare Tunnel](/docs/deployment/cloudflare-tunnel) is for when you want
+people outside your network.
 
-The desktop app bundles the same Gryt signaling server and SFU media server used in Docker and standalone deployments. When you create an embedded server, the app:
+## Creating one
 
-1. Generates a configuration with auto-detected free ports and a random JWT secret
-2. Spawns the SFU (Go binary) and signaling server (Node.js) as child processes
-3. Stores all data (SQLite database, uploads) in your app data directory
-4. Optionally advertises the server via mDNS for automatic LAN discovery
+1. Click the **+** in the server rail
+2. Choose **Create my own**
+3. Give it a name — the icon is generated from it as you type
+4. Take the port it offers, or set your own
+5. **Create**
 
-## Creating a server
+It starts and you are in it. There is no second step.
 
-1. Open the Gryt desktop app
-2. Click **Add Server** (the `+` button in the server sidebar)
-3. Under **Host a server**, enter a server name
-4. Toggle **Discoverable on LAN** if you want other Gryt users on your network to find it automatically
-5. Click **Create server**
-6. Once the status shows **Running**, click **Connect**
+The port is prefilled with one that is genuinely free, checked against every
+interface the server will bind. If you need a particular port — one your router
+already forwards, or one your firewall rules already name — type it and the
+field tells you whether anything else is on it.
 
-The server is now live and you're connected to it.
+**Discoverable on LAN** decides whether anyone else running Gryt on the same
+network sees it appear on its own. Leave it on for a LAN party.
 
-## Managing your server
+## More than one
 
-After creation, the embedded server panel shows:
+You can host several. Each server is genuinely separate — its own messages, its
+own members, its own invites, its own database — and they cost far less than
+running two of anything else:
 
-- **Status** — Running (green) or Stopped (gray)
-- **Address** — `127.0.0.1:<port>` and the LAN address if discoverable
-- **Start / Stop** — manually control the server
-- **Start automatically with app** — enable to resume hosting every time you launch Gryt
-- **Connect** — join your server with one click
+- **The SFU is shared.** One media process serves every server you host, because
+  voice rooms are namespaced per server. Hosting a second server does not mean a
+  second SFU.
+- **The image worker is not.** Each server gets one, because a worker reads
+  exactly one database.
 
-## LAN party mode
-
-With mDNS discovery enabled:
-
-1. **You** create a server with **Discoverable on LAN** enabled
-2. **Friends** open Gryt — your server appears automatically under **Local servers** in the Add Server dialog
-3. They click **Connect** — joined instantly, no invite codes or URLs needed
-
-This works on the same Wi-Fi or wired LAN. No internet, port forwarding, or configuration required.
+So server number two costs a server process and an image worker, not another
+stack.
 
 <Callout type="info">
-For the best LAN party experience, also enable **Allow anyone on LAN to join** in your server settings after connecting. This lets LAN users skip invite codes entirely.
+  Give each one a different name. A server identifies itself to the SFU using
+  its name, its port and its instance id — two servers that produce the same
+  identity will fight over voice rooms, and the second one's voice will not
+  start.
 </Callout>
 
-## Data storage
+## Managing them
 
-All server data is stored in your operating system's app data directory:
+**Settings → My servers** lists everything you host. Each one shows:
 
-| Platform | Path |
-|----------|------|
-| Windows | `%APPDATA%\gryt-chat\gryt-server\` |
-| macOS | `~/Library/Application Support/gryt-chat/gryt-server/` |
-| Linux | `~/.config/gryt-chat/gryt-server/` |
+- **Running / Stopped**, and Start or Stop
+- Both addresses — `127.0.0.1:<port>` for this machine, and the LAN address to
+  give somebody else
+- **Start automatically with app**, per server
+- **Server logs**, which do not fetch anything until you open them
+- **Open**, which puts it in your server rail
+- **Delete**
 
-Inside this directory:
-
-- `config.env` — server configuration (ports, JWT secret, settings)
-- `data/` — SQLite database and filesystem uploads
-
-## Remote access
-
-By default, the embedded server listens on `0.0.0.0`, making it accessible from other devices on your LAN. The LAN IP is shown in the server panel.
-
-For internet access, you would need port forwarding and TLS. For production internet-facing deployments, consider [Docker Compose](/docs/deployment/docker-compose) or the [Windows standalone](/docs/deployment/windows) bundle instead.
-
-## Platform support
-
-The embedded server works on all platforms supported by the Gryt desktop app:
-
-- **Windows** (x64) — may prompt for Windows Firewall access for incoming connections
-- **macOS** (Apple Silicon + Intel) — SFU binary is code-signed and notarized with the app
-- **Linux** (x64) — works in AppImage, deb, and Snap packages
+Delete is exactly as final as it sounds. It stops the server, removes its
+database, its uploads and its identity key, and asks you to type the server's
+name first. There is no second copy anywhere.
 
 <Callout type="warn">
-On Snap, the `network-bind` plug is required for the server to accept incoming connections. This is included in the Gryt Snap package.
+  Deleting a server destroys the key it identifies itself with. Everyone who
+  joined pinned that key, so a replacement with the same name and port is a
+  *different* server to them — they will be turned away rather than let back in.
 </Callout>
 
-## Troubleshooting
+## Where things live
 
-**Server won't start**: Check if ports 5000 and 5005 are already in use. The app auto-detects free ports, but if that fails, stop any conflicting services.
+Each server gets its own directory under your app data folder:
 
-**Other users can't connect**: Ensure your firewall allows incoming TCP connections on the server port and UDP on the SFU port range (10000–10019).
+```
+<userData>/gryt-servers/<server-id>/
+├── config.env      generated at creation — ports, secret, identity tiers
+└── data/
+    ├── gryt.db     messages, members, roles, invites
+    └── uploads/    files and images
+```
 
-**mDNS discovery not working**: Both devices must be on the same LAN subnet. Some corporate networks block mDNS traffic.
+`<userData>` is `~/Library/Application Support/gryt-chat` on macOS,
+`%APPDATA%/gryt-chat` on Windows, and `~/.config/gryt-chat` on Linux.
+
+Back up a server by copying its directory while it is stopped.
+
+## What it does not do
+
+Hosting from the app is a real server, but it is running on a desktop machine,
+so the limits are the machine's:
+
+- It is reachable while the app is open and the machine is awake. Closing Gryt
+  stops the servers it is hosting.
+- Anyone outside your network needs a route in — a
+  [tunnel](/docs/deployment/cloudflare-tunnel) or a forwarded port.
+- Only one hosted server can advertise itself over mDNS on Linux at a time. All
+  of them still work by address.
+
+For something that should stay up without a person nearby, run it with
+[Docker Compose](/docs/deployment/docker-compose) instead — the same server,
+pointed at a disk that is not your laptop.
