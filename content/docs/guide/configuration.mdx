@@ -225,7 +225,7 @@ Authentication is centrally hosted at `auth.gryt.chat`. No additional configurat
 To require Gryt accounts on your server:
 
 ```bash
-GRYT_AUTH_MODE=required
+GRYT_IDENTITY_TIERS=account
 GRYT_OIDC_ISSUER=https://auth.gryt.chat/realms/gryt
 GRYT_OIDC_AUDIENCE=gryt-web
 ```
@@ -288,8 +288,16 @@ to think about.
 To reject **all** join attempts (temporarily lock the server):
 
 ```bash
-GRYT_AUTH_MODE=disabled  # server locked — all joins rejected
+GRYT_SERVER_ENABLED=false
 ```
+
+The canonical values are `true` and `false`. The server also accepts
+`on`/`off`, `yes`/`no`, and `1`/`0`. An empty value uses the default (`true`),
+while an unrecognized value rejects joins and reports the bad setting.
+
+`GRYT_AUTH_MODE=required` and `GRYT_AUTH_MODE=disabled` remain supported for
+upgrades from older releases. `GRYT_SERVER_ENABLED` takes precedence when both
+variables are present.
 
 See the [Server docs](/docs/server) for more on auth integration.
 
@@ -383,8 +391,8 @@ included in both since it connects to whichever server the user selects.
 <Callout type="info">
 CORS is enforced by the browser and by the server's Socket.IO and REST middleware.
 It is not a security boundary against non-browser clients — someone could still connect
-with `curl` or a modified client. For real authentication, enable
-[Gryt Auth](/docs/guide/configuration#authentication) (`GRYT_AUTH_MODE=required`).
+with `curl` or a modified client. Require account identities with
+[`GRYT_IDENTITY_TIERS=account`](/docs/guide/configuration#authentication).
 </Callout>
 
 ## Dynamic server settings
@@ -409,7 +417,7 @@ This is ideal for LAN parties and local events where you want frictionless acces
 - Never commit `.env` files to version control
 - Use HTTPS/WSS in production
 - Configure CORS origins to match your domain
-- Use `GRYT_AUTH_MODE=required` if you need account-based access control
+- Use `GRYT_IDENTITY_TIERS=account` if every member must have a Gryt account
 - Use invite links to control membership (Server settings → Invites)
 - For LAN events, enable **LAN open join** in Server Settings instead of creating mass invite codes
 - Run containers as non-root users

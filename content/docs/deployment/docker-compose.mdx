@@ -124,6 +124,54 @@ IMAGE_WORKER_VERSION=x.y.z  # only if running image-worker
 
 Browse available tags at [github.com/orgs/gryt-chat/packages](https://github.com/orgs/gryt-chat/packages).
 
+### Beta channel
+
+The Gryt server, SFU, image worker, and web client publish a `latest-beta`
+image. To follow the beta channel, set the version variables in `.env`:
+
+```bash
+SERVER_VERSION=latest-beta
+SFU_VERSION=latest-beta
+IMAGE_WORKER_VERSION=latest-beta
+
+# Only used when the optional web profile is enabled
+CLIENT_VERSION=latest-beta
+```
+
+Then pull and restart the stack:
+
+```bash
+docker compose pull
+docker compose up -d
+```
+
+`latest-beta` moves whenever a new beta is published. For a predictable
+deployment, replace it with the exact tag shown in the package registry, such
+as `1.2.3-beta.4`. Pin each service separately because its version may differ
+from the others.
+
+<Callout type="warn" title="Back up before trying a beta">
+Beta builds may change the SQLite schema when the server starts. Gryt has no
+down-migration system, so an older server cannot undo those changes. Back up the
+server data directory before upgrading. To return to stable, restore that
+backup, change the version variables to `latest` or exact stable tags, then run
+`docker compose pull` and `docker compose up -d` again.
+</Callout>
+
+A beta server does not change any other server a user belongs to. The risk is
+at the client-server boundary: a stable client may not understand a beta-only
+event or endpoint, and a beta client may expect something a stable server does
+not provide. Run the matching beta desktop client when testing a beta server.
+
+People joining cannot rely on the client to identify a self-hosted server's
+release channel. Add `Beta` to `SERVER_NAME` and mention the version in
+`SERVER_DESCRIPTION` so they know what they are joining:
+
+```bash
+SERVER_NAME=My Gryt Server (Beta)
+SERVER_DESCRIPTION=Testing Gryt 1.2.3-beta.4
+```
+
 ### Image Worker
 
 | Variable | Default | Description |
@@ -176,7 +224,8 @@ docker compose exec server node admin-setOwner.js --grytUserId <keycloak_sub>
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `GRYT_AUTH_MODE` | `required` | `required` (users sign in with a Gryt account) or `disabled` (server locked — all joins rejected) |
+| `GRYT_IDENTITY_TIERS` | `account` | Comma-separated identity types the server accepts. Add `local` to admit people without a Gryt account. |
+| `GRYT_SERVER_ENABLED` | `true` | Set to `false` to reject every join while the server is out of service. |
 | `GRYT_OIDC_ISSUER` | `https://auth.gryt.chat/realms/gryt` | OIDC issuer URL |
 | `GRYT_OIDC_AUDIENCE` | `gryt-web` | OIDC audience |
 
