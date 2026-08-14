@@ -79,8 +79,13 @@ The server uses an embedded SQLite database in its data directory, so no separat
 
 ### Connecting
 
-Connect to your server using the [Gryt desktop app](https://github.com/Gryt-chat/gryt/releases) or
-[app.gryt.chat](https://app.gryt.chat). Enter your server address (e.g. `gryt.example.com` or your public IP).
+Connect with the [Gryt desktop app](https://github.com/Gryt-chat/gryt/releases) and enter your
+server address. A bare IP and port works: `203.0.113.10:5000`. So does a hostname if you have one.
+
+[app.gryt.chat](https://app.gryt.chat) needs a hostname with a certificate, like
+`gryt.example.com`. A browser will not connect to a plain IP, because it refuses to open an
+insecure connection from an HTTPS page. If you have no domain, see
+[No domain, just an IP](/docs/deployment/no-domain).
 
 **Invite-only**: the **first user** to join a brand-new server automatically becomes the **owner/admin**.
 After that, the server is **invite-only**. Create invite links in **Server settings → Invites** and share them.
