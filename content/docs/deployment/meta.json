@@ -5,6 +5,7 @@
   "pages": [
     "index",
     "embedded",
+    "no-domain",
     "docker-compose",
     "windows",
     "cloudflare-tunnel",
