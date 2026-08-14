@@ -15,12 +15,12 @@ That part is the same however somebody joins. What differs is **who vouches for 
 | Vouched for by | `id.gryt.chat`, after Keycloak has authenticated somebody | Nobody — the key vouches for itself |
 | Identity is | a Gryt account | the key |
 | Same on every server | yes | no, a separate key per server |
-| Survives losing the device | yes, sign in again | only if the key was saved to a file |
+| Survives losing the device | yes, sign in again | yes, if you saved your identity backup |
 | A ban holds | until they make a new account | until they make a new key |
 
 An **account** is a durable identity. The `sub` in the certificate is a Keycloak user, so it is the same person on every Gryt server, and losing a device costs nothing — sign in again and the CA certifies a fresh key.
 
-A **local identity** is a keypair on a device and nothing else. There is no sign-up, no email, and no way for anyone including us to connect it to a person. The client generates a separate key per server, so two servers cannot tell they are talking to the same person.
+A **local identity** is a keypair on a device and nothing else. There is no sign-up, no email, and no way for anyone including us to connect it to a person. The client still uses a separate key per server, so two servers cannot tell they are talking to the same person — but all of them are worked out from one backup, so there is a single thing to save and it covers servers you join later too.
 
 ## Choosing what your server accepts
 
@@ -84,26 +84,49 @@ The fingerprint is specific to your server. The same person shows a different fi
 
 A local identity lives in the browser's storage on one device. Clearing site data deletes it, and with it every server that identity was known on — roles, and any server it owns.
 
-**Settings → You → Security → Save my identity** writes every local identity to a file. Restoring it on another machine, or the same one after a wipe, brings those identities back exactly as they were.
+**Settings → You → Security → Show my identity backup** gives you 24 words. That is your identity, on every server you join without an account, including ones you have not joined yet. Save it in your password manager.
+
+The words are checked when you type them back, so a mistyped or swapped word is rejected rather than quietly making you somebody else. You never have to get them right from memory — copy and paste.
 
 <Callout type="warn">
-  That file *is* the identity. Anyone holding it can be you on the servers it
-  covers, so treat it as you would a password manager export. Restoring one also
-  replaces whatever identity the device is currently using.
+  Those words *are* the identity. Anyone holding them can be you on every server
+  you use without an account, so treat them exactly as you would a password.
 </Callout>
 
-There is no recovery without it. A server owner can move a member to a new identity from **Server settings → Replace User**, which covers somebody losing a key — but not the owner losing theirs, because nobody is left who can act.
+There is no recovery without them. A server owner can move a member to a new identity from **Server settings → Replace User**, which covers somebody losing a key — but not the owner losing theirs, because nobody is left who can act.
 
-## Using a local identity on a second device
+## Using the same identity on your phone, or a second computer
 
-Restoring is not the only way onto another machine, and on a machine you do not fully control it is the wrong one — it copies the key onto that device permanently.
+No account, and you want to be the same person on another device? Three steps:
 
-**Settings → You → Security → Authorise this device** takes the same file and does something different with it. The key stays in the file. It signs a certificate naming *this* device's own key, and the server accepts that certificate as you.
+1. On the device you already use: **Settings → You → Security → Show my identity backup**, and copy the 24 words.
+2. On the new device: **Settings → You → Security → I already have one**.
+3. Paste the words.
 
-- The key is never written to the second device
+That is it. You are the same member on every server, with the same roles and the same history — and it keeps working for servers you join afterwards, because both devices work out the same keys from the same backup. Nothing needs re-exporting when you join somewhere new.
+
+The field you paste into is a normal password field, so a password manager will offer to save the words the first time and fill them in after that.
+
+### Or a file, if you would rather
+
+**Save a backup file** writes the same thing out as a password-protected file. It is useful if your password manager takes attachments more happily than notes, and it is what the option below reads.
+
+### Authorising a device instead of moving your identity to it
+
+On a machine you do not fully control, pasting your words is the wrong move — that device is then permanently you.
+
+**Settings → You → Security → Authorise this device** takes the backup file and does something different with it. Your key stays in the file. It signs a certificate naming *this* device's own key, and the server accepts that certificate as you.
+
+- Your key is never written to the second device
 - The authorisation expires by itself after 30 days
 - Renewing it means picking the file again
 
 Nothing has to be trusted for this to be safe. The identity is derived from the key that did the signing, so a certificate can only ever name the identity of whoever held the file — there is no list of authorised devices to keep, and no decision to get wrong.
 
-Prefer **Restore** on a machine that is yours, and **Authorise** on one that is not.
+Prefer the **words** on a machine that is yours, and **Authorise** on one that is not.
+
+## Servers that move
+
+A local identity is tied to the server itself, not to the address it answers on. A server that changes port, or picks up a new address from your router, still knows you — same member, same roles, same history.
+
+One thing that follows from this: a server you can reach two ways, on its LAN address and through a tunnel, is one identity on both. It used to be two.
