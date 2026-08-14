@@ -99,7 +99,11 @@ Commits made with AI assistance keep their `Co-Authored-By` trailer, and the rev
 
 No. Auth is provided as a hosted service at `auth.gryt.chat`. Your server validates identity certificates via the Identity Service JWKS automatically.
 
-If you set `GRYT_AUTH_MODE=disabled`, the server rejects all joins (server lock).
+`GRYT_IDENTITY_TIERS` decides which identities may join. Its default, `account`,
+requires a Gryt account. Add `local` to accept people without one.
+
+To take the server out of service without stopping it, set
+`GRYT_SERVER_ENABLED=false`. This rejects every join regardless of identity.
 
 ### Do servers need to be registered anywhere?
 

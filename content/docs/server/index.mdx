@@ -61,6 +61,9 @@ CORS_ORIGIN="http://127.0.0.1:15738,https://app.gryt.chat"
 # GRYT_OIDC_ISSUER=https://auth.gryt.chat/realms/gryt
 # GRYT_TRUSTED_CERT_ISSUERS=https://id.gryt.chat
 
+# Maintenance switch. Set false to reject every join without stopping the server.
+# GRYT_SERVER_ENABLED=false
+
 # SQLite
 DATA_DIR=./data
 
@@ -82,15 +85,16 @@ Gryt uses a centrally hosted **Keycloak** instance so users have a single "Gryt 
 - **Clients** authenticate via OIDC Authorization Code + PKCE (public client `gryt-web`)
 - **Servers** validate JWTs by checking the signature against the Keycloak JWKS endpoint
 
-### Required env vars
+### Account identity settings
 
 ```bash
-GRYT_AUTH_MODE=required                            # default
+GRYT_IDENTITY_TIERS=account                        # default
 GRYT_OIDC_ISSUER=https://auth.gryt.chat/realms/gryt
 GRYT_OIDC_AUDIENCE=gryt-web
 ```
 
-Set `GRYT_AUTH_MODE=disabled` to reject all joins (server lock).
+`GRYT_SERVER_ENABLED` is a separate maintenance switch. Set it to `false` to
+reject all joins while leaving the server process running.
 
 ## Changing the owner (CLI)
 
