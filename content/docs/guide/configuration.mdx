@@ -62,6 +62,7 @@ GRYT_TRUSTED_PROXY_HOPS=0
 GRYT_OIDC_ISSUER=https://auth.gryt.chat/realms/gryt
 GRYT_OIDC_AUDIENCE=gryt-web
 # Certificate authorities this server trusts to vouch for a user's key.
+# Comma-separated. Add to the end of the list, never the front — see below.
 GRYT_TRUSTED_CERT_ISSUERS=https://id.gryt.chat
 
 # Which identities this server admits, comma-separated.
@@ -259,6 +260,28 @@ client from. [`realm/gryt-realm.json`](https://github.com/Gryt-chat/auth/blob/ma
 in the auth repository is the one Gryt runs, and is a reasonable starting point.
 
 A fuller guide, covering running the identity service itself, is still to come.
+
+### Trusting more than one certificate authority
+
+`GRYT_TRUSTED_CERT_ISSUERS` takes a list, and a server will accept a user vouched for by any
+issuer on it. Which issuer signed a certificate is part of who that user *is*: two authorities
+can hand out the same underlying account id without those being the same person, so the server
+records the issuer alongside it.
+
+The **first** issuer in the list is the one whose users are stored under a plain id. Everyone
+else is stored with their issuer attached.
+
+<Callout type="warn">
+  **Add to the end of the list, never the front.** Putting a different issuer first changes
+  which one owns the plain ids, and every account identity on the server silently becomes a
+  different user — roles, ownership and bans included. Reordering an existing list does the
+  same thing.
+
+  Adding an issuer to the end is safe and changes nothing about the users you already have.
+</Callout>
+
+A single-issuer list, which is the default and what almost every server wants, has none of this
+to think about.
 
 ### Locking the server
 
