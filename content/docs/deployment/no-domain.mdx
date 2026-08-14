@@ -1,0 +1,143 @@
+---
+title: No domain, just an IP
+description: Open three ports, hand out your address, done. The way a Minecraft server works.
+icon: Network
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+You do not need a domain name to host Gryt. You do not need a certificate, a
+reverse proxy, or a tunnel. Open a few ports, tell people your IP, and they
+connect.
+
+This is the setup most people actually want for a LAN party or a server for
+friends, and it is the least documented, because the rest of these guides are
+about the harder cases.
+
+<Callout type="warn" title="Desktop app only">
+  People joining this way need the [desktop app](/docs/client/installation).
+  A browser at app.gryt.chat cannot connect to a plain IP, and the reason is
+  worth understanding before you plan around it. See [Why the browser cannot](#why-the-browser-cannot)
+  at the end.
+</Callout>
+
+## Open these ports
+
+Three, on the machine running the server, forwarded through your router if
+people are joining from outside your network.
+
+| Port | Protocol | What it is |
+|------|----------|------------|
+| `5000` | TCP | The server itself. Chat, logins, everything except voice |
+| `5005` | TCP | Voice signalling. Which is not the voice itself |
+| `443` | UDP | The actual voice and video |
+
+That third one catches people out. Voice does not travel over the same
+connection as the chat, and it is UDP, not TCP. If you forward the first two and
+stop there, everything works until somebody joins a voice channel — and then
+nobody can hear anybody.
+
+UDP 443 is a default worth keeping. It is one port instead of a range, and it is
+a port that restrictive networks usually leave alone, so people behind a
+corporate or hotel firewall stand a better chance. If it is already taken on
+your machine, set `ICE_UDP_MUX_PORT` to something else and forward that instead.
+
+## Tell the server its own address
+
+The server has no way of knowing what address the outside world reaches it on,
+so you tell it. Two lines in your `.env`:
+
+```bash
+# The address people will type. Your public IP for internet, LAN IP for a party.
+ICE_ADVERTISE_IP=203.0.113.10
+SFU_PUBLIC_HOST=ws://203.0.113.10:5005
+```
+
+Then restart:
+
+```bash
+docker compose up -d
+```
+
+Without these, voice connects to whatever the server thinks it is, which on a
+machine behind a router is a private address nobody outside can reach. Chat will
+work fine and voice will fail — a confusing way to find out.
+
+Finding the values:
+
+```bash
+curl -4 ifconfig.me          # public IP
+hostname -I | awk '{print $1}'   # LAN IP
+```
+
+## Hand out the address
+
+`203.0.113.10:5000` — that is the whole thing. People paste it into **Add a
+server** in the desktop app.
+
+The first person to join a new server becomes its owner. After that it is
+invite-only, so make an invite in **Server settings → Invites** and share the
+link.
+
+Hosting for people in the same room, and tired of handing out codes? Turn on
+**Allow anyone on LAN to join** in **Server settings → Overview**. Anyone on a
+private IP range walks in without an invite. Anyone from outside still needs
+one.
+
+## If people are on your LAN and elsewhere at once
+
+Both values take a comma-separated list, and the client pings each one and uses
+whichever answers fastest. So a machine that is both `192.168.1.100` at the
+party and `203.0.113.10` from outside:
+
+```bash
+ICE_ADVERTISE_IP=203.0.113.10,192.168.1.100
+SFU_PUBLIC_HOST=ws://203.0.113.10:5005,ws://192.168.1.100:5005
+```
+
+People in the room get the LAN path and near-zero latency. People at home get
+the public one.
+
+## Why the browser cannot
+
+Worth knowing, because it decides whether this setup fits you.
+
+`app.gryt.chat` is served over HTTPS, and a browser refuses to let an HTTPS page
+open a plain connection to anything except localhost. That is a browser rule
+about page origins — not something Gryt configures, and no server setting turns
+it off. The connection is blocked before it reaches you.
+
+The desktop app runs its own copy of the client from `http://127.0.0.1`, which
+is not an HTTPS page, so the rule never applies. It also counts as a trusted
+origin for microphone access, which a plain IP in a browser does not. Both of
+those come for free and neither is something you configure.
+
+So if browser access matters to you, you need a real hostname and a real
+certificate, which means one of:
+
+- [Cloudflare Tunnel](/docs/deployment/cloudflare-tunnel), if you have a domain
+- [Tailscale](/docs/deployment/tailscale), which issues certificates for its own
+  hostnames without you owning anything
+
+A self-signed certificate for something like `dev.lan` is not a way around this.
+No certificate authority issues for made-up domain endings, so every device
+would have to install your certificate authority by hand, and at a LAN party
+that means asking a room full of people to trust you with all of their traffic.
+
+## When voice does not work
+
+Chat working and voice not working is almost always UDP.
+
+```bash
+# Is the SFU alive?
+curl http://203.0.113.10:5005/health
+
+# Is UDP actually getting through? Run on another machine.
+nc -vzu 203.0.113.10 443
+```
+
+Then check that `ICE_ADVERTISE_IP` says the address people actually reach you
+on, rather than the machine's own idea of itself. Getting that wrong looks
+exactly like a firewall problem.
+
+More in [troubleshooting](/docs/guide/troubleshooting).

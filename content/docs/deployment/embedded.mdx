@@ -15,10 +15,14 @@ If you ever ran a Minecraft server off your own machine so your friends could
 join, this is that. Download, host, play. On a LAN it really is that simple:
 [discovery](/docs/server/multi-server) does what Hamachi used to.
 
-From outside your network you still open a port. A
-[Cloudflare Tunnel](/docs/deployment/cloudflare-tunnel) covers the HTTPS and
-WebSocket side, but WebRTC media is UDP and a tunnel cannot carry it, so the
-SFU needs its UDP range reachable directly.
+From outside your network you still open a port. For people on the desktop app
+that is all you need: forward the ports, hand out your IP, and skip domains and
+certificates entirely. See [No domain, just an IP](/docs/deployment/no-domain).
+
+A [Cloudflare Tunnel](/docs/deployment/cloudflare-tunnel) is for letting people
+join from a browser, which needs a real hostname and certificate. Note that a
+tunnel covers the HTTPS and WebSocket side only. WebRTC media is UDP and a
+tunnel cannot carry it, so the SFU still needs its UDP port reachable directly.
 
 ## Creating one
 
