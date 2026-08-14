@@ -50,6 +50,46 @@ curl http://localhost:5005/health    # SFU
 - Check CORS: `CORS_ORIGIN` in `server/.env` must include `http://127.0.0.1:15738` (desktop app), `https://app.gryt.chat` (web client), and any custom client origins
 - In production, ensure WSS (not WS) is used
 
+### Server clock is wrong
+
+If joining fails with a message about the server's clock, the two machines
+disagree about the time by more than a minute.
+
+A server proves who it is by signing a short statement, good for 60 seconds. Your
+client checks it has not expired. When the server's clock is off, a proof it
+signed a moment ago looks like one signed minutes ago, and the client refuses it.
+Nothing is wrong with the server's identity and nothing is being attacked. The
+clock is just wrong.
+
+Gryt tells you which way and by how much, so a message saying the server is four
+minutes behind you means the server is the one to fix.
+
+On the server:
+
+```bash
+timedatectl
+```
+
+You want `System clock synchronized: yes`. If it says `no`, or `NTP service:
+n/a`, the machine has no time sync running. Fresh VPS images often ship without
+it:
+
+```bash
+apt update && apt install -y chrony
+timedatectl
+```
+
+chrony corrects the clock on startup rather than drifting slowly into place, so
+the next join works immediately. No need to restart Gryt, since the proof is
+signed from the clock at the moment it is asked for.
+
+If `timedatectl set-ntp true` answers `NTP not supported`, that is the same
+thing: `systemd-timesyncd` is not installed. Installing chrony above fixes it, or
+install `systemd-timesyncd` and enable it instead.
+
+Container hosts inherit the clock from the machine underneath, so fix it there
+rather than inside the container.
+
 ### "Server identity not recognised"
 
 The server answering at this address presented a different identity key than the one
