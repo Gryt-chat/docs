@@ -225,7 +225,7 @@ docker compose exec server node admin-setOwner.js --grytUserId <keycloak_sub>
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `GRYT_IDENTITY_TIERS` | `account` | Comma-separated identity types the server accepts. Add `local` to admit people without a Gryt account. |
-| `GRYT_SERVER_ENABLED` | `true` | Set to `false` to reject every join while the server is out of service. |
+| `GRYT_AUTH_MODE` | `required` | `required` admits people normally. `disabled` rejects every join while the server is out of service. Any other value also rejects joins, and reports itself as misconfigured. |
 | `GRYT_OIDC_ISSUER` | `https://auth.gryt.chat/realms/gryt` | OIDC issuer URL |
 | `GRYT_OIDC_AUDIENCE` | `gryt-web` | OIDC audience |
 
