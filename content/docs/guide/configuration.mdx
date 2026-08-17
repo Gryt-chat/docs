@@ -10,14 +10,23 @@ icon: Settings
 The web client is intended for **local development and contributing** to Gryt. Self-hosting it in production won't work with the centralized auth at `auth.gryt.chat` because your domain won't be registered as a redirect URI. Use the [Gryt desktop app](https://github.com/Gryt-chat/gryt/releases) or [app.gryt.chat](https://app.gryt.chat) to connect to servers. If you self-host your own Keycloak, the web client will work, but your users will have separate identities that don't carry across other Gryt servers.
 </Callout>
 
-Optional development settings in `packages/client/.env`:
+Optional settings in `packages/client/.env`. All of them point the client at an identity
+stack, and all of them default to Gryt's own:
 
 ```bash
-VITE_AUDIO_SAMPLE_RATE=48000
-VITE_AUDIO_BUFFER_SIZE=256
+VITE_GRYT_OIDC_ISSUER=https://auth.gryt.chat/realms/gryt
+VITE_GRYT_OIDC_REALM=gryt
+VITE_GRYT_OIDC_CLIENT_ID=gryt-web
+VITE_GRYT_AUTH_API=https://auth.gryt.chat
+VITE_GRYT_AUTH_CALLBACK_URL=https://gryt.chat/auth/callback
+VITE_GRYT_IDENTITY_URL=https://id.gryt.chat
 ```
 
-Audio settings (volume, noise gate, device selection) are configured through the UI at runtime.
+These are read at build time. The prebuilt web image can also be pointed somewhere else at
+runtime, without a rebuild, through matching `window.GRYT_*` globals.
+
+Audio settings (volume, noise gate, device selection) are configured through the UI at
+runtime, not through the environment. The capture pipeline runs at a fixed 48 kHz.
 
 ## Signaling Server
 
@@ -190,8 +199,14 @@ ICE_UDP_MUX_PORT=443
 # Alternative (if not using ICE_UDP_MUX_PORT): pin a UDP port range
 ICE_UDP_PORT_MIN=10000
 ICE_UDP_PORT_MAX=10019
-LOG_LEVEL=info
-MAX_CONNECTIONS=1000
+
+# Cap on peers across the whole SFU, not per room. Unset or 0 means no cap.
+# Mainly there so you cannot accept more peers than the ICE UDP port range can bind.
+MAX_PEERS=1000
+
+# Logging. DEBUG adds per-connection detail, VERBOSE_LOG adds RTP packet logging.
+DEBUG=false
+VERBOSE_LOG=false
 ```
 
 For production, also set `ICE_ADVERTISE_IP` if the SFU host is behind NAT.
@@ -217,6 +232,30 @@ ICE_ADVERTISE_IP=203.0.113.10,192.168.1.100
 # Signaling server (packages/server/.env or docker .env)
 SFU_PUBLIC_HOST=wss://sfu.example.com,ws://192.168.1.100:5005
 ```
+
+### Running without TLS
+
+You do not need a domain or a certificate to run a server. A plain `ws://` address on a LAN
+IP works, and for a lot of self-hosters that is the whole setup.
+
+The one limit is the browser. A page served over https cannot open a `ws://` or `http://`
+connection, and the browser blocks it before anything reaches the network. So a server that
+only advertises `ws://` is reachable from:
+
+- the desktop app, which is not a web page and has no such restriction
+- a web client you serve yourself over plain http, on a LAN or on localhost
+
+and is not reachable from [app.gryt.chat](https://app.gryt.chat), because that is served
+over https. The client drops `ws://` endpoints from its list there rather than trying them
+and failing, so the server does not appear broken so much as absent.
+
+The desktop app goes a step further and downgrades `wss://` to `ws://` for addresses on a
+private network, since LAN addresses rarely have a certificate that would validate. It
+treats `10.x`, `127.x`, `192.168.x`, `172.16.x` through `172.31.x`, `169.254.x`, anything
+ending in `.local`, and the Tailscale range `100.64.x` through `100.127.x` as private.
+
+If you want both, advertise both. The comma-separated form above is there for exactly this:
+browsers take the `wss://` entry and everything else takes whichever is faster.
 
 ## Authentication
 
@@ -288,16 +327,17 @@ to think about.
 To reject **all** join attempts (temporarily lock the server):
 
 ```bash
-GRYT_SERVER_ENABLED=false
+GRYT_AUTH_MODE=disabled
 ```
 
-The canonical values are `true` and `false`. The server also accepts
-`on`/`off`, `yes`/`no`, and `1`/`0`. An empty value uses the default (`true`),
-while an unrecognized value rejects joins and reports the bad setting.
+`GRYT_AUTH_MODE` is the only variable involved. It defaults to `required`, which
+is the value that lets people in. `disabled` rejects every join with
+`auth_disabled`, and any other value rejects every join with
+`auth_misconfigured` and names the bad setting in the error.
 
-`GRYT_AUTH_MODE=required` and `GRYT_AUTH_MODE=disabled` remain supported for
-upgrades from older releases. `GRYT_SERVER_ENABLED` takes precedence when both
-variables are present.
+So there are two ways to lock a server and only one of them is deliberate. If
+joins are failing with `auth_misconfigured`, the value is a typo rather than a
+policy.
 
 See the [Server docs](/docs/server) for more on auth integration.
 
