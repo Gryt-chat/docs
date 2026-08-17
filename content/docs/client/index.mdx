@@ -73,14 +73,20 @@ Multi-server WebSocket management with real-time user state synchronization.
 
 ## Configuration
 
-Optional `packages/client/.env`:
+Optional `packages/client/.env`. These point the client at an identity stack and default to
+Gryt's own:
 
 ```bash
-VITE_AUDIO_SAMPLE_RATE=48000
-VITE_AUDIO_BUFFER_SIZE=256
+VITE_GRYT_OIDC_ISSUER=https://auth.gryt.chat/realms/gryt
+VITE_GRYT_OIDC_CLIENT_ID=gryt-web
+VITE_GRYT_AUTH_API=https://auth.gryt.chat
+VITE_GRYT_IDENTITY_URL=https://id.gryt.chat
 ```
 
-Audio settings (volume, noise gate, device) are configured through the UI.
+See [Configuration](/docs/guide/configuration) for the full list.
+
+Audio settings (volume, noise gate, device) are configured through the UI, not through the
+environment.
 
 ## Build
 
