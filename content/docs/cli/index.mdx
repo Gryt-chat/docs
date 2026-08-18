@@ -81,7 +81,22 @@ cancels.
 | 5 | Voice seats | `20` | Concurrent voice users. `0` means unlimited |
 | 6 | Trusted proxy hops | `0` | Set to `1` behind one reverse proxy or tunnel |
 | 7 | SFU WebSocket URL | empty | Voice stays unavailable until this points at a running SFU |
-| 8 | Storage backend | `filesystem` | `filesystem` or `s3` |
+| 8 | Storage backend | `filesystem` | `filesystem` or `s3`. Choosing `s3` adds six more steps |
+
+Choosing `s3` asks for the object store next. These six only appear for that
+backend, and they cover every variable the server reads:
+
+| Step | Setting | Default | Notes |
+|------|---------|---------|-------|
+| 9 | S3 endpoint | none | Full URL of the S3 API. Must start with `http://` or `https://` |
+| 10 | Bucket | `gryt` | Has to exist already. Gryt does not create it |
+| 11 | Region | `auto` | Works for MinIO and most S3-compatible services |
+| 12 | Access key ID | none | Needs read and write access to the bucket |
+| 13 | Secret access key | none | Typed behind asterisks, and masked in `gryt env` |
+| 14 | Path-style addressing | `true` | On for MinIO and most self-hosted gateways, off for AWS |
+
+Switching an existing server back to `filesystem` clears these, so credentials
+do not stay in the file for a backend nothing is using.
 
 Security levels set two things at once:
 
@@ -134,8 +149,11 @@ endpoint to show whether a server is up.
 <Callout type="warn" title="The generated deployment is the server alone">
 It contains no SFU, no object storage and no image worker. In practice:
 
-- **Voice does not work out of the box.** Run an [SFU](/docs/sfu) yourself and put its WebSocket URL in step 7 of the wizard.
-- **Choosing the `s3` storage backend only sets `STORAGE_BACKEND=s3`.** There is nowhere in the manager to enter credentials, so an S3 server needs them added another way.
+Voice does not work out of the box. Run an [SFU](/docs/sfu) yourself and put its
+WebSocket URL in step 7 of the wizard.
+
+Uploads do work, either on the filesystem or against an S3 store you already
+have, but nothing here builds one for you.
 
 For a deployment with every component wired together, use
 [Docker Compose](/docs/deployment/docker-compose) instead.
