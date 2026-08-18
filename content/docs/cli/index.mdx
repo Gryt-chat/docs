@@ -100,7 +100,19 @@ gryt  server manager                          3 servers · voice ready
   Archive                      ○ stopped  192.168.50.167:5003   —        here
 › Pivert CLI Server            ● running  192.168.50.167:5001   ready    here
   Staging                      ○ stopped  192.168.50.167:5002   —        here
+
+  SHARED  one of each, used by every server above
+  Voice (SFU)                  ● running  carries voice for every server here
+  Object store                 ● running  holds uploads for every server here
 ```
+
+The two rows under **SHARED** are the pieces this machine runs one of. `l`
+follows their output, which is where to look when voice stops working. `x` on
+one of them stops it for every server at once, and says so.
+
+An image worker runs beside each server rather than being shared, because it
+reads that server's own database. It has no row: `l` on the server already
+carries its output too.
 
 It refreshes every few seconds on its own, so a server that stops says so without
 you asking. `l` follows a server's log rather than showing a snapshot.
@@ -108,7 +120,7 @@ you asking. `l` follows a server's log rather than showing a snapshot.
 | Key | Action |
 |-----|--------|
 | `↑` `↓` or `k` `j` | Select a server |
-| `enter` | One server, with its addresses in full |
+| `enter` | One server, with its addresses grouped by who they are for |
 | `n` | New server |
 | `e` | Edit the selected server |
 | `s` `x` `r` | Start · stop · restart |
@@ -117,9 +129,42 @@ you asking. `l` follows a server's log rather than showing a snapshot.
 | `u` | Update, when one is available |
 | `q` | Quit |
 
-The `ADDRESS` column is the address other machines can use. A server bound to
-`0.0.0.0` is reachable on every address this machine has, and `enter` lists them
-all with loopback last.
+Every key that acts on a server works inside `enter` too, so you can start,
+stop and read a log without going back out.
+
+## Which address to give people
+
+The `ADDRESS` column is the address other machines on your network can use.
+`enter` groups them by who each one is for:
+
+```
+  On your network
+  192.168.50.167:5001   en0, local network
+
+  From the internet
+  81.166.209.188:5001
+  only if port 5001 is forwarded to this machine
+
+  This machine only
+  127.0.0.1:5001
+```
+
+The public address cannot be read off this machine's interfaces. Behind NAT the
+machine holds a private address and has no way of knowing what the world sees,
+so something outside has to answer. The CLI asks a STUN server, which is what
+STUN is for and what the SFU already uses for voice: one UDP packet to
+`stun.l.google.com:19302`, which replies with the address it saw. Nothing else
+is sent, and nothing is recorded.
+
+It runs once, the first time you open a server with `enter`, and never on the
+table. A machine that already holds a public address on an interface is
+answered from the interface without any packet leaving. Set
+`GRYT_NO_PUBLIC_LOOKUP=1` to skip it entirely; the line then reads
+"lookup turned off".
+
+The caveat under the address is the important part. A public address does not
+make a server reachable on its own: the port has to be forwarded to this
+machine first.
 
 ## The wizard
 
