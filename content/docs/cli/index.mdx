@@ -75,10 +75,10 @@ cancels.
 | Step | Setting | Default | Notes |
 |------|---------|---------|-------|
 | 1 | Server name | none | Required. Also becomes the profile ID, lowercased and hyphenated |
-| 2 | Bind address | `127.0.0.1` | Local only. Use `0.0.0.0` behind a firewall or proxy |
+| 2 | Bind address | `0.0.0.0` | Reachable from other machines. Use `127.0.0.1` to keep it on this one |
 | 3 | Port | `5000` | The port Docker publishes and clients connect to |
 | 4 | Security level | `balanced` | See the table below |
-| 5 | Voice seats | `20` | Concurrent voice users. `0` means unlimited |
+| 5 | Voice seats | `0` | No limit, matching the server's own default. See below |
 | 6 | Trusted proxy hops | `0` | Set to `1` behind one reverse proxy or tunnel |
 | 7 | SFU WebSocket URL | empty | Voice stays unavailable until this points at a running SFU |
 | 8 | Storage backend | `filesystem` | `filesystem` or `s3`. Choosing `s3` adds six more steps |
@@ -98,21 +98,43 @@ backend, and they cover every variable the server reads:
 Switching an existing server back to `filesystem` clears these, so credentials
 do not stay in the file for a backend nothing is using.
 
-Security levels set two things at once:
+### Security levels
 
-| Level | Identities | Discovery |
-|-------|-----------|-----------|
-| `strict` | Accounts only | Hidden |
-| `balanced` | Accounts only | Discoverable |
-| `community` | Accounts and local identities | Discoverable |
+Every level is invite-only. What changes between them is who may hold an
+identity on the server, and whether the server advertises itself over mDNS on
+the local network.
 
-All three are invite-only.
+| Level | Identities | LAN discovery |
+|-------|-----------|---------------|
+| `strict` | Gryt accounts only | Not advertised |
+| `balanced` | Gryt accounts only | Advertised |
+| `community` | Gryt accounts and local identities | Advertised |
+
+A **Gryt account** is an identity from [auth.gryt.chat](/docs/guide/accounts)
+that works across servers. A **local identity** is a keypair generated on the
+device, which never leaves it and is known only to this server. Allowing local
+identities means somebody can join without an account anywhere.
+
+**LAN discovery** is mDNS advertising, so a Gryt client on the same network
+lists the server without being given its address. Turning it off stops the
+advertisement; it is not an access control, since an invite still works either
+way.
+
+### Voice seats
+
+`0`, the default, means no cap, which is what the server does on its own.
+
+A cap is about the machine running the SFU, not about ports. With
+`ICE_UDP_MUX_PORT` set, which is the recommended arrangement, every participant
+shares one UDP port, so there is no per-person port to run out of. What runs
+out first is CPU and upload bandwidth.
 
 ## Commands
 
 | Command | What it does |
 |---------|--------------|
 | `gryt` | Open the manager |
+| `gryt doctor` | Check Docker and the config directory, and say what to fix. Exits non-zero when something is wrong |
 | `gryt list` | Print each server's ID, address and name |
 | `gryt env <server>` | Print the server's settings, each marked `live` or `restart`. Secrets are masked |
 | `gryt version` | Print the CLI version |
