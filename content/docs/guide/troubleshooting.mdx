@@ -112,6 +112,33 @@ If it does not match, something else is answering at that address. Do not unbloc
 To avoid this when moving or rebuilding a server, keep `server-identity-key.json` from
 the server's `DATA_DIR` — see [Security](/docs/guide/security#authenticating-the-server).
 
+### People connect and chat, but nobody can hear anyone
+
+This is the signature of a wrong or unreachable advertised address, and it is
+worth recognising because nothing in the app will say so.
+
+Chat and voice do not travel the same way. The signalling connection uses the
+address people joined on, so if they can see the server and send messages, that
+address is fine. Media does not use it: WebRTC connects directly to whatever the
+SFU advertises, which is `ICE_ADVERTISE_IP` and `SFU_PUBLIC_HOST`. Get those
+wrong, or leave the UDP port closed, and everything except the audio works.
+
+So the fault does not look like a network problem. It looks like broken audio.
+
+Check, in this order:
+
+- `ICE_ADVERTISE_IP` is your real public IP, not the machine's LAN address. A
+  server behind NAT cannot discover this by looking at itself.
+- The UDP port is open and forwarded to the SFU host: `ICE_UDP_MUX_PORT` if you
+  use the mux, otherwise the whole `ICE_UDP_PORT_MIN`–`ICE_UDP_PORT_MAX` range.
+- The forward points at the machine running the SFU, which is not necessarily
+  the machine running the server.
+
+Testing this from the server itself proves nothing. Some routers will let a
+machine reach its own public IP and some will not, and neither answer tells you
+what somebody outside your network sees. It has to be tried from outside, by
+somebody on a different connection or on mobile data with Wi-Fi off.
+
 ### SFU connection fails
 
 ```bash
