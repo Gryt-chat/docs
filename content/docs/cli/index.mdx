@@ -1,0 +1,149 @@
+---
+title: Overview
+description: gryt, the terminal manager for self-hosted Gryt servers
+icon: Terminal
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+`gryt` creates and runs self-hosted Gryt servers from a terminal. Run it with no
+arguments and it opens a keyboard-driven manager: create a server profile, edit
+its settings with validation, and start, stop or inspect the Docker deployment
+it writes for you.
+
+## Install
+
+```bash
+curl -fsSL https://get.gryt.chat | sh
+```
+
+The script picks the build for your platform, checks it against the release
+checksums, and installs to `/usr/local/bin` if that is writable or
+`~/.local/bin` if not. Two variables change what it does:
+
+| Variable | Effect |
+|----------|--------|
+| `GRYT_VERSION` | Install a specific tag, such as `v0.1.0`, instead of the newest release |
+| `GRYT_INSTALL_DIR` | Install somewhere other than the default |
+
+The script does not cover Windows. Download the `.zip` from the
+[releases page](https://github.com/Gryt-chat/cli/releases) instead.
+
+From source, with Go 1.25 or newer:
+
+```bash
+go install github.com/Gryt-chat/cli/cmd/gryt@latest
+```
+
+Starting a deployment needs Docker Desktop, or Docker Engine with the Compose
+plugin. Creating profiles and writing their files works without Docker.
+
+## Features
+
+- **Server profiles**: named local servers, each with its own settings, data directory and generated Compose file
+- **Validated settings**: ports, bind addresses, voice seats and proxy hops are checked as you type rather than when the container fails to start
+- **Security presets**: `strict`, `balanced` and `community`, which set the identity tiers and discoverability together
+- **Deployment control**: start, stop, restart, health and recent logs, without leaving the manager
+- **Live and restart labels**: every setting says whether saving it takes effect now or needs a restart
+- **Private storage**: profiles and generated `.env` files live in your user config directory, readable only by you
+- **Scriptable output**: `gryt list` and `gryt env` print plain text for use outside the manager
+
+## Using the manager
+
+```bash
+gryt
+```
+
+| Key | Action |
+|-----|--------|
+| `↑` `↓` or `k` `j` | Select a server |
+| `n` | New server wizard |
+| `e` | Edit the selected server |
+| `s` | Start |
+| `x` | Stop |
+| `r` | Restart |
+| `l` | Recent logs |
+| `g` | Refresh health |
+| `q` | Quit |
+
+## The wizard
+
+Press `n` for a new server, or `e` to edit one. `Enter` advances and saves on
+the last step, `Shift+Tab` goes back, `←` and `→` change a choice, and `Esc`
+cancels.
+
+| Step | Setting | Default | Notes |
+|------|---------|---------|-------|
+| 1 | Server name | none | Required. Also becomes the profile ID, lowercased and hyphenated |
+| 2 | Bind address | `127.0.0.1` | Local only. Use `0.0.0.0` behind a firewall or proxy |
+| 3 | Port | `5000` | The port Docker publishes and clients connect to |
+| 4 | Security level | `balanced` | See the table below |
+| 5 | Voice seats | `20` | Concurrent voice users. `0` means unlimited |
+| 6 | Trusted proxy hops | `0` | Set to `1` behind one reverse proxy or tunnel |
+| 7 | SFU WebSocket URL | empty | Voice stays unavailable until this points at a running SFU |
+| 8 | Storage backend | `filesystem` | `filesystem` or `s3` |
+
+Security levels set two things at once:
+
+| Level | Identities | Discovery |
+|-------|-----------|-----------|
+| `strict` | Accounts only | Hidden |
+| `balanced` | Accounts only | Discoverable |
+| `community` | Accounts and local identities | Discoverable |
+
+All three are invite-only.
+
+## Commands
+
+| Command | What it does |
+|---------|--------------|
+| `gryt` | Open the manager |
+| `gryt list` | Print each server's ID, address and name |
+| `gryt env <server>` | Print the server's settings, each marked `live` or `restart`. Secrets are masked |
+| `gryt version` | Print the CLI version |
+| `gryt help` | Print usage |
+
+## Where things live
+
+Profiles go in your user config directory, under `gryt/servers/<id>/`:
+
+| Platform | Path |
+|----------|------|
+| macOS | `~/Library/Application Support/gryt` |
+| Linux | `~/.config/gryt` |
+| Windows | `%AppData%\gryt` |
+
+Set `GRYT_CONFIG_DIR` to put them somewhere else.
+
+Each server directory holds `profile.json`, a generated `.env`, a generated
+`compose.yaml`, and a `data/` directory mounted into the container. The
+directory is created readable only by your user, and `.env` is written the same
+way, because it can hold secrets.
+
+Both generated files carry a header saying they are managed by `gryt`. Editing
+them by hand works, but the next save from the manager overwrites them.
+
+## What gets generated
+
+`compose.yaml` defines a single service: the Gryt server, from
+`ghcr.io/gryt-chat/server:latest`, published on the address and port you chose,
+with `data/` mounted at `/data` and a health check against `/health`. Starting
+it runs `docker compose up --detach`, and the manager reads the same `/health`
+endpoint to show whether a server is up.
+
+<Callout type="warn" title="The generated deployment is the server alone">
+It contains no SFU, no object storage and no image worker. In practice:
+
+- **Voice does not work out of the box.** Run an [SFU](/docs/sfu) yourself and put its WebSocket URL in step 7 of the wizard.
+- **Choosing the `s3` storage backend only sets `STORAGE_BACKEND=s3`.** There is nowhere in the manager to enter credentials, so an S3 server needs them added another way.
+
+For a deployment with every component wired together, use
+[Docker Compose](/docs/deployment/docker-compose) instead.
+</Callout>
+
+<Callout title="Live settings still need a restart today">
+Settings marked `live` are ones that belong in the server's own database rather
+than its environment. The label tells you which is which. Applying them without
+a restart needs a local management API in the server, which does not exist yet,
+so for now every change takes effect on restart.
+</Callout>
