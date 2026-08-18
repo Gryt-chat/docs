@@ -38,6 +38,43 @@ go install github.com/Gryt-chat/cli/cmd/gryt@latest
 Starting a deployment needs Docker Desktop, or Docker Engine with the Compose
 plugin. Creating profiles and writing their files works without Docker.
 
+## Updating
+
+```bash
+gryt update
+```
+
+That replaces the binary in place, checking the download against the release
+checksums first. `gryt update --check` reports whether a newer release exists
+and changes nothing.
+
+The manager also checks once when it starts. If there is a newer release it
+says so above the server list, and `u` applies it. The check asks GitHub which
+release is newest and sends nothing else, no identifier and nothing recorded.
+It fails silently, so a machine with no route out shows its servers rather than
+an error.
+
+`gryt version` prints what you have.
+
+Re-running the installer does the same job, and is the way back if the binary
+lives somewhere you cannot write. `gryt update` says so rather than asking for
+a password:
+
+```bash
+curl -fsSL https://get.gryt.chat | sh
+```
+
+To pin a version or roll one back, install it explicitly. `gryt update` always
+moves to the newest release, so it is the installer that goes backwards:
+
+```bash
+GRYT_VERSION=v0.1.2 sh -c "$(curl -fsSL https://get.gryt.chat)"
+```
+
+Note the shape. `GRYT_VERSION=v0.1.2 curl -fsSL https://get.gryt.chat | sh`
+sets the variable for `curl` rather than for the shell running the script, so
+it is ignored and you get the newest release anyway, without being told.
+
 ## Features
 
 - **Server profiles**: named local servers, each with its own settings, data directory and generated Compose file
