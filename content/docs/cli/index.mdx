@@ -77,13 +77,13 @@ it is ignored and you get the newest release anyway, without being told.
 
 ## Features
 
-- **Server profiles**: named local servers, each with its own settings, data directory and generated Compose file
-- **Validated settings**: ports, bind addresses, voice seats and proxy hops are checked as you type rather than when the container fails to start
-- **Security presets**: `strict`, `balanced` and `community`, which set the identity tiers and discoverability together
-- **Deployment control**: start, stop, restart, health and recent logs, without leaving the manager
-- **Live and restart labels**: every setting says whether saving it takes effect now or needs a restart
-- **Private storage**: profiles and generated `.env` files live in your user config directory, readable only by you
-- **Scriptable output**: `gryt list` and `gryt env` print plain text for use outside the manager
+- **Live dashboard**: every server on one screen, refreshing itself, with the address you hand people rather than the address it binds to
+- **A wizard that asks answerable questions**: which of this machine's addresses people will reach it on, not what a WebSocket URL should be
+- **Voice and uploads without configuration**: one SFU and one object store per machine, shared by every server on it
+- **Ports that do not collide**: it offers the first port nothing else holds
+- **`gryt doctor`**: says what is wrong with Docker, the config directory, or a port something else has taken
+- **Updates itself**: `gryt update`, or `u` when the dashboard says one is available
+- **Private by default**: profiles and generated `.env` files are readable only by you
 
 ## Using the manager
 
@@ -91,49 +91,85 @@ it is ignored and you get the newest release anyway, without being told.
 gryt
 ```
 
+Every server, its live state, and the address to hand out:
+
+```
+gryt  server manager                          3 servers · voice ready
+  NAME                         STATUS     ADDRESS               VOICE    UPLOADS
+
+  Archive                      ○ stopped  192.168.50.167:5003   —        here
+› Pivert CLI Server            ● running  192.168.50.167:5001   ready    here
+  Staging                      ○ stopped  192.168.50.167:5002   —        here
+```
+
+It refreshes every few seconds on its own, so a server that stops says so without
+you asking. `l` follows a server's log rather than showing a snapshot.
+
 | Key | Action |
 |-----|--------|
 | `↑` `↓` or `k` `j` | Select a server |
-| `n` | New server wizard |
+| `enter` | One server, with its addresses in full |
+| `n` | New server |
 | `e` | Edit the selected server |
-| `s` | Start |
-| `x` | Stop |
-| `r` | Restart |
-| `l` | Recent logs |
-| `g` | Refresh health |
+| `s` `x` `r` | Start · stop · restart |
+| `l` | Follow the log |
+| `g` | Refresh now |
+| `u` | Update, when one is available |
 | `q` | Quit |
+
+The `ADDRESS` column is the address other machines can use. A server bound to
+`0.0.0.0` is reachable on every address this machine has, and `enter` lists them
+all with loopback last.
 
 ## The wizard
 
-Press `n` for a new server, or `e` to edit one. `Enter` advances and saves on
-the last step, `Shift+Tab` goes back, `←` and `→` change a choice, and `Esc`
-cancels.
+`n` for a new server, `e` to edit one. `enter` advances and saves on the last
+step, `shift+tab` goes back, `esc` cancels.
 
-| Step | Setting | Default | Notes |
-|------|---------|---------|-------|
-| 1 | Server name | none | Required. Also becomes the profile ID, lowercased and hyphenated |
-| 2 | Bind address | `0.0.0.0` | Reachable from other machines. Use `127.0.0.1` to keep it on this one |
-| 3 | Port | `5000` | The port Docker publishes and clients connect to |
-| 4 | Security level | `balanced` | See the table below |
-| 5 | Voice seats | `0` | No limit, matching the server's own default. See below |
-| 6 | Trusted proxy hops | `0` | Set to `1` behind one reverse proxy or tunnel |
-| 7 | SFU WebSocket URL | empty | Voice stays unavailable until this points at a running SFU |
-| 8 | Storage backend | `filesystem` | `filesystem` or `s3`. Choosing `s3` adds six more steps |
+Eight questions, and the count moves as you answer: ticking "a domain" adds one,
+choosing external S3 adds six.
 
-Choosing `s3` asks for the object store next. These six only appear for that
-backend, and they cover every variable the server reads:
+| Step | Question | Default |
+|------|----------|---------|
+| 1 | Server name | none, required |
+| 2 | Bind address | `0.0.0.0`, reachable from other machines |
+| 3 | Port | the first one nothing else on this machine holds |
+| 4 | Security level | `balanced` |
+| 5 | Voice seats | `0`, no limit |
+| 6 | Trusted proxy hops | `0` |
+| 7 | Where will people connect from | this machine, ticked |
+| 8 | Where do uploads go | `shared` |
 
-| Step | Setting | Default | Notes |
-|------|---------|---------|-------|
-| 9 | S3 endpoint | none | Full URL of the S3 API. Must start with `http://` or `https://` |
-| 10 | Bucket | `gryt` | Has to exist already. Gryt does not create it |
-| 11 | Region | `auto` | Works for MinIO and most S3-compatible services |
-| 12 | Access key ID | none | Needs read and write access to the bucket |
-| 13 | Secret access key | none | Typed behind asterisks, and masked in `gryt env` |
-| 14 | Path-style addressing | `true` | On for MinIO and most self-hosted gateways, off for AWS |
+Every default is a placeholder rather than text you have to delete: type and it
+replaces, leave it and you get the default.
 
-Switching an existing server back to `filesystem` clears these, so credentials
-do not stay in the file for a backend nothing is using.
+### Where will people connect from
+
+Step 7 is a tick-list of this machine's own addresses, read from its interfaces.
+Docker bridges and other virtual interfaces are left out, because advertising
+those hands clients candidates that can never connect.
+
+```
+Where will people connect from?
+Space ticks, ↑/↓ moves. Tick every route that applies.
+
+  › [x] This machine only (localhost)
+    [ ] 192.168.50.167  (en0, local network)
+    [ ] A domain or address I will type
+```
+
+Tick every route that applies. Clients are given all of them and use whichever
+answers fastest, so a server reachable over a LAN and over the internet is both.
+Ticking the last option adds a step to type a domain, for a server behind a
+reverse proxy with TLS.
+
+### Where do uploads go
+
+| Answer | What happens |
+|--------|--------------|
+| `shared` | The object store on this machine, with thumbnails and compression. Needs nothing from you |
+| `filesystem` | Straight into the server's own folder. No extra containers, no thumbnails |
+| `s3` | A storage service you already have. Adds six steps for the endpoint, bucket, region, keys and path-style setting |
 
 ### Security levels
 
@@ -171,11 +207,26 @@ out first is CPU and upload bandwidth.
 | Command | What it does |
 |---------|--------------|
 | `gryt` | Open the manager |
-| `gryt doctor` | Check Docker and the config directory, and say what to fix. Exits non-zero when something is wrong |
+| `gryt doctor` | Check Docker, the config directory and the ports. Exits non-zero when something is wrong |
 | `gryt list` | Print each server's ID, address and name |
-| `gryt env <server>` | Print the server's settings, each marked `live` or `restart`. Secrets are masked |
+| `gryt env <server>` | Print the settings, each marked `live` or `restart`. Secrets are masked |
+| `gryt update` | Replace this binary with the newest release |
 | `gryt version` | Print the CLI version |
-| `gryt help` | Print usage |
+
+`gryt doctor` checks that Docker is installed, that the Compose plugin is there,
+that the daemon is actually running, that the config directory is writable, and
+that nothing else has taken a server's port. That last one matters on macOS:
+AirPlay Receiver listens on port 5000, so a server there is reachable by
+AirTunes rather than by anybody you gave the address to.
+
+```
+ok    Docker installed     /usr/local/bin/docker
+ok    Compose plugin       available
+FAIL  Docker daemon        installed, but not running
+ok    Config directory     /Users/you/Library/Application Support/gryt
+
+Docker daemon: Open Docker Desktop and wait for it to finish starting
+```
 
 ## Where things live
 
@@ -190,35 +241,31 @@ Profiles go in your user config directory, under `gryt/servers/<id>/`:
 Set `GRYT_CONFIG_DIR` to put them somewhere else.
 
 Each server directory holds `profile.json`, a generated `.env`, a generated
-`compose.yaml`, and a `data/` directory mounted into the container. The
-directory is created readable only by your user, and `.env` is written the same
-way, because it can hold secrets.
+`compose.yaml`, and a `data/` directory mounted into the container. Beside them
+is `shared/`, holding the compose project every server uses and the credentials
+for the object store. Both are created readable only by your user, because they
+hold secrets.
 
-Both generated files carry a header saying they are managed by `gryt`. Editing
-them by hand works, but the next save from the manager overwrites them.
+Generated files carry a header saying they are managed by `gryt`. Editing them
+by hand works, but the next save overwrites them.
 
 ## What gets generated
 
-`compose.yaml` defines a single service: the Gryt server, from
-`ghcr.io/gryt-chat/server:latest`, published on the address and port you chose,
-with `data/` mounted at `/data` and a health check against `/health`. Starting
-it runs `docker compose up --detach`, and the manager reads the same `/health`
-endpoint to show whether a server is up.
+Two compose projects, on a shared Docker network named `gryt`.
 
-<Callout type="warn" title="The generated deployment is the server alone">
-It contains no SFU, no object storage and no image worker. In practice:
+**`shared/`** holds the pieces there is one of per machine: the SFU that carries
+voice for every server here, and, when any server uses shared storage, the
+object store and its bucket. Starting any server brings it up first.
 
-Voice does not work out of the box. Run an [SFU](/docs/sfu) yourself and put its
-WebSocket URL in step 7 of the wizard.
+**Each server** gets its own project: the Gryt server itself, and an image
+worker beside it when that server uses object storage. The worker is per-server
+rather than shared because it reads the job queue out of that server's own
+database.
 
-Uploads do work, either on the filesystem or against an S3 store you already
-have, but nothing here builds one for you.
+So voice and uploads work on a server made with the defaults, with nothing to
+configure and no external service.
 
-For a deployment with every component wired together, use
-[Docker Compose](/docs/deployment/docker-compose) instead.
-</Callout>
-
-<Callout title="Live settings still need a restart today">
+<Callout title="Live settings still need a restart">
 Settings marked `live` are ones that belong in the server's own database rather
 than its environment. The label tells you which is which. Applying them without
 a restart needs a local management API in the server, which does not exist yet,
