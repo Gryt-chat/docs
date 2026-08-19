@@ -1,0 +1,111 @@
+---
+title: Hooks
+description: The API you actually call
+icon: Code
+---
+
+Every hook here is a singleton. Its body runs once inside `<VoiceSingletonHooks />` and every caller reads the same value, so calling `useMicrophone()` in five components does not open five microphones.
+
+## useSFU
+
+The call itself.
+
+```typescript
+const {
+  connect, disconnect, isConnected, isConnecting,
+  connectionState, connectionError,
+  streams, streamSources, videoStreams,
+  addVideoTrack, removeVideoTrack,
+  addScreenVideoTrack, removeScreenVideoTrack,
+  addScreenAudioTrack, removeScreenAudioTrack,
+  currentServerConnected, currentChannelConnected,
+} = useSFU();
+```
+
+`connect(channelId, esportsMode?, maxBitrate?)` asks the room coordinator for access, probes the SFU URLs it gets back, and brings the peer connection up. `disconnect(onDisconnect?)` tears it down.
+
+`connectionState` is a `SFUConnectionState`: `disconnected`, `requesting_access`, `connecting`, `connected`, `reconnecting` or `failed`.
+
+`connectionError` says why a connection ended when the engine has something to say. `"reconnect-failed"` means it retried and gave up. Null covers everything else, including an ordinary hang-up. Without it, `disconnected` alone cannot tell a dropped call from somebody pressing leave, which left embedders guessing.
+
+`streams` is keyed by id and carries `{ stream, isLocal, kind }`. `streamSources` gives you the Web Audio nodes per remote stream, a gain and an analyser, which is what a speaking indicator or a per-person volume slider reads. `videoStreams` is the plain map of camera and screen streams.
+
+The video and screen track methods take a `MediaStreamTrack`, its `MediaStream` and an optional preferred codec, and handle the renegotiation.
+
+There are also optional escape hatches for debugging and stats: `getPeerConnection`, `getScreenSenderTrackId`, `getCameraSenderTrackId`, `getScreenVideoSender` and `activeSfuUrl`.
+
+## useMicrophone
+
+```typescript
+const {
+  microphoneBuffer, isLoaded, devices, getDevices,
+  micUnavailable, isTransmitting, getVisualizerData, getGateLevel,
+  setPushToTalkActive, addHandle, removeHandle,
+} = useMicrophone(shouldAccess);
+```
+
+`microphoneBuffer` is the whole audio graph: the raw and processed analysers, the gain nodes, the noise gate worklet, the RNNoise node, the AGC nodes and the compressor. A meter reads `analyser` or `finalAnalyser` from it.
+
+`micUnavailable` is `"denied"`, `"no-device"`, `"failed"`, or null once a microphone is live. The three cases want different advice, which is why they are not one boolean. Joining a voice channel still works in this state on purpose, because listening without a microphone is useful, so this is what lets the UI say so out loud instead of looking healthy while nobody can hear you.
+
+`isTransmitting` is true while audio is actually leaving the client, and `getGateLevel()` returns the level the noise gate is deciding on. Both are null when the gate worklet is unavailable.
+
+`setPushToTalkActive(active)` opens and closes the transmit gate. The embedder owns the trigger, a key on the desktop or a held button on a phone, and calls this. It does nothing in voice-activity mode.
+
+### Handles
+
+`addHandle(id)` and `removeHandle(id)` are how a component says it needs the microphone open. The microphone stays live while at least one handle is held and is released when the last one goes, which is what stops the OS showing your app listening while it sits idle. `useHandles` exposes the same registry directly.
+
+## useCamera
+
+```typescript
+const {
+  cameraStream, cameraEnabled, setCameraEnabled,
+  cameraError, retryCamera, devices, getDevices,
+} = useCamera();
+```
+
+Quality and fps come from `VoiceConfig.camera` rather than from arguments. `QUALITY_CONSTRAINTS` maps a `CaptureQuality` to width and height, and `CAMERA_FPS_OPTIONS` is the list of allowed frame rates.
+
+## useScreenShare
+
+```typescript
+const {
+  startScreenShare, stopScreenShare, screenShareActive,
+  screenVideoStream, screenAudioStream,
+  nativeAudioActive, nativeScreenCaptureAvailable,
+  nativeEncodedCodec, subscribeEncodedFrames,
+} = useScreenShare();
+```
+
+`startScreenShare(withAudio, sourceId?)` takes the source id from whatever picker the embedder shows.
+
+The native fields only matter where the host provides native screen capture. `nativeScreenCaptureAvailable` says whether it is there, `nativeEncodedCodec` is `"h264"`, `"hevc"` or null, and `subscribeEncodedFrames` hands you pre-encoded NAL frames from the hardware encoder. `nativeAudioActive` is true when the OS is capturing audio directly, which is the case where no phase cancellation is needed.
+
+`STANDARD_FPS_OPTIONS` and `EXPERIMENTAL_FPS_OPTIONS` are the two frame rate lists, and `estimateBitrate(quality, fps)` returns a bitrate for a combination, or null.
+
+## useSpeakers
+
+```typescript
+const { devices, getOutputDevices, applyOutputDevice, remoteBusNode } = useSpeakers();
+```
+
+`applyOutputDevice(deviceId)` calls `setSinkId` on the shared audio context. `remoteBusNode` is the gain node everyone else's audio is mixed into.
+
+## Smaller pieces
+
+`useSharedAudioContext` gives you the one `AudioContext` everything runs on.
+
+`useDeviceEnumeration` lists audio input devices and re-lists them on `devicechange`, prompting for permission if the labels come back empty.
+
+`usePushToTalkGate` is the gate itself, for embedders wiring their own trigger.
+
+`useVoiceLatency` returns a `LatencyBreakdown`, and `useVideoStats` returns inbound and outbound video stats from `getStats`.
+
+`getCurrentVolume`, `getVolumeDb`, `volumeToLevel` and `isSpeaking` are plain functions over an analyser, for meters and speaking indicators.
+
+`detectFraming` and `CENTRED` are the face-framing helpers, which run on the local machine and produce two numbers rather than sending video anywhere.
+
+`selectBestSfuUrl`, `getCachedSfuUrl` and `warmSfuSelection` are the SFU probing, exposed so an embedder can warm the selection before somebody presses join.
+
+`getIsBrowserSupported` tells you whether device enumeration is available at all.
