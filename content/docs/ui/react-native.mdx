@@ -1,0 +1,59 @@
+---
+title: React Native
+description: "@gryt/ui-native, and where a phone forces a different answer"
+icon: Smartphone
+---
+
+`@gryt/ui-native` renders the Gryt design system through React Native.
+
+```bash
+npm install @gryt/ui-native
+```
+
+Your app provides `react` and `react-native`. `@gryt/ui` is installed alongside it, for the colour maths below, and nothing from its main entry is loaded.
+
+## Theming
+
+There is no cascade and there are no custom properties, so the theme arrives through context rather than through `:root`.
+
+```tsx
+import { Chip, GrytThemeProvider, Surface } from "@gryt/ui-native";
+
+export function App() {
+  return (
+    <GrytThemeProvider followSystemAppearance>
+      <Surface level="raised" bordered padding={4}>
+        <Chip label="Live" tone="success" />
+      </Surface>
+    </GrytThemeProvider>
+  );
+}
+```
+
+A component rendered outside a provider gets the dark theme rather than nothing, which matches `@gryt/ui` shipping its dark tokens on `:root`.
+
+`createNativeTheme` builds its ramps by calling `neutralScale`, `hueScale` and `alphaScale` from `@gryt/ui/theme`. What it does not use is `createGrytTheme`, which returns a map of CSS custom properties that React Native has nowhere to put.
+
+## What is here
+
+Thirty-three components, against 42 in `@gryt/ui`. Missing: Autocomplete, Combobox, Composer, ContextMenu, ConversationItem, Form, IconButton, MessageBubble, NavigationMenu and PreviewCard. Most of those are Gryt-specific and want a screen to design against rather than a web component to copy.
+
+## Where a phone forces a different answer
+
+The goal is 1:1, and the honest list of where it is not is kept in the package's [README](https://github.com/Gryt-chat/ui/blob/main/packages/ui-native/README.md). The ones worth knowing before you design against them:
+
+<Callout type="warn" title="Tooltip is a different interaction">
+On the web a tooltip appears on hover after a delay. Here it opens on long press and closes on release. It is the same name on a different interaction, and it is the component where 1:1 is least achievable. An interface that needs tooltips to be usable will not survive the port.
+</Callout>
+
+There is no hover state anywhere, because a phone has no pointer. The web's scale-on-hover is deliberately not emulated on press, which would fire on every tap.
+
+A positioned overlay does not follow a trigger that moves. Floating UI keeps watching the reference element; React Native measures on demand and reports nothing afterwards, so the position is taken once, when the popup opens. A list scrolling underneath an open menu leaves the menu where it was.
+
+`Select` is a list rather than the platform picker, and `Switch` is drawn from tokens rather than using React Native's. iOS and Android draw both of those differently from each other and neither takes the Gryt palette.
+
+## Importing it outside React Native
+
+You cannot. The build is unbundled `tsc` output, which is what Metro wants: it resolves `.native.ts` and `.web.ts` per file, and a bundle would have no files left to pick between. A post-build step appends the `.js` extensions Node's resolver needs, so the module graph is valid, but importing the entry from plain Node still fails on `react-native` itself, which Node cannot load either.
+
+The theme layer is testable without a native runtime, which is what the package's own tests cover.
