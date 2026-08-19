@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          # Matching the Dockerfile rather than the newest Node, so a build that
+          # passes here is a build that passes in the image.
+          node-version: 22
+          cache: yarn
+      - run: yarn install --frozen-lockfile
+
+      # `next build` type-checks as part of building and there is no separate
+      # typecheck script, so this is both.
+      - run: yarn build
+
+      # docs.gryt.chat is this Dockerfile, and until now nothing built it before
+      # a deploy tried to. ui was broken that way for days with every other
+      # check green (GRYT-362), which is what this is here to prevent.
+      #
+      # In the same job as the build because the Dockerfile copies node_modules
+      # out of the build context before it installs, so the context needs one.
+      # A separate job would have to install a second time to produce it.
+      - run: docker build .
