@@ -3,7 +3,6 @@ FROM node:22-alpine AS builder
 WORKDIR /app
 
 COPY package.json yarn.lock ./
-COPY node_modules ./node_modules
 RUN yarn install --frozen-lockfile --ignore-scripts --ignore-engines
 
 COPY . .

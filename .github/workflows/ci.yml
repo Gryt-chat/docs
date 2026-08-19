@@ -22,11 +22,10 @@ jobs:
       # typecheck script, so this is both.
       - run: yarn build
 
-      # docs.gryt.chat is this Dockerfile, and until now nothing built it before
-      # a deploy tried to. ui was broken that way for days with every other
-      # check green (GRYT-362), which is what this is here to prevent.
-      #
-      # In the same job as the build because the Dockerfile copies node_modules
-      # out of the build context before it installs, so the context needs one.
-      # A separate job would have to install a second time to produce it.
+  # docs.gryt.chat is this Dockerfile. Its own job, because the image installs
+  # everything it needs and has nothing to take from the one above.
+  image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
       - run: docker build .
