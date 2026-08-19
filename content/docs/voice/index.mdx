@@ -1,0 +1,41 @@
+---
+title: Overview
+description: "The Gryt voice engine as an npm package"
+icon: Mic
+---
+
+`@gryt/voice` is Gryt's voice engine published on its own. It handles signalling with the SFU, ICE, track management, capture, the audio graph, and the connection state machine. The Gryt client uses it, and so can anything else that runs React.
+
+```bash
+npm install @gryt/voice
+```
+
+The package is `0.1.0`, AGPL-3.0-only, ESM only. React 18 or newer is the only peer dependency, and there are no runtime dependencies.
+
+<Callout type="warn" title="Two things that will cost you an afternoon">
+`<VoiceSingletonHooks />` has to be mounted above anything that calls a voice hook, or every hook returns its initial value forever and nothing tells you why. The package also cannot be pre-bundled: Vite needs `optimizeDeps: { exclude: ["@gryt/voice"] }`. Both are covered in [Getting started](/docs/voice/getting-started).
+</Callout>
+
+## What it does not do
+
+The engine reports and the app decides. That split is what makes the rest of the API legible, so it is worth stating plainly.
+
+It plays no sounds. It raises no toasts and sends no notifications. It does not know that servers exist, which ones you have, or which one is on screen. When a call drops after retrying, the engine sets `connectionError` to `"reconnect-failed"` and stops there. Whether that is worth interrupting somebody is a question the engine cannot answer.
+
+The Gryt client does all of those things itself, in two small hooks sitting on top of the package. They are worth reading before writing your own: see the [reference implementation](/docs/voice/getting-started#the-reference-implementation).
+
+## The seams
+
+Five interfaces cover everything the engine cannot work out for itself. None of them are guessable from the export list, so they get [a page of their own](/docs/voice/seams).
+
+`VoiceConfig` is what the person has chosen: device ids, mute state, gain, noise gate, camera quality, STUN hosts. It arrives through `VoiceConfigProvider` and the engine never reaches up for it.
+
+`VoiceHost` answers two questions about the runtime. Is native capture available, and is a plain `ws://` connection to a private address allowed.
+
+`RoomCoordinator` is Gryt's half of joining a channel: asking permission, saying what is being published, reporting peers. You supply it alongside a connection target.
+
+`SfuTransport` and `VoicePlatform` describe signalling and per-platform capture. In `0.1.0` these are exported types that nothing consumes yet. The engine opens its own WebSocket to the SFU and calls `navigator.mediaDevices` directly, so a browser or Electron embedder does not supply either one. They are the shape the React Native adapter will plug into.
+
+## Where the code is
+
+The package lives at [Gryt-chat/voice](https://github.com/Gryt-chat/voice). The Gryt client is the reference implementation, under `packages/client/src/packages/webRTC/src/adapters`.
