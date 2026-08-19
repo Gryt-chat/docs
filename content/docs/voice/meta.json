@@ -1,0 +1,11 @@
+{
+  "root": true,
+  "title": "Voice SDK",
+  "icon": "AudioLines",
+  "pages": [
+    "index",
+    "getting-started",
+    "seams",
+    "hooks"
+  ]
+}

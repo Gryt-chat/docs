@@ -1,0 +1,111 @@
+---
+title: Getting started
+description: Wiring the engine into a React app
+icon: Play
+---
+
+Four things have to be in place before a call can happen: the bundler has to leave the package alone, the host has to be set, the singleton hooks have to be mounted, and the engine needs a config and a target.
+
+## Tell the bundler not to pre-bundle it
+
+The package builds its RNNoise worker with `new URL("./rnnoiseWorker.js", import.meta.url)`. A bundler that rewrites the package into its own dependency cache moves the code away from the worker file, and the URL then points at somewhere no worker exists.
+
+In `vite.config.ts`:
+
+```typescript
+export default defineConfig({
+  optimizeDeps: {
+    exclude: ["@gryt/voice"],
+  },
+});
+```
+
+<Callout type="warn">
+Getting this wrong fails quietly. You get `Failed to initialize RNNoise processor` in the console, and voice keeps working without noise suppression. Nothing else breaks, so it is easy to ship.
+</Callout>
+
+## Set the host
+
+`VoiceHost` answers two questions about the runtime it is embedded in. In a browser you can skip this entirely: the default is `webHost`, which reports no native capture and no insecure transport, so forgetting to set one degrades to the plain `getUserMedia` path rather than throwing.
+
+```typescript
+import { setVoiceHost } from "@gryt/voice";
+
+setVoiceHost(myHost);
+```
+
+Set it at module scope rather than inside an effect. Host capabilities cannot change while the process is running, and setting it during a render leaves the first connection asking a host that is not there yet.
+
+## Mount the singleton hooks
+
+<Callout type="warn" title="This is the one that costs an afternoon">
+`useSFU`, `useMicrophone`, `useCamera`, `useScreenShare`, `useSpeakers`, `useHandles` and `useSharedAudioContext` are singleton hooks. Their bodies run once, inside `<VoiceSingletonHooks />`, and every caller reads the same value. Without that component mounted they register into a list that nothing renders, so every hook returns its `initialValue` and keeps returning it.
+
+The failure is silent. `useSFU().connect` is the no-op from the init object, `useMicrophone()` never opens a microphone, and the app typechecks, builds and launches. You find out when a call does nothing.
+</Callout>
+
+Mount it once, above anything that consumes a voice hook. If your app has its own singleton-hook host, this goes next to it rather than instead of it: they are two separate registries.
+
+## Supply config and a target
+
+`VoiceConfigProvider` carries three things: the settings the engine reads, the callbacks it reports back through, and where to connect.
+
+```tsx
+import { VoiceConfigProvider, VoiceSingletonHooks } from "@gryt/voice";
+
+export function VoiceProvider({ children }: { children?: ReactNode }) {
+  const config = useVoiceConfigFromSettings(stunHosts);
+
+  const target = useMemo(() => {
+    if (!host) return null;
+    return { id: host, room: createRoomCoordinator(socket, host) };
+  }, [host, socket]);
+
+  return (
+    <VoiceConfigProvider config={config} target={target}>
+      <VoiceSingletonHooks />
+      {children}
+    </VoiceConfigProvider>
+  );
+}
+```
+
+A null `target` is a normal state and not an error. It means nothing is selected and the engine has nothing to do.
+
+Keep the target's identity stable while its `id` is. Building a new object on every render hands the engine a new coordinator each time the app shell re-renders.
+
+Config is a context rather than a module singleton on purpose. It changes while a call is running, every time somebody drags a slider, and a singleton would not re-render anything. Host capabilities are fixed for the life of the process, which is why that one is a singleton.
+
+## Make a call
+
+```tsx
+import { SFUConnectionState, useSFU } from "@gryt/voice";
+
+function JoinButton({ channelId }: { channelId: string }) {
+  const { connect, disconnect, connectionState } = useSFU();
+
+  if (connectionState === SFUConnectionState.CONNECTED) {
+    return <button onClick={() => disconnect()}>Leave</button>;
+  }
+
+  return <button onClick={() => connect(channelId)}>Join</button>;
+}
+```
+
+The full surface is in [Hooks](/docs/voice/hooks).
+
+## The reference implementation
+
+The Gryt client wires all of this up in `packages/client/src/packages/webRTC/src/adapters`:
+
+`VoiceProvider.tsx` sets the host at module scope, builds the target from the socket for whichever server is on screen, and mounts `VoiceSingletonHooks`.
+
+`voiceConfig.ts` maps the client's settings store into a `VoiceConfig`. It is the one place that knows both shapes, so renaming a setting is a change here rather than a change inside the package.
+
+`roomCoordinator.ts` puts Gryt's `voice:*` socket events behind the `RoomCoordinator` interface, including a 15 second timeout on the access request and the rate-limit path.
+
+`voiceHost.ts` answers the two host questions from the Electron bridge and wraps the native capture methods the package calls.
+
+`useVoiceLifecycle.ts` runs the three behaviours that were left out of the package on purpose: the connect sound, ending a call when its server is removed, and the server hanging up on you.
+
+`useVoiceLifecycle` is the clearest illustration of where the line sits. All three of those behaviours used to live inside `useSFU`. Each one needs the server list, the DOM, or a decision about what the person should hear, and none of those belong to a voice engine.
