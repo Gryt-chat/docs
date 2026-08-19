@@ -1,0 +1,191 @@
+---
+title: The seams
+description: The five interfaces the engine cannot work out for itself
+icon: Cable
+---
+
+Signalling, ICE, track management and the connection state machine are the same wherever the engine runs. Five interfaces cover the parts that are not, and they are the whole API surface an embedder has to think about.
+
+## VoiceConfig
+
+What the person has chosen. It is passed in and never read from a store, which is also what makes the values testable without a React tree.
+
+```typescript
+interface VoiceConfig {
+  audio: {
+    deviceId?: string;
+    muted: boolean;
+    serverMuted: boolean;
+    deafened: boolean;
+    serverDeafened: boolean;
+    outputVolume: number;
+    inputMode: "voice_activity" | "push_to_talk";
+    volume: number;
+    loopback: boolean;
+    noiseSuppression: boolean;
+    noiseGate: number;
+    noiseGateRelease: number;
+    autoGain: { enabled: boolean; targetDb: number };
+    compressorEnabled: boolean;
+    compressorAmount: number;
+  };
+  camera: {
+    deviceId?: string;
+    quality: CaptureQuality;
+    fps: CameraFps;
+    codec?: string;
+    mirrored: boolean;
+  };
+  screen: {
+    quality: CaptureQuality;
+    fps: ScreenShareFps;
+    codec?: string;
+    gamingMode: boolean;
+  };
+  connection: {
+    stunHosts: string[];
+    eSportsMode: boolean;
+    maxBitrate?: number | null;
+  };
+}
+```
+
+`muted` and `serverMuted` are separate on purpose: one is the person's choice, the other a moderator's. `noiseGate` is a threshold in dB where 0 disables gating, which is what push-to-talk relies on. `noiseSuppression` is off on native platforms, where the OS does its own.
+
+`stunHosts` deserves a note. The client derives these from whichever server is on screen. The engine is not told which server that is, because knowing about a server list is the one thing it is deliberately kept out of, so it gets the answer instead of the lookup.
+
+<Callout type="warn" title="inputMode uses underscores">
+`"voice_activity"` and `"push_to_talk"`. This field said `"voice-activity"` and `"push-to-talk"` until GRYT-340 and nothing caught it, because the only code reading it was inside the package and the only code writing it was in the client. Both halves compiled, and they would have met for the first time at runtime with push-to-talk never engaging.
+</Callout>
+
+### Delivery
+
+`VoiceConfigProvider` is how it arrives, and `useVoiceConfig` is how the engine reads it.
+
+```tsx
+<VoiceConfigProvider config={config} callbacks={callbacks} target={target}>
+  {children}
+</VoiceConfigProvider>
+```
+
+`callbacks` is the other direction: things the engine finds out and the app might want to store. There is one so far, `onCameraDeviceChanged`, which fires when the camera that opened is not the one that was configured, usually because it has been unplugged. These are deliberately not setters. The engine says what it observed and the app writes it down, or does not.
+
+## VoiceTarget and RoomCoordinator
+
+`VoiceTarget` is where to connect and what to talk to when it gets there.
+
+```typescript
+interface VoiceTarget {
+  id: string;
+  room: RoomCoordinator;
+}
+```
+
+The engine never learns what `id` means. It compares it, reports it on the connection state, and uses it as a cache key.
+
+`RoomCoordinator` is the part of joining a channel that is not generic WebRTC. Who may enter a channel and how many fit are the server's rules, so the engine asks and something else answers.
+
+```typescript
+interface RoomCoordinator {
+  requestAccess(channelId: string): Promise<RoomAccess>;
+  leave(): void;
+  announceJoined(joined: boolean): void;
+  setLocalStream(streamId: string | null): void;
+  peerChanged(streamId: string, present: boolean): void;
+  readonly connected: boolean;
+  onReconnected(handler: () => void): () => void;
+}
+```
+
+`setLocalStream` takes a stream id rather than a description of what is being published, because the server matches the id against what arrives at the SFU and does not care whether it is a camera or a screen.
+
+`connected` and `onReconnected` exist for the reconnect policy. Retrying the SFU while signalling is down burns attempts against something that cannot answer.
+
+`requestAccess` resolves with a `RoomAccess`:
+
+```typescript
+interface RoomAccess {
+  granted: boolean;
+  roomId?: string;
+  sfuUrls?: string[];
+  joinToken?: unknown;
+  cacheKey?: string;
+  reason?: string;
+  retryAfterMs?: number;
+}
+```
+
+`sfuUrls` is a list of candidates rather than a single answer. The engine probes them and picks, which is what `selectBestSfuUrl` is for. Handing over one chosen URL would either throw that away or push it into every embedder. `cacheKey` is what the chosen URL is cached against so a reconnect can skip the probing, and it is opaque to the engine. The Gryt client passes the server's host, which is exactly the sort of thing the engine is not supposed to know it has.
+
+`reason` and `retryAfterMs` are populated when access is refused, so the caller can say why instead of "failed".
+
+## VoiceHost
+
+Two questions about the runtime, both fixed for the life of the process.
+
+```typescript
+interface VoiceHost {
+  hasNativeCapture(): boolean;
+  getNativeAudio(): NativeAudioCapture | null;
+  getNativeScreen(): NativeScreenCapture | null;
+  allowsInsecureTransport(): boolean;
+}
+```
+
+Both capture surfaces are optional and independent. A platform may have one and not the other, and returning null is a normal answer rather than a failure: callers fall back to the standard web capture path.
+
+`allowsInsecureTransport` is a separate question from native capture, and conflating them is a real mistake rather than a tidy shortcut. What it really asks is whether the code is inside a browser's mixed-content sandbox, which is why LAN servers on plain `ws://` are reachable from the desktop app and invisible from app.gryt.chat. On Electron both answers happen to be the same expression, which is how they came to be conflated in the first place. React Native is the counterexample: native capture and no mixed-content rule.
+
+The default is `webHost`, which answers no to both.
+
+## SfuTransport
+
+Signalling with the SFU, in the generic half: offer, answer, candidate, and a keep-alive. The package owns what the messages mean and the caller owns the socket, so an embedder can carry them over anything.
+
+```typescript
+interface SfuTransport {
+  send(message: SfuOutbound): void;
+  onMessage(handler: (message: SfuInbound) => void): () => void;
+  readonly ready: boolean;
+  close(): void;
+}
+```
+
+Outbound events are `client_join`, `offer`, `answer`, `candidate`, `renegotiate` and `keep_alive`. Inbound are `room_joined`, `offer`, `answer` and `candidate`. Every one carries a string `data`.
+
+## VoicePlatform
+
+Capture, playback and peer construction, which differ per platform.
+
+```typescript
+interface VoicePlatform {
+  createPeerConnection(config: RTCConfiguration): RTCPeerConnection;
+  getMicrophone(deviceId?: string): Promise<MediaStream>;
+  getCamera(constraints: CameraConstraints): Promise<MediaStream>;
+  getScreen?(constraints: ScreenConstraints): Promise<MediaStream>;
+  listDevices(): Promise<VoiceDevice[]>;
+  createAudioPipeline(options: AudioPipelineOptions): AudioPipeline;
+}
+```
+
+`getScreen` is optional because some platforms have no such concept, which is phones. `createAudioPipeline` is the audio graph: on the web it is built from `AudioContext` and `AudioWorklet`, and a native implementation would use its own audio API and skip noise suppression, since the phone already does it.
+
+The interface is deliberately narrow. Everything that is not capture or playback is shared, so anything you want to add here is worth re-examining first.
+
+<Callout type="warn" title="Not wired up in 0.1.0">
+`SfuTransport` and `VoicePlatform` are exported as types, and nothing in `0.1.0` consumes them. The engine opens its own WebSocket to the SFU and calls `navigator.mediaDevices` and `new RTCPeerConnection` directly, so there is currently no way to pass either one in. They describe the shape the React Native adapter will plug into. Read them as the intended boundary rather than as configuration you can supply today.
+</Callout>
+
+## Logging
+
+The package logs its own connect and disconnect flow through `voiceLog`, which is exported and prints numbered, colour-coded steps to the console under phases like `CONNECT`, `MIC`, `SFU-WS` and `WEBRTC`. It is how every hard bug in this code has been found, and it is worth reading the console the first time a call does not come up.
+
+```typescript
+import { voiceLog } from "@gryt/voice";
+
+voiceLog.step("CONNECT", 1, "Requesting microphone access");
+voiceLog.ok("CONNECT", 1, "Microphone acquired", { deviceId });
+voiceLog.fail("CONNECT", 1, "Microphone denied", error);
+```
+
+A `VoiceLogger` interface is exported alongside `VoiceEngineOptions`, for injecting a logger rather than using this one. Like the two seams above it, nothing in `0.1.0` reads it yet.

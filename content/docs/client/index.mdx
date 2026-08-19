@@ -19,8 +19,8 @@ The Gryt client is a React/TypeScript application (packaged with Electron for de
 ```
 client/src/
 ├── packages/
-│   ├── audio/      # useMicrophone, noise gate, volume, visualization
-│   ├── webRTC/     # useSFU, peer connections, track management
+│   ├── audio/      # Sound assets, the visualizer, global hotkeys
+│   ├── webRTC/     # @gryt/voice adapters, call controls, encoded transform
 │   ├── socket/     # useSockets, server views, user components
 │   ├── settings/   # useSettings, useTheme, persistent storage
 │   └── mobile/     # Touch gestures, responsive helpers
@@ -41,24 +41,13 @@ Open [http://localhost:3666](http://localhost:3666).
 
 ## Key hooks
 
-### `useMicrophone`
+### `useMicrophone` and `useSFU`
 
 ```typescript
-const { microphoneBuffer, isLoaded, devices } = useMicrophone(shouldAccess);
+import { useMicrophone, useSFU } from "@gryt/voice";
 ```
 
-Provides the full audio buffer chain (raw and processed analysers, gain nodes, RNNoise worklet), device list, and pipeline controls. Feeds into the audio processing pipeline.
-
-### `useSFU`
-
-```typescript
-const {
-  connect, disconnect, isConnected,
-  isConnecting, streamSources, connectionState
-} = useSFU();
-```
-
-Manages the WebRTC connection to the SFU with automatic reconnection and track lifecycle handling.
+The voice engine is [`@gryt/voice`](/docs/voice), an npm package. `packages/webRTC` holds the adapters that wire it into this client: the settings store mapped into a `VoiceConfig`, the socket behind a `RoomCoordinator`, and the Electron bridge behind a `VoiceHost`.
 
 ### `useSockets`
 
