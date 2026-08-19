@@ -1,0 +1,66 @@
+---
+title: Overview
+description: The two packages Gryt's interface is built from
+icon: Palette
+---
+
+Gryt's interface comes from two published packages that share one set of tokens.
+
+`@gryt/ui` is the web library: React components on [Base UI](https://base-ui.com), styled with Tailwind on the Gryt palette. It is what the desktop and web clients render.
+
+`@gryt/ui-native` is the same design system through React Native. Same colours, same names, a different renderer.
+
+Both are MIT, which makes them the exception in this project. Everything else here is AGPL-3.0, on the argument that somebody running a modified Gryt as a service should publish their changes. A component library is meant to be picked up and used in whatever somebody is building, including things with nothing to do with Gryt, and AGPL would rule that out for most of them.
+
+## Which one
+
+```bash
+npm install @gryt/ui
+```
+
+Your app provides `react` and `react-dom`. Base UI, the Phosphor icons and the compiled stylesheet come with the package, and there is no CSS-in-JS runtime.
+
+```bash
+npm install @gryt/ui-native
+```
+
+Your app provides `react` and `react-native`. See [React Native](/docs/ui/react-native), which is where the differences live.
+
+## Using the web library
+
+Import the stylesheet once, in whichever file is your global entry.
+
+```tsx
+import "@gryt/ui/styles.css";
+```
+
+Then wrap the app in `GrytProvider`:
+
+```tsx
+import { Button, GrytProvider, TextField } from "@gryt/ui";
+
+export function App() {
+  return (
+    <GrytProvider>
+      <TextField label="Channel name" placeholder="Design review" />
+      <Button tone="primary">Create</Button>
+    </GrytProvider>
+  );
+}
+```
+
+## The component reference is elsewhere
+
+[ui.gryt.chat](https://ui.gryt.chat) is the library's own documentation: every component with live examples, the theme reference, a theme generator, and a handful of full-screen examples built out of the parts.
+
+This section does not repeat it. What is here is the part that spans both packages, and the React Native story, which ui.gryt.chat does not currently cover.
+
+## Themes
+
+A theme is a couple of dozen hex values. The generator on [ui.gryt.chat/theme/generator](https://ui.gryt.chat/theme/generator) produces one and gives you a link, and the Gryt client takes that link directly in **Settings → How Gryt looks → Theme**.
+
+Underneath, the ramps are built in OKLab by `neutralScale`, `hueScale` and `alphaScale`, exported from `@gryt/ui` and from its `./theme` entry. Both renderers call the same functions, so a curve tuned for the web moves to the phone with it.
+
+## Where the code is
+
+The two packages live in one repository, [Gryt-chat/ui](https://github.com/Gryt-chat/ui), which is the only Gryt repository that is not AGPL.
