@@ -6,9 +6,11 @@ icon: Heart
 
 ## Prerequisites
 
-- **Node.js** 22+ and **yarn**
-- **Go** 1.21+ (SFU)
-- **Docker** (optional)
+- **Node.js** 22.13 or newer, and **yarn**. Not npm: `packages/client` and
+  `packages/server` ship a `yarn.lock`, and `npm install` resolves a different
+  tree and writes a competing lockfile.
+- **Go** 1.24 or newer for the SFU, 1.25 for the CLI
+- **Docker**, if you want to run anything in a container
 
 ## Setup
 
@@ -60,15 +62,19 @@ const useMicrophone = (shouldAccess: boolean): MicrophoneState => {
 ## Testing
 
 ```bash
-# Client
-cd packages/client && yarn test
-
 # Server
 cd packages/server && yarn test
 
 # SFU
 cd packages/sfu && go test ./...
+
+# CLI
+cd packages/cli && go test ./...
 ```
+
+The client has no general test suite yet. What it has is `yarn typecheck` and
+`yarn lint`, and one targeted check, `yarn test:updater-bridge`. Run the first
+two before opening a pull request.
 
 ## Blog and site content
 
@@ -88,8 +94,9 @@ Some areas are audited more critically than others. The SFU, authentication and 
 
 ## Pull request checklist
 
-- Tests pass (`yarn test`, `go test ./...`)
-- Code is linted (`yarn lint`, `go fmt ./...`)
+- Tests pass where they exist (`yarn test` in the server, `go test ./...` in the
+  SFU and CLI)
+- Types check and the linter is clean (`yarn typecheck`, `yarn lint`, `go fmt ./...`)
 - Documentation is updated if needed
 - No breaking changes (or clearly marked)
 - AI-assisted code is disclosed (see the [AI policy](/docs/guide/ai))
