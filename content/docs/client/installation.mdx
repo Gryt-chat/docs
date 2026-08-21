@@ -32,7 +32,14 @@ you need to switch back.
 
 ### Download
 
-Download **Gryt-Chat-Setup-x.x.x.exe** from the [releases page](https://github.com/Gryt-chat/gryt/releases).
+Two Windows builds are published:
+
+| File | What it is |
+|------|------------|
+| `Gryt-Chat-x.x.x-win-x64.exe` | The installer |
+| `Gryt-Chat-x.x.x-win-x64-portable.exe` | Runs without installing, for a USB stick or a machine you cannot install on |
+
+Both are on the [releases page](https://github.com/Gryt-chat/gryt/releases).
 
 ### Install
 
@@ -52,17 +59,23 @@ Go to **Settings → Apps → Gryt Chat → Uninstall**, or run the uninstaller 
 
 ### Download
 
-Download **Gryt-Chat-x.x.x-mac.zip** from the [releases page](https://github.com/Gryt-chat/gryt/releases).
+Two files are published, both Apple Silicon:
+
+| File | What it is |
+|------|------------|
+| `Gryt-Chat-x.x.x-mac-arm64.dmg` | The usual way in |
+| `Gryt-Chat-x.x.x-mac-arm64.zip` | The same app, and what the updater uses |
+
+Get either from the [releases page](https://github.com/Gryt-chat/gryt/releases).
 
 ### Install
 
-1. Extract the `.zip` file (double-click it in Finder)
-2. Drag **Gryt Chat.app** into your **Applications** folder
-3. On first launch, macOS may show **"Gryt Chat can't be opened because Apple cannot check it for malicious software."** To bypass this:
-   - Right-click (or Control-click) the app
-   - Select **Open**
-   - Click **Open** in the confirmation dialog
-4. This only needs to be done once. Future launches work normally.
+Open the `.dmg` and drag **Gryt Chat.app** into **Applications**. With the
+`.zip`, extract it first and drag the app across yourself.
+
+The app is code-signed and notarized, so it opens normally. There is no
+right-click-Open step, and if macOS does complain that it cannot be checked for
+malicious software, that is worth reporting rather than working around.
 
 ### Uninstall
 
