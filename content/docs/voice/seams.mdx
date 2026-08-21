@@ -50,7 +50,11 @@ interface VoiceConfig {
 }
 ```
 
-`muted` and `serverMuted` are separate on purpose: one is the person's choice, the other a moderator's. `noiseGate` is a threshold in dB where 0 disables gating, which is what push-to-talk relies on. `noiseSuppression` is off on native platforms, where the OS does its own.
+`muted` and `serverMuted` are separate on purpose: one is the person's choice, the other a moderator's. `noiseGate` is a threshold on a 0 to 100 scale, not a decibel figure, and 0
+disables gating, which is what push-to-talk relies on. The gate takes an RMS
+level, converts it to dBFS, and maps that onto 0 to 100 before comparing. The
+doc comment on the field in `types.ts` says dB and is wrong; the `AudioParam` it
+feeds is declared `minValue: 0, maxValue: 100`. `noiseSuppression` is off on native platforms, where the OS does its own.
 
 `stunHosts` deserves a note. The client derives these from whichever server is on screen. The engine is not told which server that is, because knowing about a server list is the one thing it is deliberately kept out of, so it gets the answer instead of the lookup.
 
