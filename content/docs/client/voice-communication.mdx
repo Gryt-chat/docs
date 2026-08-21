@@ -1,145 +1,110 @@
 ---
-title: Voice Communication
-description: High-quality audio with noise suppression and echo cancellation
+title: Voice
+description: Talking to people, and what happens when things go wrong
 icon: Mic
 ---
 
-Real-time voice communication with noise suppression, echo cancellation, and voice activity detection.
+import { Callout } from 'fumadocs-ui/components/callout';
 
-## Key Features
+Click a voice channel to join it. Everyone in that channel hears you, and the
+member list shows who is in which channel and who is speaking.
 
-### High-Quality Audio
-- **Crystal-Clear Voice**: Professional-grade audio quality with minimal latency
-- **Noise Suppression**: Advanced algorithms filter out background noise
-- **Echo Cancellation**: Eliminates echo and feedback automatically
-- **Automatic Gain Control**: Maintains consistent volume levels
+Audio is Opus at 48 kHz. The processing chain between your microphone and the
+network is covered in [audio processing](/docs/client/audio-processing); this
+page is about using voice rather than tuning it.
 
-### Voice Controls
-- **Mute/Unmute**: Server-synchronized microphone control with visual feedback
-- **Deafen**: Mutes incoming audio; state is synced to the server
-- **Push-to-Talk**: Hold a configurable key to transmit (global hotkey in desktop app, keyboard in browser)
-- **Voice Activity**: Automatic transmission based on voice level (default mode)
+## Controls
 
-### Real-time Feedback
-- **Voice Activity Detection**: Visual indicators showing who's speaking
-- **Audio Level Meters**: Real-time visualization of audio input/output
-- **Connection Status**: Clear indicators for connection states
-- **Speaking Indicators**: Visual feedback for all participants
+**Mute** stops your microphone. It is the last stage of the audio chain, so
+nothing upstream can leak through it, and the state is synchronised with the
+server so other people see the right indicator on your name.
 
-## Voice Controls
+**Deafen** stops both directions. Muting yourself is implied, because being heard
+while hearing nothing is not a state anybody wants to be in by accident.
 
-### Mute / Deafen
+**Push-to-talk** transmits only while a key is held. Selecting it disables the
+noise gate entirely, since holding a key is the same job done better. On the
+desktop app the key works while Gryt is in the background; a browser cannot see
+keys it does not have focus for, so the web client's push-to-talk only works
+while the window is focused.
 
-Toggling mute or deafen updates the local audio pipeline immediately and emits a `voice:state:update` event to the signaling server:
+## Bitrate
 
-```typescript
-socket.emit("voice:state:update", { isMuted, isDeafened, isAFK });
-```
+Opus can go up to 510 kbps, and the channel's cap is a server setting. The
+default ceiling is 96 kbps, which is more than speech needs.
 
-Other participants see the updated state in the member list within milliseconds.
+eSports mode caps it at 128 kbps and switches Opus to 10 ms frames, which is
+where most of its latency saving comes from: a shorter frame is less time spent
+filling a packet before it can be sent.
 
-### Push-to-Talk
+## Screen share
 
-Push-to-talk is available in both the browser (keyboard key) and the desktop app (global hotkey via `uiohook-napi`). The PTT key is configurable in **Settings > Audio**. When PTT is active, the mic is unmuted only while the key is held. Per-channel PTT can also be enforced by admins via the channel setting `requirePushToTalk`.
+**Audio isolation.** Sharing system audio without also capturing Gryt's own
+output needs a native helper that excludes Gryt's process tree, so it is a
+desktop feature. In a browser you get the tab or window audio the browser is
+willing to give.
 
-## Server Restart Resilience
+**Codec.** Auto, H.264, VP9 or AV1. Auto picks H.264, because every current GPU
+encodes it in hardware through NVENC, Quick Sync or AMF. AV1 compresses better
+and wants recent hardware to encode without cooking the CPU.
 
-Gryt automatically handles signaling server restarts without losing your voice session.
+The SFU forwards whatever the two ends negotiate. It does not transcode, so the
+codec choice is between you and the people watching.
 
-### How It Works
+## When the server restarts
 
-The voice architecture separates the **signaling server** (session management, member lists) from the **SFU** (audio forwarding). When the signaling server restarts:
+Voice keeps working. This is worth knowing because it looks alarming and is not.
 
-1. **Audio continues uninterrupted** — the SFU operates independently, so voice chat keeps working during the restart
-2. **Automatic reconnection** — once the signaling server is back online, clients automatically reconnect and restore their session
-3. **Voice channel rejoin** — the client performs a full SFU disconnect and reconnect to cleanly re-establish speaking indicators, stream mapping, and member list status
-4. **Identity preservation** — session restoration uses the access token from the initial connection, so nicknames and user identity are preserved
+Signalling and media are separate connections to separate services. The server
+holds sessions, member lists and permissions; the SFU forwards audio and knows
+nothing about any of that. Restarting the server does not touch the media path,
+so people carry on hearing each other while the member list is stale.
 
-### Timing
+When the server comes back:
 
-| Phase | Duration | What happens |
-|-------|----------|-------------|
-| Server down | Varies | Audio continues via SFU; signaling unavailable |
-| Reconnect | ~1s | Socket.IO auto-reconnects; session restored from JWT |
-| Voice rejoin | ~2.5s | Full SFU disconnect + reconnect; speaking indicators restored |
+1. Socket.IO reconnects on its own.
+2. The client sends `session:restore` with the access token it already had, so
+   the nickname and identity come back rather than being re-negotiated.
+3. The client fully disconnects and reconnects to the SFU, rather than trying to
+   patch up the old state. Speaking indicators, stream mapping and voice status
+   in the member list are all derived from that state, and rebuilding it is more
+   reliable than reconciling it.
 
-### What Users See
+What you see is a brief reconnecting notice, voice dropping and coming back with
+the connect sound, and the member list correcting itself. Step 3 is the reason
+voice audibly blips even though step 1 and 2 did not need it.
 
-- A brief "Reconnecting..." toast notification
-- Voice temporarily disconnects and reconnects (connect sound plays)
-- Member list updates to show correct voice status within seconds
+<Callout title="A dropped client is different">
+This is about the server restarting. If your own connection drops, media goes
+with it, because that connection is the media path.
+</Callout>
 
-## Audio Quality Features
+## Speaking indicators
 
-### Screen Share Audio Isolation
+Voice activity is detected on each client and broadcast, rather than being
+measured at the SFU. The ring around an avatar is that client saying it is
+talking.
 
-The desktop app uses OS-native per-process audio capture to exclude Gryt's own audio from screen share streams. On Windows this uses WASAPI process loopback exclusion; on macOS it uses ScreenCaptureKit's `excludesCurrentProcessAudio`. Other participants hear only your game or application audio, not the voices of people already in the call. See [Audio Processing — Native Capture](/docs/client/audio-processing#screen-share-audio--native-capture) for technical details.
+That means indicators depend on the signalling connection, and audio does not.
+A member list that has gone quiet while you can still hear everybody is a
+signalling problem, not an audio one.
 
-### Screen Share Quality and Gaming Mode
+## Latency
 
-Gaming mode (on by default) optimizes screen sharing for fast-moving content like games and video. It hides the mouse cursor from the stream, tells the encoder to prioritize framerate over resolution, and applies a 1.5x bitrate boost. Toggle it in the screen share dialog before starting a share.
+The panel in **Settings → Advanced** shows your round-trip time to the SFU
+alongside everybody else's, plus the jitter buffer, which is highlighted above
+80 ms.
 
-The **Advanced** panel in the screen share dialog gives you control over:
+If you are on the same network as the SFU and the remote address is a private
+one at near-zero latency, media is staying on the LAN. A public address at 20 ms
+or more means it is going out to the internet and back, which is expected when
+the SFU is hosted elsewhere and worth investigating when it is not.
 
-- **Codec** — Auto (H.264), H.264, VP9, or AV1. Auto prefers H.264 for universal hardware encoding via NVENC (NVIDIA), Quick Sync (Intel), and AMF (AMD). AV1 offers better compression but requires newer GPUs (RTX 40+, Intel Arc, AMD RX 7000+) for hardware encode.
-- **Max bitrate** — Override the auto-estimated bitrate with a fixed value from 1 to 50 Mbps.
-- **SVC layers** — Scalable Video Coding temporal layers. L1T3 (default) enables 3 framerate tiers (7.5/15/30fps) so the SFU can send lower framerate to bandwidth-constrained receivers instead of degrading quality for everyone. L1T2 gives 2 tiers, and L1T1 disables SVC.
+## When it does not work
 
-For detailed tuning information, see [Performance Tuning — Screen share video quality](/docs/guide/troubleshooting).
+Voice failing for everybody except people on your own network is nearly always
+the media port or STUN, not anything on this page. The
+[voice debugging guide](/docs/sfu/voice-debugging) covers it.
 
-### RNNoise Noise Reduction
-
-AI-powered noise suppression via an `AudioWorkletNode` running RNNoise compiled to WebAssembly. Processes 480-sample frames off the main thread with ~20 ms added latency. Toggle in **Settings → Audio → Noise Reduction (RNNoise)**.
-
-### Auto Gain Control
-
-True RMS-based AGC that normalizes your voice to a configurable target level (-30 to -5 dB, default -20 dB). Quiet speech gets boosted, loud speech gets reduced. Enabled by default.
-
-### Compressor
-
-Optional dynamic range compressor that tames peaks after AGC. Adjustable from gentle leveling (0 %) to heavy squash (100 %). Enabled by default at 50 %.
-
-### Noise Gate
-
-Configurable threshold gate that silences the mic when you're not speaking. Uses the raw (pre-RNNoise) signal level for accurate detection.
-
-For full pipeline details and settings reference, see [Audio Processing](/docs/client/audio-processing).
-
-## Voice Activity Detection
-
-### Visual Indicators
-
-Real-time visual feedback for all participants:
-
-- **Speaking Animation**: Pulsing border around user avatars when voice is detected
-- **Audio Level Bars**: Real-time visualization of voice levels in settings
-- **Connection Status**: Clear indicators for connection states
-- **Mute Indicators**: Visual feedback for mute/deafen states
-
-## Troubleshooting
-
-### Common Audio Issues
-
-**Microphone not working?**
-- Check browser permissions for microphone access
-- Verify HTTPS in production (required for `getUserMedia`)
-- Try selecting a different input device in Audio Settings
-
-**Echo or feedback?**
-- Use headphones instead of speakers
-- Echo cancellation is enabled by default via browser constraints
-- Reduce output volume if echo persists
-
-**Voice cutting in and out?**
-- Lower the noise gate threshold in Audio Settings
-- If using RNNoise, it may be gating legitimate speech — try disabling it
-
-**Audio too quiet or too loud?**
-- Adjust the AGC target level slider
-- Combine with the microphone volume slider for fine control
-
-## Audio Metrics
-
-- **Sample Rate**: 48 kHz (Opus)
-- **Bitrate**: Configurable per channel (32–510 kbps presets)
-- **Pipeline latency**: ~20 ms with RNNoise enabled; negligible without it
+For your voice specifically not arriving, work down the audio chain: mute, input
+device, browser permission, then the noise gate.

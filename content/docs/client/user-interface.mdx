@@ -4,31 +4,40 @@ description: Design system, themes, and accessibility
 icon: Palette
 ---
 
-The Gryt client is built with [Radix Themes](https://www.radix-ui.com/themes), [Motion](https://motion.dev/) (formerly Framer Motion) for animations, and supports dark/light themes with system preference detection.
+The Gryt client is built on `@gryt/ui`, Gryt's own component library, with Tailwind for styling and [Motion](https://motion.dev/) for animation. It follows the system light and dark preference unless told otherwise, and accepts imported themes.
 
-## Tech Stack
+## What it is built on
 
-- **Radix Themes** — component library (buttons, dialogs, cards, text fields, etc.)
-- **CSS variables** — theming and color tokens
-- **Motion** — layout animations and transitions (AnimatePresence, motion.div)
-- **React Icons** — icon set (Material Design icons via `react-icons/md`)
+| Piece | What it does |
+|-------|--------------|
+| `@gryt/ui` | Gryt's own component library, shared with the mobile app |
+| Tailwind CSS 4 | Utility styling |
+| Motion | Layout animations and transitions |
+| React Icons | Material Design icons, via `react-icons/md` |
 
 ## Theming
 
-Gryt uses the Radix Themes `<Theme>` provider with configurable accent color, gray color, radius, and appearance (light/dark/system). The `useTheme()` hook exposes:
+`useTheme()` gives the current appearance and the scaling settings:
 
-- `resolvedAppearance` — `"light"` or `"dark"` after resolving system preference
-- `accentColor` — Radix accent color (e.g. `"iris"`, `"blue"`)
-- `grayColor` — Radix gray variant
-- `radius` — border radius scale
-- `uiScale` — global UI scaling factor
-- `chatFontSize` — font size for chat messages
+- `resolvedAppearance` — `"light"` or `"dark"`, after resolving the system preference
+- `accentColor` — the accent hue
+- `uiScale` — global interface scaling
+- `chatFontSize` — message text size
 
-Theme preferences are persisted per user and sync across sessions.
+There is no theme provider component wrapping the tree. The appearance class goes
+straight onto `document.documentElement`, along with `color-scheme`, because
+overlays portal to `document.body` and would otherwise sit outside anything the
+variables were painted on.
 
-### CSS Variables
+Custom themes work the same way: their variables are set on the root element, and
+every property is removed before the next theme's are applied. A theme is not
+obliged to declare everything the previous one did, so switching from a theme
+with a split light accent to one without would otherwise leave the old accent
+behind on an element nothing else cleans.
 
-Custom variables extend the Radix theme tokens:
+Preferences persist per user.
+
+### CSS variables
 
 ```css
 :root {
@@ -54,7 +63,7 @@ Gryt uses [Atkinson Hyperlegible Next](https://brailleinstitute.org/freefont) as
 
 Both fonts ship as variable WOFF2 files supporting weights 200–900.
 
-## Invites and Membership
+## Invites and membership
 
 Gryt servers are **invite-only**.
 
@@ -73,19 +82,19 @@ Each invite shows its usage:
 - Finite: `uses remaining / max uses`
 - Infinite: `uses consumed / ∞`
 
-## Emoji System
+## Emoji
 
-### Standard Emoji Shortcodes
+### Standard shortcodes
 
 Type `:smile:` or any other standard shortcode in the chat input and it will be rendered as the corresponding Unicode emoji. Over 1800 standard emojis are supported via the `gemoji` dataset, including names, aliases, and tags.
 
-### Custom Server Emojis
+### Custom server emoji
 
 Server admins can upload custom emojis (PNG, JPEG, WebP, GIF, or SVG). Animated GIFs are preserved as GIFs; all other formats are resized to 128px height and converted to PNG. Multiple images can be selected at once, and `.zip` archives containing images are automatically extracted. Shortcodes are derived from filenames and deduplicated against existing server emojis. Custom emojis are used with the same `:shortcode:` syntax and render as inline images in messages.
 
 Each emoji shows an individual upload progress bar during upload, which is especially useful for larger GIF files. After uploading, admins can rename any emoji by clicking the edit icon in the emoji list.
 
-### Emoji Autocomplete
+### Autocomplete
 
 When you type `:` followed by two or more characters, a popup appears above the chat input showing matching emojis. The search uses a ranked algorithm:
 
@@ -96,23 +105,23 @@ When you type `:` followed by two or more characters, a popup appears above the 
 
 Navigate with arrow keys, press Enter/Tab to insert, or click a result. Custom server emojis are included and marked with a "custom" badge.
 
-### Rich Text Input
+### The message box
 
 The chat input is a `contenteditable` editor that renders emojis inline. Standard emojis appear as native Unicode characters and custom emojis appear as small inline images, so you can see exactly what your message will look like before sending.
 
-## Application Structure
+## How the code is laid out
 
 The client is organized into feature packages under `src/packages/`:
 
 | Package | Purpose |
 |---------|---------|
+| `addons` | The plugin API and addon loading |
 | `audio` | Microphone, audio pipeline, RNNoise, push-to-talk, speakers |
 | `common` | Auth (Keycloak), shared hooks, utility functions |
 | `dialogues` | Dialog/modal components |
 | `lib` | Shared utilities |
 | `mobile` | Mobile-related hooks |
 | `settings` | Settings UI, theme, server management |
-| `signUp` | Sign-up/onboarding flow |
 | `socket` | Socket.IO connections, server list, member sidebar |
 | `webRTC` | SFU connection, voice room, camera, screen share |
 
@@ -123,7 +132,7 @@ Top-level components live in `src/components/` and include the titlebar, browser
 See the [Accessibility guide](/docs/guide/accessibility) for our commitment and current status. Key points:
 
 - **Atkinson Hyperlegible** typeface for maximum legibility
-- Radix UI components provide built-in ARIA attributes and keyboard interaction
+- `@gryt/ui` components carry their ARIA attributes and keyboard behaviour
 - Dark/light themes with system preference detection
 - Keyboard shortcuts for mute, deafen, disconnect, and push-to-talk
 - Ongoing work on full keyboard navigation, screen reader support, and focus management

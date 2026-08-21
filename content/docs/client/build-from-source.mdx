@@ -54,10 +54,12 @@ yarn install
 This compiles the native audio capture binary (if supported on your platform), builds the TypeScript source with Vite, then packages it with Electron Builder. No artifacts are published — everything stays local.
 
 ```bash
-npm run electron:build
+yarn electron:build
 ```
 
-The command runs `npm run build:native && cross-env ELECTRON=1 vite build && electron-builder --publish never` under the hood.
+That runs `build:native`, then a Vite build with `ELECTRON=1`, then `electron-builder --publish never`.
+
+The `package.json` scripts call each other with `npm run` internally. That is fine, and it is not an invitation to install with npm: `packages/client` ships a `yarn.lock` and no `package-lock.json`, and `npm install` resolves a different tree and writes a competing lockfile.
 
 <Callout type="info">
 The native audio capture binary enables Gryt to exclude its own voice audio from screen share streams. It is compiled automatically on Windows (requires MSVC `cl.exe`) and macOS (requires `swiftc`). On Linux the binary is not available — the build step is skipped and screen share audio is passed through unfiltered.
@@ -95,7 +97,7 @@ Built artifacts are written to `packages/client/release/`:
 ## Verify the build
 
 1. **Read the source** — the full client source lives in `packages/client/src/`. No hidden code, no obfuscation.
-2. **Check dependencies** — run `npm ls` to list every dependency and its resolved version.
+2. **Check dependencies** — run `yarn list` to see every dependency and its resolved version.
 3. **Compare checksums** — after building, you can compare the SHA-256 hash of your local build against the published release to confirm they were built from the same source.
 
 ```bash
