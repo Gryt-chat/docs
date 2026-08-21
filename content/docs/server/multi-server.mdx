@@ -34,10 +34,19 @@ LAN discovery only works in the desktop (Electron) app. Browsers cannot perform 
 #### How mDNS works
 
 - The server publishes a `_gryt._tcp` mDNS service on startup
-- On Linux with avahi-daemon (default on Debian/Ubuntu), it writes a service file to `/etc/avahi/services/` — this is the most reliable method
+- On Linux with avahi-daemon (the default on Debian and Ubuntu), it writes a service file into `/etc/avahi/services/` — the most reliable method
 - If avahi is not available, it falls back to the `bonjour-service` npm package
-- The Electron client browses for `_gryt._tcp` services and displays any it finds
-- When a server shuts down, it removes the service
+- The Electron client browses for `_gryt._tcp` services and shows what it finds
+- On shutdown the server withdraws the advertisement, waiting for the goodbye packets before the process exits so the record does not outlive it
+
+Each server writes its own file, named `gryt-<instanceId>-<port>.service`. Two
+servers on one host share that directory, which is exactly what `network_mode: host`
+with the bundled compose file gives you, and both used to write `gryt.service`. The
+second to start silently overwrote the first, so only one was discoverable, nothing
+errored, and both worked fine by address. It looked like flaky mDNS rather than one
+server replacing another's advertisement. The port is part of the name as well as
+the instance ID, because `SERVER_INSTANCE_ID` defaults to `default` when unset and
+two servers on one host cannot share a port.
 
 #### Server configuration
 
@@ -55,14 +64,22 @@ By default, every new user must use an invite code to join a server. For LAN par
 
 To enable it, go to **Server Settings → Overview** and toggle **Allow anyone on LAN to join**. This setting is dynamic — it takes effect immediately with no server restart.
 
-When enabled, the server checks the connecting client's IP address. If it falls within a private/LAN range (`10.x.x.x`, `172.16–31.x.x`, `192.168.x.x`, or IPv6 link-local/unique-local), the invite requirement is skipped. Clients connecting from public IPs are still required to use an invite code.
+When enabled, the server checks the connecting client's address. The ranges it treats as local are `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `127.0.0.0/8` and `169.254.0.0/16`, plus IPv6 link-local and unique-local. Anything else still needs an invite.
 
 <Callout type="info">
 LAN open join works with both manual connections and mDNS discovery. When a LAN-discovered server has this setting enabled, the desktop app skips the invite code prompt entirely — users just click **Connect** and **Join**.
 </Callout>
 
-<Callout type="warn">
-If your server is behind a reverse proxy, make sure `X-Forwarded-For` is set correctly. Otherwise the server may see the proxy's IP instead of the client's real IP, which could bypass or prevent the LAN detection.
+<Callout type="warn" title="Behind a proxy this needs configuring">
+The server ignores `X-Forwarded-For` unless you tell it how many proxies to
+believe. `GRYT_TRUSTED_PROXY_HOPS` is zero by default, because that header is
+something any client can set, so trusting it blindly would let somebody claim a
+private address and walk straight past the invite requirement.
+
+Left at zero behind a proxy, every client arrives wearing the proxy's address.
+If that address is private, which it usually is, LAN open join lets in everybody
+who can reach the proxy. Set the hop count to match your setup. See
+[Behind a proxy](/docs/guide/configuration#behind-a-proxy).
 </Callout>
 
 ## Removing a server
