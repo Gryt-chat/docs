@@ -3,23 +3,37 @@ title: Introduction
 description: Overview of the Gryt WebRTC voice chat platform
 ---
 
-Gryt is a WebRTC-based voice chat platform built with TypeScript, React, Go, and Keycloak. It provides low-latency voice communication with noise suppression, echo cancellation, and a modern UI.
+Gryt is a self-hosted voice, video and text chat platform. You run the server; it holds your messages and decides who may join. Voice and video go through a separate media service that never sees any of that.
 
 ## Components
 
 | Component | Tech | Role |
 |-----------|------|------|
-| **Client** | React + TypeScript (Electron) | UI, audio processing, WebRTC |
-| **Server** | Node.js + TypeScript | Signaling, rooms, user state |
-| **SFU** | Go + Pion WebRTC | Media forwarding |
-| **Auth** | Keycloak (hosted) | OIDC authentication |
+| **Client** | React + TypeScript, Electron on the desktop | Interface, audio processing, WebRTC |
+| **Server** | Node.js + TypeScript, SQLite | Chat, identity, permissions, invites |
+| **SFU** | Go + Pion WebRTC | Media forwarding. One per machine |
+| **Image worker** | Node.js + sharp | Thumbnails and compression, kept out of the server |
+| **Keycloak** | Hosted at `auth.gryt.chat` | Signing in |
+| **Identity service** | Hosted at `id.gryt.chat` | Signs the certificate that binds your key to your account |
+| **CLI** | Go | Creates and runs servers from a terminal |
 
 ## How it works
 
-1. Users authenticate via Keycloak (OIDC + PKCE)
-2. The client connects to a signaling server over WebSocket
-3. When joining a voice channel, the server coordinates a WebRTC session through the SFU
-4. The SFU selectively forwards audio tracks between participants
+1. You sign in to Keycloak, once, with OIDC and PKCE.
+2. Your client generates a keypair that never leaves the device, and the
+   identity service signs a certificate saying that key is yours.
+3. Joining a server is a signed challenge. The server sends a nonce, your client
+   signs it, and the server checks the signature against the certificate. **Your
+   Keycloak token is never sent to the server**, so a server operator has no
+   credential of yours to steal.
+4. The server issues a token scoped to itself, and the client talks to it over a
+   WebSocket for chat, presence and permissions.
+5. Joining a voice channel gets you a room from the SFU. Media goes straight to
+   the SFU over one UDP port and never touches the server.
+
+[Security](/docs/guide/security) has the whole handshake, and
+[Do I need an account?](/docs/guide/accounts) covers joining without one, which
+is also supported.
 
 ## Next steps
 
