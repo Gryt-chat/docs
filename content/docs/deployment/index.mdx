@@ -59,7 +59,7 @@ These apply to **all** deployment methods.
 </Callout>
 
 - **HTTPS/WSS required** — browsers require a secure context for WebRTC microphone access.
-- **One UDP media port** — the SFU needs `ICE_UDP_MUX_PORT` reachable from the internet, and every participant's media shares it. The compose files here set it to 443; a server made with the `gryt` CLI uses 3478.
+- **One UDP media port** — the SFU needs `ICE_UDP_MUX_PORT` (default `3478/udp`) reachable from the internet. Every participant's media shares it.
 - **JWT_SECRET** — used by the signaling server for session tokens. Generate with `openssl rand -base64 48`.
 
 ## Quick comparison
@@ -67,7 +67,7 @@ These apply to **all** deployment methods.
 | Method | Best for | TLS | Needs open ports? |
 |--------|----------|-----|-------------------|
 | [Embedded (desktop app)](/docs/deployment/embedded) | LAN parties, quick hosting, zero setup | N/A (local) | No (LAN only) |
-| [Docker Compose](/docs/deployment/docker-compose) | Self-hosting on a VPS or bare metal | Add Caddy/Nginx | Yes (443 TCP + UDP) |
+| [Docker Compose](/docs/deployment/docker-compose) | Self-hosting on a VPS or bare metal | Add Caddy/Nginx | Yes (443 TCP, 3478 UDP) |
 | [Windows (no Docker)](/docs/deployment/windows) | LAN parties, local teams, Windows PCs | Manual / reverse proxy | Yes |
 | [Terminal manager](/docs/cli) | A machine you administer, one or several servers | Add Caddy/Nginx | Yes |
 | [Cloudflare Tunnel](/docs/deployment/cloudflare-tunnel) | Hosting behind NAT / no static IP | Automatic | UDP only |
@@ -117,11 +117,11 @@ Each image is tagged with `latest` and semver tags (e.g. `1.2.3`, `1.2`, `1`). M
 | Port | Proto | Service |
 |------|------:|---------|
 | `443` | TCP | TLS termination (proxy / tunnel edge) |
-| `443` | UDP | SFU WebRTC media (if using `ICE_UDP_MUX_PORT=443`) |
+| `3478` | UDP | SFU WebRTC media, `ICE_UDP_MUX_PORT` |
 | `3666` | TCP | Web client (dev / direct access) |
 | `5000` | TCP | Signaling server |
 | `5005` | TCP | SFU WebSocket |
-| `443` | UDP | SFU WebRTC media, `ICE_UDP_MUX_PORT`. Must be public |
+| `3478` | UDP | SFU WebRTC media, `ICE_UDP_MUX_PORT`. Must be public |
 
 ## Health checks
 

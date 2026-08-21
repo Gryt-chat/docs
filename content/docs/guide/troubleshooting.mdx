@@ -137,8 +137,8 @@ Check, in this order:
 - `ICE_ADVERTISE_IP` is your real public IP, not the machine's LAN address. A
   server behind NAT cannot discover this by looking at itself.
 - `ICE_UDP_MUX_PORT` is open and forwarded to the SFU host. There is one media
-  port and it is UDP. Check what yours is rather than assuming: the compose
-  files set 443, the CLI and the Windows bundle use 3478.
+  port and it is UDP, 3478 unless you set `ICE_UDP_MUX_PORT` to something
+  else.
 - The forward points at the machine running the SFU, which is not necessarily
   the machine running the server.
 
