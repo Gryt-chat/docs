@@ -62,10 +62,9 @@ Open them on the machine's own firewall if anyone is joining from another
 computer at all, and forward them on your router as well if anyone is joining
 from outside your network.
 
-The third one is the one people miss, and it fails in a way that does not look
-like a firewall problem. Voice does not travel over the same connection as the
-chat, and it is UDP rather than TCP — so with that port shut, people join, the
-member list fills up, messages send, and then nobody can hear anybody.
+Voice does not travel over the same connection as the chat, and it is UDP
+rather than TCP. With that port shut, people join, the member list fills up,
+messages send, and nobody can hear anybody.
 
 The numbers are not always those three. If something already holds one when the
 server is created, the app takes the next one up — `5006` rather than `5005` —
