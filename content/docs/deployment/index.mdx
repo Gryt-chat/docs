@@ -54,7 +54,7 @@ These apply to **all** deployment methods.
 </Callout>
 
 - **HTTPS/WSS required** — browsers require a secure context for WebRTC microphone access.
-- **UDP media ports** — the SFU needs a dedicated UDP port range reachable from the internet (default `10000-10019/udp`).
+- **One UDP media port** — the SFU needs `ICE_UDP_MUX_PORT` (default `3478/udp`) reachable from the internet. Every participant's media shares it.
 - **JWT_SECRET** — used by the signaling server for session tokens. Generate with `openssl rand -base64 48`.
 
 ## Quick comparison
@@ -113,7 +113,7 @@ Each image is tagged with `latest` and semver tags (e.g. `1.2.3`, `1.2`, `1`). M
 | `3666` | TCP | Web client (dev / direct access) |
 | `5000` | TCP | Signaling server |
 | `5005` | TCP | SFU WebSocket |
-| `10000-10019` | UDP | SFU WebRTC media (if not using UDP mux; must be public) |
+| `3478` | UDP | SFU WebRTC media, `ICE_UDP_MUX_PORT`. Must be public |
 
 ## Health checks
 
