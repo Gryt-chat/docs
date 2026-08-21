@@ -39,13 +39,18 @@ interface the server will bind. If you need a particular port — one your route
 already forwards, or one your firewall rules already name — type it and the
 field tells you whether anything else is on it.
 
+Worth doing rather than skipping past, because this is the moment the number is
+settled. The server keeps the ports it is given here, and does not go looking
+for new ones later. You can change them afterwards, but you have to mean it.
+
 **Discoverable on LAN** decides whether anyone else running Gryt on the same
 network sees it appear on its own. Leave it on for a LAN party.
 
 ## Ports to open
 
-Three, and the app tells you which — **Settings → My servers** lists them under
-the server, with the numbers it actually picked. They are typically:
+Three, and the app tells you which. **Settings → My servers → Open these
+ports** lists them under the server with the numbers it actually picked, and is
+also where you change them. They are typically:
 
 | Port | Protocol | What it is |
 |------|----------|------------|
@@ -62,10 +67,10 @@ like a firewall problem. Voice does not travel over the same connection as the
 chat, and it is UDP rather than TCP — so with that port shut, people join, the
 member list fills up, messages send, and then nobody can hear anybody.
 
-The numbers are not always those three. If something else on the machine
-already holds one, the app moves to the next free port and writes the new one
-into the server's `config.env` — which is why the list in **My servers** is
-worth reading rather than assuming.
+The numbers are not always those three. If something already holds one when the
+server is created, the app takes the next one up — `5006` rather than `5005` —
+and that becomes the server's port. So read the panel rather than assuming the
+table.
 
 <Callout type="warn" title="Windows: the SFU asks separately">
   Voice runs in its own executable, `gryt_sfu.exe`, so Windows Firewall prompts
@@ -76,6 +81,30 @@ worth reading rather than assuming.
   answered. Check both boxes, or add an inbound rule for UDP 3478 by hand under
   **Windows Security → Firewall → Advanced settings → Inbound Rules**.
 </Callout>
+
+## When a port is taken
+
+The server refuses to start and says which port, rather than quietly moving to
+a free one.
+
+That is deliberate, and it used to work the other way. A server that relocates
+itself is fine on the machine it runs on and quietly broken for everyone else:
+you forwarded `5000` on your router, something claimed `5000` one morning, the
+app moved to `5001`, and the server came back up looking perfectly healthy
+while nobody outside could reach it. With the media port it is worse, because
+chat keeps working and only voice goes quiet. Neither is something you can see
+from inside the app, which is the problem with fixing it silently.
+
+So when something else has the port, you get told, and you pick:
+
+- Close whatever took it, and start the server again
+- Or open **Open these ports** and give the server a different number
+
+The fields are editable while the server is stopped. Changing one rewrites the
+server's `config.env`, including the addresses derived from it, so nothing is
+left pointing at the old number. What it cannot do is update your router, which
+is the one part still on you.
+
 
 ## More than one
 
@@ -107,6 +136,8 @@ stack.
 - Both addresses — `127.0.0.1:<port>` for this machine, and the LAN address to
   give somebody else
 - **Start automatically with app**, per server
+- **Advertised addresses**, which is where voice is told how to reach you
+- **Open these ports**, the three numbers and the fields to change them
 - **Server logs**, which do not fetch anything until you open them
 - **Open**, which puts it in your server rail
 - **Delete**
