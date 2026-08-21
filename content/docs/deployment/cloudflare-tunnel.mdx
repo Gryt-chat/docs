@@ -160,7 +160,7 @@ Recommended (best success rate on restrictive networks):
 
 Alternative:
 
-- `SFU_UDP_MIN..SFU_UDP_MAX/udp` (default `10000-10019/udp`)
+- `ICE_UDP_MUX_PORT/udp` (default `3478/udp`). One port, and the tunnel does not carry it
 
 If the SFU host is behind NAT or has multiple interfaces, set `ICE_ADVERTISE_IP` so it advertises the correct public IP in ICE candidates. For multi-network setups (e.g. LAN + public), both `ICE_ADVERTISE_IP` and `SFU_PUBLIC_HOST` accept comma-separated values — the client automatically pings each endpoint and picks the fastest one.
 
