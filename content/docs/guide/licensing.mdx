@@ -6,7 +6,8 @@ icon: Scale
 
 ## The short version
 
-Gryt is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**. Here's what that means in plain English:
+Gryt is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**,
+with one exception covered below. Here's what that means in plain English:
 
 **You can:**
 
@@ -26,6 +27,18 @@ Gryt is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**
 
 - Take Gryt's code, make it closed-source, and sell it
 - Run a commercial service based on Gryt without either following the AGPL-3.0 terms or purchasing a commercial license
+
+## The exception: the component library
+
+`@gryt/ui` and `@gryt/ui-native` are **MIT**, not AGPL. They live together in
+[Gryt-chat/ui](https://github.com/Gryt-chat/ui), which is the only Gryt
+repository that is not AGPL.
+
+The reason is what they are. A component library is meant to be picked up and
+used in whatever somebody is building, including things with nothing to do with
+Gryt, and the AGPL would rule that out for most of them. Everything that makes
+up a running Gryt — the client, the server, the SFU, the identity service, the
+image worker, the CLI and `@gryt/voice` — is AGPL.
 
 ## Why AGPL-3.0?
 
