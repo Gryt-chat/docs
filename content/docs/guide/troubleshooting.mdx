@@ -129,8 +129,8 @@ Check, in this order:
 
 - `ICE_ADVERTISE_IP` is your real public IP, not the machine's LAN address. A
   server behind NAT cannot discover this by looking at itself.
-- The UDP port is open and forwarded to the SFU host: `ICE_UDP_MUX_PORT` if you
-  use the mux, otherwise the whole `ICE_UDP_PORT_MIN`–`ICE_UDP_PORT_MAX` range.
+- `ICE_UDP_MUX_PORT` is open and forwarded to the SFU host. There is one media
+  port, 3478 unless you changed it, and it is UDP.
 - The forward points at the machine running the SFU, which is not necessarily
   the machine running the server.
 
@@ -146,8 +146,11 @@ wscat -c ws://localhost:5005
 ```
 
 - Verify STUN servers are reachable: `dig stun.l.google.com`
-- If using ICE UDP mux (`ICE_UDP_MUX_PORT`), ensure **UDP 443** (or your chosen mux port) is open
-- Otherwise, ensure the SFU UDP port range is open (`ICE_UDP_PORT_MIN` / `ICE_UDP_PORT_MAX`)
+- Ensure `ICE_UDP_MUX_PORT` is open as **UDP**. All media shares that one port
+- Check the SFU actually started. It binds the mux port at boot and exits if
+  something else holds it, logging `failed to create ICE UDP mux on port`
+- `curl -s localhost:5005/health` — a 503 with `"status":"starting"` means its
+  UDP readiness probe has not passed yet
 - If you use Cloudflare Tunnel / Cloudflare proxy for the SFU WebSocket, remember WebRTC media is still **direct UDP** to the SFU host — set `ICE_ADVERTISE_IP` to your real public IPs and open the UDP port(s) there
 - Verify the SFU hostname DNS record is set to **Proxied** (orange cloud) in Cloudflare — a grey-cloud (DNS-only) record won't route through the tunnel
 - Review SFU logs: `docker compose logs sfu`
