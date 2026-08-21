@@ -106,11 +106,12 @@ docker compose --profile web up -d
 |------|----------|------|
 | `5000` | TCP | Server: API and WebSocket |
 | `5005` | TCP | SFU signalling WebSocket |
-| `3478` | UDP | All WebRTC media, one port |
+| `443` | UDP | All WebRTC media, one port |
 
-`SERVER_PORT`, `SFU_PORT` and `ICE_UDP_MUX_PORT` change them. The example `.env`
-sets the media port to 443, which gets through more restrictive networks than
-3478 does, at the cost of a privileged bind.
+`SERVER_PORT`, `SFU_PORT` and `ICE_UDP_MUX_PORT` change them. 443 is what the
+example `.env` above sets, because it gets through more restrictive networks
+than a high port does, at the cost of a privileged bind. A server made with the
+`gryt` CLI uses 3478 instead.
 
 Media is the one that catches people out. It is UDP, it does not go through a
 reverse proxy or a tunnel, and it has to reach the SFU host directly.
