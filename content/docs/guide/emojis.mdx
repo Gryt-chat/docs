@@ -16,7 +16,7 @@ Custom emojis let members express themselves with images unique to your server. 
 | GIF | `.gif` | Yes | Resized to 128px height, animation preserved |
 | SVG | `.svg` | No | Stored as-is (no resize) |
 
-All raster images are resized to **128 pixels tall** (aspect ratio preserved, no enlargement). The maximum file size per image is configurable per server (default **5 MB**).
+All raster images are resized to **128 pixels tall**, keeping the aspect ratio and never enlarging something smaller. The size limit per image is a per-server setting, `emojiMaxBytes`, which defaults to **100 MB** and can be set anywhere between 64 KB and 200 MB.
 
 ## Naming rules
 
@@ -71,7 +71,7 @@ You can bulk-import emotes from any public [BetterTTV](https://betterttv.com) us
 7. Edit any shortcode names as needed (names that conflict with existing server emojis are flagged).
 8. Click **Import N emojis** to import the selected emotes.
 
-The server downloads each emote at full resolution from the BetterTTV CDN, processes it through the same pipeline as regular uploads (128x128 resize, GIF animation preserved), and stores it as a server emoji.
+The server downloads each emote at full resolution from the BetterTTV CDN, processes it through the same pipeline as a regular upload (resized to 128 pixels tall, GIF animation preserved), and stores it as a server emoji.
 
 ### URL format
 

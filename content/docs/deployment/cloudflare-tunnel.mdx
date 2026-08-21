@@ -12,7 +12,7 @@ This setup uses Cloudflare Tunnel for **HTTPS/WSS** (server, SFU websocket) whil
   - Server HTTP + WebSocket (Socket.IO)
   - SFU websocket (HTTP upgraded to WSS at the edge)
 - **Not OK via Tunnel**:
-  - WebRTC media (UDP). You must open/forward a UDP port range to the SFU host.
+  - WebRTC media (UDP). You must open and forward `ICE_UDP_MUX_PORT` to the SFU host. It is one port.
 
 ### Important: Tunnel/proxy is only for the SFU WebSocket
 
