@@ -1,266 +1,269 @@
 ---
 title: API Reference
-description: WebSocket events, REST endpoints, and data structures
+description: Every REST endpoint and Socket.IO event the server answers
 icon: Book
 ---
 
-API reference for the Gryt signaling server. Authentication uses Keycloak OIDC via `auth.gryt.chat` and a challenge-response flow with identity certificates from `id.gryt.chat`. There are no custom auth REST endpoints on the server itself.
+import { Callout } from 'fumadocs-ui/components/callout';
 
-## REST Endpoints
+Two surfaces. REST handles uploads, downloads and a few things that want plain
+HTTP caching. Everything interactive runs over Socket.IO: chat, presence, voice
+signalling, moderation, settings.
 
-All REST endpoints are served by the signaling server (default port 5000). Endpoints marked **Bearer** require an `Authorization: Bearer <accessToken>` header.
+There are no authentication endpoints here. Identity comes from an account
+issuer or from a keypair on the device, and joining is a signed challenge over
+the socket. See [Identity](/docs/server/identity).
+
+## REST
+
+Default port 5000. Endpoints marked **Bearer** want `Authorization: Bearer <accessToken>`.
 
 ### Public
 
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/health` | Health check. Returns `{ status, service, serverName, timestamp }` |
-| GET | `/metrics` | Prometheus metrics (text/plain) |
-| GET | `/info` | Public server preview: `{ name, description, members, version, lanOpen }` |
-| GET | `/icon` | Server icon image (404 if none set) |
-| GET | `/.well-known/jwks.json` | JWKS for built-in identity verification |
+| Method | Path | Returns |
+|--------|------|---------|
+| GET | `/health` | `{ status, service, serverName, timestamp }` |
+| GET | `/info` | The public join preview |
+| GET | `/icon` | The server icon. 404 when none is set |
+| GET | `/metrics` | Prometheus, `text/plain` |
+
+<Callout title="No JWKS endpoint">
+The server does not publish `/.well-known/jwks.json`. It fetches one, from the
+identity issuer it is configured to trust, and caches it. Nothing here serves
+keys.
+</Callout>
 
 ### Messages
 
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| GET | `/api/messages/:conversationId` | Bearer | Fetch messages. Query: `?limit=` (max 200), `?before=` (ISO date) |
+| Method | Path | Auth | Notes |
+|--------|------|------|-------|
+| GET | `/api/messages/:conversationId` | Bearer | `?limit=` up to 200, `?before=` an ISO date |
 
-Messages are **created** via the WebSocket `chat:send` event, not via REST.
+Sending is `chat:send` over the socket. There is no POST here.
 
 ### Uploads
 
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| POST | `/api/uploads` | Bearer | Upload a file (multipart `file`) |
-| POST | `/api/uploads/avatar` | Bearer | Upload avatar image |
-| DELETE | `/api/uploads/avatar` | Bearer | Remove avatar |
-| GET | `/api/uploads/files/:fileId` | No | Download file. `?thumb=1` for thumbnail, `?download=1` for attachment header |
+| Method | Path | Auth | Notes |
+|--------|------|------|-------|
+| POST | `/api/uploads` | Bearer | multipart `file` |
+| POST | `/api/uploads/avatar` | Bearer | multipart |
+| DELETE | `/api/uploads/avatar` | Bearer | |
+| GET | `/api/uploads/files/:fileId` | — | `?thumb=1` for the thumbnail, `?download=1` for an attachment header |
 
 ### Server
 
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| POST | `/api/server/icon` | Bearer | Upload server icon (owner only, multipart `file`) |
-| DELETE | `/api/server/icon` | Bearer | Remove server icon (owner only) |
+| Method | Path | Auth | Notes |
+|--------|------|------|-------|
+| POST | `/api/server/icon` | Bearer | Owner only, multipart `file` |
+| DELETE | `/api/server/icon` | Bearer | Owner only |
+
+`GRYT_SERVER_ICON_MAX_MB` caps the upload, 25 MB by default. PNG, JPEG, WebP,
+GIF, AVIF and SVG are accepted; SVG is sanitised before it is stored.
 
 ### Members
 
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| GET | `/api/members` | Bearer | List members: `{ items: [{ serverUserId, nickname, lastSeen }] }` |
+| Method | Path | Auth | Returns |
+|--------|------|------|---------|
+| GET | `/api/members` | Bearer | `{ items: [{ serverUserId, nickname, lastSeen }] }` |
 
 ### Emojis
 
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| GET | `/api/emojis` | No | List all emojis: `[{ name, file_id }]` |
-| GET | `/api/emojis/img/:name` | No | Emoji image bytes (cached) |
-| POST | `/api/emojis` | Bearer | Upload emoji (admin/owner). Multipart `file` + `name`, or `files` + `names` JSON for batch |
-| PATCH | `/api/emojis/:name` | Bearer | Rename emoji (admin/owner). Body: `{ name }` |
-| DELETE | `/api/emojis/:name` | Bearer | Delete emoji (admin/owner) |
+| Method | Path | Auth | Notes |
+|--------|------|------|-------|
+| GET | `/api/emojis` | — | `[{ name, file_id }]` |
+| GET | `/api/emojis/all` | — | Including staged |
+| GET | `/api/emojis/img/:name` | — | Image bytes, cached |
+| POST | `/api/emojis` | Bearer | Admin or owner. `file` + `name`, or `files` + a `names` JSON array |
+| PATCH | `/api/emojis/:name` | Bearer | Rename. Body `{ name }` |
+| DELETE | `/api/emojis/:name` | Bearer | |
+| GET | `/api/emojis/queue` | Bearer | The processing queue |
+| POST | `/api/emojis/stage` | Bearer | Stage emojis before committing them |
 
-### BetterTTV Import
+### Importing emojis
 
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| GET | `/api/emojis/bttv/user/:userId` | No | Fetch channel/shared emotes for a BTTV user |
-| GET | `/api/emojis/bttv/emote/:emoteId` | No | BTTV emote metadata |
-| GET | `/api/emojis/bttv/file/:emoteId` | No | BTTV emote image bytes |
-| POST | `/api/emojis/bttv/import` | Bearer | Import BTTV emotes as server emojis (admin/owner, max 200 per request) |
+From BetterTTV:
 
-### Link Preview and Media
+| Method | Path | Auth |
+|--------|------|------|
+| GET | `/api/emojis/bttv/user/:userId` | — |
+| GET | `/api/emojis/bttv/emote/:emoteId` | — |
+| GET | `/api/emojis/bttv/file/:emoteId` | — |
+| POST | `/api/emojis/bttv/import` | Bearer, admin or owner, 200 per request |
 
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| GET | `/api/link-preview?url=` | Bearer | Fetch Open Graph metadata for a URL |
-| GET | `/api/oembed?url=` | Bearer | Fetch oEmbed data (X/Twitter, SoundCloud, Spotify, TikTok) |
-| GET | `/api/media/metadata?url=` | Bearer | Fetch media dimensions and MIME type |
+From emoji.gg:
 
-## WebSocket Events (Socket.IO)
+| Method | Path | Auth |
+|--------|------|------|
+| GET | `/api/emojis/emojigg/user/:username` | — |
+| GET | `/api/emojis/emojigg/pack/:slug` | — |
+| GET | `/api/emojis/emojigg/emoji/:slug` | — |
+| GET | `/api/emojis/emojigg/file` | — |
 
-### Connection and Join Flow
+The `file` routes fetch the image server-side and return the bytes, so the
+browser is not the thing talking to BetterTTV or emoji.gg.
 
-#### Client → Server
+### Link previews and media
 
-| Event | Payload | Description |
-|-------|---------|-------------|
-| `server:info` | — | Request public server preview |
-| `server:join` | `{ nickname?, inviteCode? }` | Start join flow; server responds with `server:challenge` |
-| `server:verify` | `{ certificate, assertion }` | Complete join with signed identity assertion |
-| `server:leave` | — | Leave the server |
-| `server:details` | — | Request full server state |
-| `token:refresh` | `{ refreshToken? }` or `{ accessToken? }` | Refresh access token |
+| Method | Path | Auth | Notes |
+|--------|------|------|-------|
+| GET | `/api/link-preview?url=` | Bearer | Open Graph metadata |
+| GET | `/api/oembed?url=` | Bearer | X, SoundCloud, Spotify, TikTok |
+| GET | `/api/media/metadata?url=` | Bearer | Dimensions and MIME type |
 
-#### Server → Client
+### Webhooks
 
-| Event | Payload | Description |
-|-------|---------|-------------|
-| `server:info` | `{ name, description, members, version, lanOpen }` | Public preview |
-| `server:challenge` | `{ nonce, serverHost }` | Identity challenge (response to `server:join`) |
-| `server:joined` | `{ accessToken, refreshToken, nickname, avatarFileId, isOwner, setupRequired }` | Join success |
-| `server:error` | `{ error, message?, retryAfterMs?, canReapply? }` | Error (e.g. `invite_required`, `invalid_invite`, `rate_limited`) |
-| `server:details` | Full server state | Channels, sidebar, clients, SFU hosts, STUN config |
-| `server:left` | `{ message }` | Leave confirmation |
-| `token:refreshed` | `{ accessToken }` | New access token |
-| `token:error` | `{ error, message? }` | Token error |
-| `token:revoked` | `{ reason, message }` | Session revoked |
+| Method | Path | Auth | Notes |
+|--------|------|------|-------|
+| POST | `/api/webhooks/:webhookId/:token` | Token in the path | Post as the webhook |
+| GET | `/api/webhooks` | Bearer | List |
+| POST | `/api/webhooks` | Bearer | Create |
+| GET | `/api/webhooks/:webhookId` | Bearer | Read one |
+| PATCH | `/api/webhooks/:webhookId` | Bearer | Update |
+| DELETE | `/api/webhooks/:webhookId` | Bearer | Delete |
 
-### Voice
+## The management API
 
-#### Client → Server
+A separate listener on `GRYT_ADMIN_PORT` (5099), started only when
+`GRYT_ADMIN_TOKEN` is set, published to loopback only. It exists so somebody
+administering the machine can change database-backed settings without being the
+server's owner.
 
-| Event | Payload | Description |
-|-------|---------|-------------|
-| `voice:room:request` | `roomId` | Request SFU room credentials |
-| `voice:stream:set` | `streamID` | Set active stream (empty string to clear) |
-| `voice:state:update` | `{ isMuted, isDeafened, isAFK }` | Update voice state flags |
-| `voice:channel:joined` | `boolean` | Notify channel join/leave |
-| `voice:camera:state` | `{ enabled, streamId? }` | Update camera state |
-| `voice:screen:state` | `{ enabled, videoStreamId?, audioStreamId? }` | Update screen share state |
-| `voice:peer:connected` | `streamId` | Notify peer stream connected |
-| `voice:peer:disconnected` | `streamId` | Notify peer stream disconnected |
-| `voice:latency:report` | `{ estimatedOneWayMs?, networkRttMs?, jitterMs?, codec?, bitrateKbps? }` | Report latency metrics |
+| Method | Path | Returns |
+|--------|------|---------|
+| GET | `/management/settings` | `joinPolicy`, `discoverable`, `lanOpen`, `profanityMode` |
+| PATCH | `/management/settings` | The same, updated. Send only the keys you are changing |
+| GET | `/management/health` | `{ ok: true }` |
 
-#### Server → Client
+`Authorization: Bearer <GRYT_ADMIN_TOKEN>` on all three. Requires server 1.5.0.
+A PATCH goes through the same apply path as a change made from a client, so it
+withdraws mDNS advertising, drops caches and writes an audit entry rather than
+only updating a row.
 
-| Event | Payload | Description |
-|-------|---------|-------------|
-| `voice:room:granted` | `{ room_id, join_token, sfu_url, sfu_urls?, timestamp }` | SFU room credentials |
-| `voice:room:error` | `string` or `{ error, message?, retryAfterMs? }` | Voice join error |
-| `voice:peer:joined` | `{ clientId, nickname, channelId }` | Peer joined voice |
-| `voice:peer:left` | `{ clientId, nickname, channelId }` | Peer left voice |
-| `voice:kicked` | `{ reason }` | Force disconnected from voice |
-| `voice:device:disconnect` | `{ type, message }` | Device switch notification |
-| `voice:latency:update` | `{ clientId, latency }` | Peer latency update |
+## Socket.IO
+
+### Joining
+
+The handshake is three messages, and it is a signature exchange rather than a
+password.
+
+| Event | Direction | Payload |
+|-------|-----------|---------|
+| `server:info` | client → server | — |
+| `server:join` | client → server | `{ nickname?, inviteCode? }` |
+| `server:challenge` | server → client | A nonce to sign |
+| `server:verify` | client → server | `{ certificate, assertion }` |
+| `server:joined` | server → client | Success, with tokens |
+| `server:setup_required` | server → client | Nothing has claimed ownership yet |
+
+The server also proves itself, over `server:identify`, as a connection-level
+exchange rather than part of the join. A client reconnecting with a saved token
+never joins at all, so a proof carried on join would leave the common path
+handing a bearer token to a server nobody authenticated.
+
+Refusals come back on `server:error` with a reason: `invite_required`,
+`invalid_invite`, `invite_rate_limited`, `identity_tier_refused`,
+`identity_verification_failed`, `challenge_expired`, `nonce_mismatch`,
+`account_already_member`, `approval_pending`, `auth_required`, `auth_disabled`,
+`auth_misconfigured`, `join_refused`, `join_failed`, `invalid_nickname`.
+
+### Sessions and tokens
+
+| Event | Direction |
+|-------|-----------|
+| `session:restore` | client → server |
+| `token:refresh` | client → server |
+| `token:refreshed`, `token:invalid`, `token:revoked`, `token:error` | server → client |
 
 ### Chat
 
-#### Client → Server
+| Event | Direction | Notes |
+|-------|-----------|-------|
+| `chat:send` | client → server | |
+| `chat:fetch` | client → server | |
+| `chat:edit`, `chat:delete`, `chat:react` | client → server | |
+| `chat:report` | client → server | |
+| `chat:typing`, `chat:stop_typing` | both | |
+| `chat:new`, `chat:edited`, `chat:deleted`, `chat:reaction` | server → client | |
+| `chat:history` | server → client | Answer to `chat:fetch` |
+| `chat:purge_user` | server → client | Everything from one member is gone |
+| `chat:error` | server → client | |
 
-| Event | Payload | Description |
-|-------|---------|-------------|
-| `chat:send` | `{ conversationId, accessToken, text?, attachments?, replyToMessageId?, nonce? }` | Send a message |
-| `chat:fetch` | `{ conversationId, limit?, before? }` | Fetch message history |
-| `chat:react` | `{ conversationId, messageId, reactionSrc, accessToken }` | Toggle reaction |
-| `chat:edit` | `{ conversationId, messageId, text, accessToken }` | Edit a message |
-| `chat:delete` | `{ conversationId, messageId, accessToken }` | Delete a message |
+### Voice
 
-#### Server → Client
+| Event | Direction | Notes |
+|-------|-----------|-------|
+| `voice:room:request` | client → server | Asks for access to a voice channel |
+| `voice:room:granted` | server → client | `{ room_id, join_token, sfu_url }` |
+| `voice:channel:joined` | both | |
+| `voice:state:update` | client → server | Mute, deafen |
+| `voice:stream:set`, `voice:camera:state`, `voice:screen:state`, `voice:framing:set` | client → server | |
+| `voice:peer:connected`, `voice:peer:disconnected` | client → server | |
+| `voice:peer:joined`, `voice:peer:left` | server → client | |
+| `voice:latency:report` | client → server | |
+| `voice:latency:update` | server → client | Everybody's round-trip times |
+| `voice:disconnect:user` | client → server | Moderation |
+| `voice:kicked`, `voice:device:disconnect`, `voice:room:leave` | server → client | |
+| `voice:state:restored` | server → client | After a reconnect |
+| `voice:error`, `voice:room:error` | server → client | |
 
-| Event | Payload | Description |
-|-------|---------|-------------|
-| `chat:new` | `MessageRecord` | New message broadcast |
-| `chat:history` | `{ conversation_id, items, hasMore, before? }` | Message history response |
-| `chat:reaction` | `MessageRecord` | Reaction update broadcast |
-| `chat:edited` | `MessageRecord` | Edited message broadcast |
-| `chat:deleted` | `{ conversation_id, message_id }` | Deletion broadcast |
-| `chat:error` | `{ error, retryAfterMs?, message }` | Chat error (including rate limits) |
+### Members, profile and presence
 
-### Admin Events
+| Event | Direction |
+|-------|-----------|
+| `members:fetch` | client → server |
+| `members:list`, `members:error` | server → client |
+| `profile:update` | client → server |
+| `profile:updated`, `profile:error` | server → client |
+| `avatar:updated` | client → server |
+| `presence:heartbeat` | client → server |
+| `presence:stale` | server → client |
 
-Admin events require `accessToken` in the payload and appropriate role (`admin` or `owner`).
+### Moderation
 
-| Event (Client → Server) | Description |
-|--------------------------|-------------|
-| `server:settings:update` | Update server settings (owner). Fields: `displayName`, `description`, `avatarMaxBytes`, `uploadMaxBytes`, `emojiMaxBytes`, `profanityMode`, `profanityCensorStyle`, `systemChannelId`, `lanOpen` |
-| `server:invites:create` | Create invite code |
-| `server:invites:revoke` | Revoke invite code |
-| `server:kick` | Kick a user |
-| `server:ban` | Ban a user |
-| `server:unban` | Unban a user |
-| `server:roles:set` | Set user role (owner) |
-| `server:channels:upsert` | Create or update a channel |
-| `server:channels:delete` | Delete a channel |
-| `server:channels:reorder` | Reorder channels |
-| `server:sidebar:item:upsert` | Create or update sidebar item |
-| `server:sidebar:item:delete` | Delete sidebar item |
-| `server:sidebar:reorder` | Reorder sidebar |
-| `voice:disconnect:user` | Force disconnect a user from voice |
+| Event | Direction |
+|-------|-----------|
+| `server:kick`, `server:ban`, `server:unban` | client → server |
+| `server:mute`, `server:deafen` | client → server |
+| `server:bans:list` | client → server |
+| `server:kicked`, `server:muted`, `server:deafened` | server → client |
+| `server:kick:success`, `server:ban:success`, `server:unban:success`, `server:mute:success`, `server:deafen:success` | server → client |
+| `server:bans` | server → client |
+| `reports:list`, `reports:resolve` | client → server |
+| `reports:list`, `reports:resolved`, `report:submitted`, `report:already_reported` | server → client |
 
-## SFU WebSocket Protocol
+### Administration
 
-The SFU uses raw WebSocket (not Socket.IO). All messages use a JSON envelope:
+| Event | Direction | Notes |
+|-------|-----------|-------|
+| `server:settings:get`, `server:settings:update` | client → server | The database-backed settings |
+| `server:settings` | server → client | |
+| `server:channels:list`, `:upsert`, `:delete`, `:reorder` | client → server | |
+| `server:channels` | server → client | |
+| `server:sidebar:list`, `:item:upsert`, `:item:delete`, `:reorder` | client → server | |
+| `server:sidebar` | server → client | |
+| `server:roles:list`, `server:roles:set` | client → server | |
+| `server:roles`, `server:role:updated` | server → client | |
+| `server:invites:create`, `:list`, `:revoke` | client → server | |
+| `server:invites`, `server:invite:created`, `server:invite:revoked` | server → client | |
+| `server:member:invite` | both | |
+| `server:joinRequests:list`, `server:joinRequests:decide` | client → server | |
+| `server:joinRequests`, `server:joinRequest:decided` | server → client | |
+| `server:audit:list` | client → server | |
+| `server:audit` | server → client | |
+| `server:user:replace` | client → server | |
+| `server:user:replace:success` | server → client | |
+| `server:leave` | client → server | |
+| `server:left` | server → client | |
+| `server:details` | both | |
+| `server:clients` | server → client | |
+| `server:emojiQueue:get` | client → server | |
+| `server:emojiQueue:state`, `server:emojis:updated` | server → client | |
+| `server:version:check` | client → server | |
+| `server:version:status` | server → client | |
 
-```json
-{ "event": "<event_name>", "data": "<json_string>" }
-```
+### Diagnostics
 
-### Client → SFU
-
-| Event | Data | Description |
-|-------|------|-------------|
-| `client_join` | `{ room_id, server_id, server_password, user_token, user_id }` | Join a voice room |
-| `answer` | SDP answer string | WebRTC answer |
-| `candidate` | RTCIceCandidateInit JSON | ICE candidate |
-| `renegotiate` | — | Request renegotiation (e.g. to add tracks) |
-| `keep_alive` | `{ timestamp }` | Keep-alive ping (every 15s) |
-
-### SFU → Client
-
-| Event | Data | Description |
-|-------|------|-------------|
-| `room_joined` | — | Join success |
-| `room_error` | Error string | Join or room error |
-| `offer` | SDP offer string | WebRTC offer |
-| `candidate` | RTCIceCandidateInit JSON | ICE candidate |
-
-### SFU HTTP Endpoints
-
-| Path | Method | Description |
-|------|--------|-------------|
-| `/health` | GET | Health check: `{ status, service, version, timestamp }` |
-| `/metrics` | GET | Prometheus metrics |
-
-## Data Types
-
-### MessageRecord
-
-```typescript
-interface MessageRecord {
-  conversation_id: string;
-  message_id: string;
-  sender_server_id: string;
-  text: string;
-  created_at: string;
-  edited_at?: string;
-  attachments?: string[];
-  reactions?: Reaction[];
-  reply_to_message_id?: string;
-  sender_nickname?: string;
-  sender_avatar_file_id?: string;
-  enriched_attachments?: EnrichedAttachment[];
-}
-```
-
-### Channel
-
-```typescript
-interface ServerChannelRecord {
-  channel_id: string;
-  name: string;
-  type: "text" | "voice";
-  position: number;
-  description?: string;
-  require_push_to_talk?: boolean;
-  disable_rnnoise?: boolean;
-  max_bitrate?: number;
-  esports_mode?: boolean;
-  text_in_voice?: boolean;
-}
-```
-
-### Server Roles
-
-Roles in order of permission: `owner` > `admin` > `mod` > `member`.
-
-## Error Format
-
-Errors are emitted as string-based codes, not numeric. Common error values:
-
-- `invite_required` — server is invite-only
-- `invalid_invite` — invite code is wrong or expired
-- `rate_limited` — too many requests (includes `retryAfterMs`)
-- `auth_required` — missing or invalid access token
-- `token_invalid` — access token is expired or malformed
-- `not_owner` / `not_admin` — insufficient permissions
+| Event | Direction |
+|-------|-----------|
+| `diagnostics:ping` | client → server |
+| `diagnostics:pong` | server → client |
