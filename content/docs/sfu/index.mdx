@@ -1,40 +1,224 @@
 ---
 title: Overview
-description: Go SFU — WebRTC media forwarding with Pion
+description: The Go SFU that carries voice, video and screen share
 icon: Zap
 ---
 
-The Gryt SFU (Selective Forwarding Unit) is a Go-based WebRTC media server built with [Pion WebRTC v4](https://github.com/pion/webrtc). It receives audio, video, and screen-share tracks from each participant and forwards them to every other peer in the room without transcoding.
+import { Callout } from 'fumadocs-ui/components/callout';
 
-## Features
+The SFU is the media plane. Every participant sends their audio, camera and
+screen share to it once, and it forwards each of those streams on to everybody
+else in the room. Nothing is transcoded on the way through — the packets that
+arrive are the packets that leave.
 
-- **Selective forwarding**: Routes audio, video, and screen-share streams with no transcoding
-- **SVC layer-aware forwarding**: Parses the Dependency Descriptor (DD) RTP header extension to extract temporal layer IDs, then selectively drops higher layers for bandwidth-constrained receivers. Falls back to blind relay for non-SVC streams
-- **RTCP relay + SVC adaptation**: Relays receiver feedback (PLI, FIR, REMB) back to senders, and uses REMB bitrate to auto-adapt each receiver's temporal layer subscription
-- **Multi-codec support**: Registers H.264, VP9, VP8, and AV1 codecs. The client controls codec preference via `setCodecPreferences` — H.264 is the default for universal hardware encoding (NVENC, Quick Sync, AMF), with AV1 available for newer GPUs. The SFU forwards whichever codec is negotiated without transcoding
-- **Pion WebRTC v4**: ICE handling, STUN support, multi-IP NAT mapping, connection recovery
-- **Multi-network support**: Comma-separated `ICE_ADVERTISE_IP` for LAN + WAN setups — clients automatically select the fastest path
-- **Thread-safe**: Concurrent handling of multiple connections
-- **Lightweight**: Minimal CPU and memory footprint
-- **Metrics**: Prometheus endpoint (`/metrics`) with room, peer, track, and Go runtime metrics
+It is a Go service built on [Pion WebRTC v4](https://github.com/pion/webrtc),
+and it is deliberately small: one of it runs per machine, shared by every Gryt
+server on that machine.
 
-## Project structure
+## How it handles media
+
+Forwarding is the whole job. A room of five people means each client sends one
+copy up and receives four down, so the SFU spends almost no CPU compared to
+something that mixes streams together, and upload bandwidth is what runs out
+first.
+
+Streams that carry the Dependency Descriptor RTP header extension get parsed for
+their temporal layer, which means the forwarder is able to drop the higher
+layers for a receiver that cannot keep up. It does not do that on its own.
+Every receiver gets every layer unless a client asks for fewer with `set_layer`,
+so the frame rate you configured is the frame rate you get, instead of sagging
+whenever a bandwidth estimate dips.
+
+Receiver feedback is relayed selectively. A receiver reporting a lost picture
+(PLI) or asking for a full intra refresh (FIR) results in the SFU asking the
+original sender for a keyframe. Bandwidth estimates (REMB) go no further than
+the SFU and play no part in choosing layers. The sender's own congestion
+controller already has better information from transport-cc, which measures the
+sender's link to the SFU instead of somebody else's link away from it. The
+reasoning is written down in `internal/signaling/coordinator.go` if you want the
+longer version.
+
+The SFU never sees message content. Text, identity and permissions belong to the
+Gryt server. Room IDs, peer IDs and RTP are all it knows about.
+
+## Codecs
+
+Registered at startup, in `registerCodecs`. The client picks with
+`setCodecPreferences`; the SFU forwards whatever gets negotiated.
+
+| Kind | Codecs |
+|------|--------|
+| Audio | Opus (48 kHz stereo, in-band FEC), G.722, PCMU, PCMA |
+| Video | H.264 (five profile/packetization combinations), VP9 (two profiles), VP8, AV1 |
+
+H.264 leads the video list because every current GPU encodes it in hardware —
+NVENC, Quick Sync, AMF. AV1 is there for hardware new enough to want it.
+
+## Configuration
+
+Every variable the SFU reads. There are no others.
+
+| Variable | Default | What it does |
+|----------|---------|--------------|
+| `SFU_PORT` | `5005` | HTTP and WebSocket port. `PORT` is read as a fallback |
+| `ICE_UDP_MUX_PORT` | `3478` | The one UDP port all media flows over |
+| `STUN_SERVERS` | `stun:stun.l.google.com:19302` | Comma-separated, used both for ICE and for the startup readiness probe |
+| `DISABLE_STUN` | `false` | Stop discovering server-reflexive candidates |
+| `ICE_ADVERTISE_IP` | — | Comma-separated IPs to advertise as host candidates instead of the ones found on the interfaces |
+| `MAX_PEERS` | `200` | How many peers may be connected at once, across all rooms |
+| `DEBUG` | `true` | Room, connection and signaling logging. On unless explicitly set to `false` |
+| `VERBOSE_LOG` | `false` | Per-packet RTP forwarding detail |
+
+### One UDP port, not a range
+
+All media shares `ICE_UDP_MUX_PORT`. One port is far easier to get through a
+firewall than a range, and restrictive networks that drop UDP on high ports
+often let a port they recognise through.
+
+The default is 3478 — unprivileged, and already open on hosts that run STUN.
+Production Gryt uses 443, which almost nothing blocks, at the cost of a
+privileged bind and a clash with anything already serving HTTPS.
+
+The SFU binds this port at startup and refuses to start if something else holds
+it. That is deliberate: the alternative is coming up healthy and handing out
+candidates on ports nobody opened.
+
+<Callout type="warn" title="The port range is gone">
+`ICE_UDP_PORT_MIN` and `ICE_UDP_PORT_MAX` were removed. If they are still set
+anywhere, they are ignored. A range never bought capacity — one muxed port
+carries far more peers than a machine has CPU and upload bandwidth for. If you
+genuinely outgrow one SFU, run a second one.
+</Callout>
+
+### MAX_PEERS
+
+A guardrail on the machine rather than a limit the port imposes. When the count
+of peers across every room reaches it, the next client to join is refused with
+"there are no seats left in this voice server".
+
+This is separate from the Gryt server's own `VOICE_MAX_USERS`, which caps a
+single server's voice channels. The SFU's cap covers every server sharing it.
+
+## Endpoints
+
+| Endpoint | What it does |
+|----------|--------------|
+| `GET /health` | `{"status":"healthy","service":"sfu","version":…,"timestamp":…}` |
+| `GET /metrics` | Prometheus |
+| `GET /` | WebSocket upgrade. Anything else gets 400 and a sentence saying so |
+| `WS /server` | The Gryt server's control connection |
+| `WS /client` | A participant's connection |
+
+### Health has a starting state
+
+Before the SFU reports healthy it sends a STUN Binding Request and waits for a
+reply, retrying up to eight times with a backoff that grows to five seconds.
+Until that succeeds, `/health` answers **503** with `{"status":"starting",
+"detail":"verifying UDP connectivity"}`.
+
+This exists because Docker Desktop on Windows and macOS can finish starting a
+container before its UDP forwarding rules are in place, which used to break ICE
+on the very first `docker compose up` and look like a configuration problem.
+With `DISABLE_STUN=true` or no STUN servers, the probe is skipped and the SFU is
+ready immediately. If all eight attempts fail it gives up and reports healthy
+anyway, with a warning in the log.
+
+### Metrics
+
+Four gauges, resynced from real state every fifteen seconds:
+`gryt_sfu_rooms_active`, `gryt_sfu_peers_active`,
+`gryt_sfu_websocket_connections_active`, `gryt_sfu_tracks_active`. Standard Go
+runtime metrics come along with them.
+
+## The WebSocket protocol
+
+Raw WebSocket, not Socket.IO. Every message is
+`{ "event": "<name>", "data": "<json string>" }` — note that `data` is a string
+containing JSON, not a nested object.
+
+There are two kinds of connection, and they are told apart by path. `/server` is
+the Gryt server's control channel. `/client` (and anything else) is a
+participant.
+
+### The server's connection
+
+The Gryt server connects once and registers each voice room. Every message
+after registration carries `server_id` and `server_password`, and is dropped
+without a reply if they do not match.
+
+| Event | Direction | Payload |
+|-------|-----------|---------|
+| `server_register` | server → SFU | `{ server_id, server_password, room_id }` |
+| `disconnect_user` | server → SFU | `{ room_id, user_id, server_id, server_password }` |
+| `user_audio_control` | server → SFU | `{ room_id, user_id, server_id, server_password, is_muted, is_deafened }` |
+| `sync_request` | server → SFU | `{ server_id, server_password }` |
+| `sync_response` | SFU → server | `{ rooms: [{ room_id, user_ids }] }` |
+| `peer_joined` / `peer_left` | SFU → server | `{ room_id, user_id }` |
+| `keep_alive` | either | `{ timestamp }` |
+
+`sync_request` is how the server reconciles after a restart: it asks who is
+actually connected rather than trusting its own record.
+
+### A participant's connection
+
+The first message has to be `client_join`. Anything else and the connection is
+closed with "Expected client_join event".
+
+| Event | Direction | Payload |
+|-------|-----------|---------|
+| `client_join` | client → SFU | `{ room_id, server_id, server_password, user_token, user_id }` |
+| `room_joined` | SFU → client | — |
+| `room_error` | SFU → client | The reason, as a string |
+| `offer` | SFU → client | SDP |
+| `answer` | client → SFU | SDP |
+| `candidate` | both | `RTCIceCandidateInit` JSON |
+| `renegotiate` | client → SFU | — |
+| `set_layer` | client → SFU | `{ track_id, max_temporal_layer }` |
+| `keep_alive` | client → SFU | `{ timestamp }` |
+
+`max_temporal_layer` is `-1` for every layer, or `0`, `1`, `2` for T0, T0+T1 and
+T0+T1+T2. It only does anything on a stream that actually carries the Dependency
+Descriptor extension.
+
+## A call, start to finish
+
+1. The Gryt server registers the room over `/server`.
+2. A client connects to `/client` and sends `client_join`. The SFU checks the
+   room exists and the server credentials match, then checks `MAX_PEERS`.
+3. A peer connection is created with receive-only transceivers for audio, video,
+   screen-share video and screen-share audio.
+4. The SFU offers, the client answers, candidates go both ways.
+5. Each track the client publishes gets a `LayerForwarder`: one goroutine
+   reading RTP, parsing the Dependency Descriptor if present, and writing to one
+   local track per receiver.
+6. Each forwarder sends the sender a PLI every two seconds, and relays any PLI
+   or FIR from a receiver as a PLI to the sender. FIR is translated to PLI
+   rather than passed through.
+7. On leave, tracks, forwarders and the peer connection are torn down, and the
+   server is told with `peer_left`.
+
+Rooms that have been empty for thirty minutes are removed by a sweep that runs
+every five minutes.
+
+## Layout
 
 ```
 sfu/
-├── cmd/sfu/           # Entry point
-├── internal/
-│   ├── config/        # Environment-based configuration
-│   ├── metrics/       # Prometheus metrics
-│   ├── svc/           # SVC: DD header parser, per-receiver LayerForwarder
-│   ├── websocket/     # Thread-safe WebSocket wrapper + handler
-│   ├── webrtc/        # Peer connection management
-│   ├── track/         # Media track lifecycle
-│   └── signaling/     # Offer/answer coordination
-└── pkg/types/         # Shared message structures
+├── cmd/sfu/            # main: config, codecs, the mux, HTTP, cleanup loops
+└── internal/
+    ├── config/         # every environment variable, in one place
+    ├── readiness/      # the STUN probe /health gates on
+    ├── recovery/       # panic containment around every goroutine and handler
+    ├── room/           # rooms, registration, peer bookkeeping, cleanup
+    ├── signaling/      # offer/answer coordination, RTCP relay
+    ├── svc/            # Dependency Descriptor parser and LayerForwarder
+    ├── track/          # track lifecycle
+    ├── webrtc/         # peer connection management
+    ├── websocket/      # the two connection kinds and their handlers
+    └── metrics/        # the four gauges
 ```
 
-## Getting started
+## Running it
 
 ```bash
 cd packages/sfu
@@ -42,88 +226,10 @@ cp env.example .env
 go run ./cmd/sfu
 ```
 
-Or with the start script:
-
 ```bash
-./start.sh
-```
-
-## Environment variables
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `PORT` | `5005` | HTTP server port |
-| `STUN_SERVERS` | `stun:stun.l.google.com:19302` | Comma-separated STUN servers |
-| `ICE_UDP_MUX_PORT` | — | Enable ICE UDP mux on a single UDP port (e.g. `443`) |
-| `ICE_UDP_PORT_MIN` | — | Min UDP port for WebRTC media |
-| `ICE_UDP_PORT_MAX` | — | Max UDP port for WebRTC media |
-| `ICE_ADVERTISE_IP` | — | Public IP(s) to advertise in ICE candidates (comma-separated for multi-network) |
-| `DISABLE_STUN` | `false` | Disable server-side STUN. Only safe with host networking or 1:1 NAT (see [Troubleshooting](#troubleshooting)) |
-| `MAX_PEERS` | `200` (mux) / port range size | Max concurrent peers |
-| `DEBUG` | `true` | Enable debug logging |
-| `VERBOSE_LOG` | `false` | Enable verbose logging (very noisy) |
-
-## WebSocket protocol
-
-The SFU uses raw WebSocket (not Socket.IO). All messages use a JSON envelope: `{ "event": "<name>", "data": "<json_string>" }`.
-
-### Client to SFU
-
-| Event | Data | Description |
-|-------|------|-------------|
-| `client_join` | `{ room_id, server_id, server_password, user_token, user_id }` | Join a room |
-| `answer` | SDP answer string | WebRTC answer |
-| `candidate` | RTCIceCandidateInit JSON | ICE candidate |
-| `renegotiate` | — | Request renegotiation (e.g. to add tracks) |
-| `set_layer` | `{ track_id, max_temporal_layer }` | Set max temporal layer for a track (-1 = all, 0 = T0, 1 = T0+T1, 2 = all) |
-| `keep_alive` | `{ timestamp }` | Keep-alive ping (every 15s) |
-
-### SFU to Client
-
-| Event | Data | Description |
-|-------|------|-------------|
-| `room_joined` | — | Join success |
-| `room_error` | Error string | Join or room error |
-| `offer` | SDP offer string | WebRTC offer |
-| `candidate` | RTCIceCandidateInit JSON | ICE candidate |
-
-## Track lifecycle
-
-1. Client joins room — peer connection created with recvonly transceivers for audio, video, screen-share video, and screen-share audio. Supported video codecs: H.264, VP9, VP8, AV1
-2. Client sends offer — SFU processes and creates answer
-3. Client adds tracks (audio, camera, screen share) — SFU creates a LayerForwarder per track that parses the Dependency Descriptor header extension and fans out to per-receiver tracks
-4. For each forwarded video track, receiver RTCP (PLI/REMB) is relayed back to the sender and used to auto-adapt temporal layer subscriptions
-5. Clients can send `set_layer` to manually override their temporal layer for a track
-6. Client leaves — tracks, forwarders, and connections cleaned up
-
-## HTTP endpoints
-
-| Endpoint | Description |
-|----------|-------------|
-| `GET /health` | Health check: `{ status, service, version, timestamp }` |
-| `GET /metrics` | Prometheus metrics |
-
-## Development
-
-```bash
-go mod download
 go test ./...
-go run -race ./cmd/sfu   # with race detection
+go run -race ./cmd/sfu
 ```
 
-## Troubleshooting
-
-### External users stuck on "connecting" (ICE failure)
-
-If users outside your local network can reach the signaling server but voice never connects, the most likely cause is a **UDP source-port mismatch**. This happens when there is a NAT layer (Docker bridge, cloud VPC, etc.) between the SFU's UDP socket and the public internet that rewrites the source port.
-
-**Diagnosis** — look for the SFU's ICE candidate log lines:
-
-```
-ICE candidate for <peer>: type=host  protocol=udp address=203.0.113.10:443
-ICE candidate for <peer>: type=srflx protocol=udp address=203.0.113.10:57599
-```
-
-If the `srflx` port (57599) differs from `ICE_UDP_MUX_PORT` (443), the NAT is remapping the port. The rewritten `host` candidate advertises `:443`, but external peers actually need to reach `:57599`. Without the `srflx` candidate, ICE checks will never succeed.
-
-**Fix** — keep `DISABLE_STUN=false` (the default) so the SFU discovers and advertises the correct external port. `DISABLE_STUN=true` is only safe when the SFU has a direct, port-preserving path to the internet (host networking, bare metal, or a 1:1 NAT that preserves UDP source ports).
+Most people never do this. `gryt` runs one SFU per machine and shares it between
+every server there — see the [CLI docs](/docs/cli).

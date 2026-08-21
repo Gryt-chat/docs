@@ -1,196 +1,219 @@
 ---
 title: Overview
-description: Node.js signaling server — rooms, WebSocket API, and auth
+description: The Gryt server — chat, identity, permissions and everything that is not media
 icon: Server
 ---
 
-The Gryt signaling server is a Node.js/TypeScript application that manages WebRTC signaling, user sessions, room coordination, and authentication. It acts as the central hub between clients and the SFU.
+import { Callout } from 'fumadocs-ui/components/callout';
 
-## Features
+The Gryt server is the part that knows who people are. It holds the messages,
+the members, the permissions and the invites, it decides who may join, and it
+tells the SFU which voice rooms exist. Media never touches it.
 
-- **WebRTC signaling**: Offer/answer exchange, ICE candidate relay, renegotiation
-- **Room management**: Multi-room support with server-prefixed IDs, auto-cleanup
-- **User state**: Nickname, mute, presence tracking with real-time sync
-- **Chat**: Text channels with message editing, replies, attachments, nonce-based deduplication, and owner moderation
-- **WebSocket**: Socket.IO with automatic reconnection and rate limiting
-- **Auth**: JWT validation via Keycloak JWKS (hosted at `auth.gryt.chat`)
-- **Metrics**: Prometheus endpoint (`/metrics`) with HTTP, Socket.IO, and Node.js runtime metrics
+It is a Node service: Express for HTTP, Socket.IO for the live connection,
+SQLite through `node:sqlite` for storage. One process per community.
 
-## Deployment
+## What runs alongside it
 
-Looking to run a Gryt server? See the deployment guide for your platform:
+A working server is usually three or four containers:
 
-- [Docker Compose](/docs/deployment/docker-compose) (recommended for Linux/VPS)
-- [Windows (no Docker)](/docs/deployment/windows)
-- [Cloudflare Tunnel](/docs/deployment/cloudflare-tunnel)
-- [Kubernetes with Helm](/docs/deployment/kubernetes)
+| Piece | Why it is there |
+|-------|-----------------|
+| The server | Chat, identity, permissions, invites, the database |
+| The SFU | Voice and video. One per machine, shared by every server on it |
+| An image worker | Thumbnails and compression. One per server, because it reads that server's job queue |
+| Object storage | Uploads, when `STORAGE_BACKEND=s3` |
 
-## Getting started (development)
+The image worker is per-server rather than shared for a specific reason: it
+pulls jobs out of the server's own SQLite database rather than being handed
+them over a network.
 
-```bash
-cd packages/server
-yarn install
-cp .env.example .env
-yarn dev
-```
+## Configuration
 
-## Environment variables
+The server reads its settings from the environment, except for the handful that
+live in the database and are covered further down.
 
-```bash
-PORT=5000
-SFU_WS_HOST="ws://sfu:5005"
-# Comma-separated for multi-network (client auto-selects fastest)
-SFU_PUBLIC_HOST="wss://sfu.example.com"
-STUN_SERVERS="stun:stun.l.google.com:19302"
+### The ones you will actually set
 
-SERVER_NAME="My Brand New Server"
-CORS_ORIGIN="http://127.0.0.1:15738,https://app.gryt.chat"
+| Variable | Default | What it does |
+|----------|---------|--------------|
+| `SERVER_NAME` | — | The name people see |
+| `SERVER_DESCRIPTION` | — | Shown on the join preview |
+| `HOST` | `127.0.0.1` | Bind address. Has to be `0.0.0.0` for anything but this machine to connect |
+| `PORT` | `5000` | HTTP and WebSocket port |
+| `JWT_SECRET` | — | Signs access tokens. Required |
+| `DATA_DIR` | `./data` | Where SQLite and local uploads go |
+| `CORS_ORIGIN` | — | Comma-separated origins allowed to connect |
+| `SFU_WS_HOST` | — | Where the server reaches the SFU, internally |
+| `SFU_PUBLIC_HOST` | — | Where clients should reach the SFU. Usually different |
+| `STUN_SERVERS` | Google's | Passed through to clients |
 
-# Optional: server-to-SFU shared secret (NOT a user join password)
-# SERVER_PASSWORD="your-internal-sfu-shared-secret"
+<Callout type="warn" title="HOST defaults to loopback">
+A server left on `127.0.0.1` still advertises itself over mDNS, so clients on
+the network find it and then cannot connect. The server says so in its log at
+startup. Set `HOST=0.0.0.0` for a server other machines should reach.
+</Callout>
 
-# Invite brute-force protection (optional)
-# SERVER_INVITE_MAX_RETRIES=8
-# SERVER_INVITE_RETRY_WINDOW_MS=300000
-# SERVER_INVITE_RETRY_COOLDOWN_MS=60000
-# SERVER_INVITE_MAX_COOLDOWN_MS=3600000
-# SERVER_INVITE_IP_MAX_RETRIES=20
+### Capacity and limits
 
-# Identity — who this server lets in. See the Identity page.
-# GRYT_IDENTITY_TIERS=account,local   # also accept people with no Gryt account
-# GRYT_OIDC_ISSUER=https://auth.gryt.chat/realms/gryt
-# GRYT_TRUSTED_CERT_ISSUERS=https://id.gryt.chat
+| Variable | Default | What it does |
+|----------|---------|--------------|
+| `MAX_MEMBERS` | `100` | How many members the server accepts |
+| `VOICE_MAX_USERS` | `0` | Voice seats. `0` is no limit |
+| `GRYT_INVITE_MAX_JOINS_PER_HOUR` | — | Per-invite join rate |
+| `GRYT_SERVER_ICON_MAX_MB` | `25` | Server icon upload ceiling. `SERVER_ICON_MAX_MB` also works |
+| `MESSAGE_CACHE_TTL_MS` | `30000` | How long a message page stays cached |
+| `REFRESH_TOKEN_TTL_DAYS` | `7` | Refresh token lifetime |
 
-# Maintenance switch. Set to disabled to reject every join without stopping the server.
-# GRYT_AUTH_MODE=disabled
+`VOICE_MAX_USERS` is the server's own cap. The SFU has a separate `MAX_PEERS`
+that covers every server sharing it.
 
-# SQLite
-DATA_DIR=./data
+### Storage
 
-# S3 / Object storage
-S3_REGION=auto
-S3_ACCESS_KEY_ID=
-S3_SECRET_ACCESS_KEY=
-S3_BUCKET=gryt-bucket
-S3_FORCE_PATH_STYLE=false
+| Variable | Default | What it does |
+|----------|---------|--------------|
+| `STORAGE_BACKEND` | `s3` | `s3` or `filesystem` |
+| `S3_ENDPOINT` | — | Object store endpoint |
+| `S3_BUCKET` | — | Bucket name |
+| `S3_REGION` | — | Region |
+| `S3_ACCESS_KEY_ID` / `S3_SECRET_ACCESS_KEY` | — | Credentials |
+| `S3_FORCE_PATH_STYLE` | — | Needed by MinIO and most self-hosted stores |
+| `DISABLE_S3` | — | Turn object storage off entirely |
+| `IMAGE_WORKER_URL` | — | Where the image worker listens |
+| `MEDIA_SWEEP_INTERVAL_MS` | `600000` | How often orphaned media is swept |
+| `MEDIA_SWEEP_GRACE_MS` | `1800000` | How long an orphan is left alone first |
+| `EMOJI_QUEUE_CONCURRENCY` | `1` | Emoji jobs at once, clamped to 1–4 |
+| `EMOJI_QUEUE_POLL_MS` | `750` | Queue poll interval, clamped to 250–5000 |
 
-NODE_ENV=development
-DEBUG=gryt:*
-```
+Object keys are flat: `uploads/<uuid>.<ext>`. Several servers can share one
+bucket safely, because nothing ever lists the bucket and every delete works
+from a key stored in that server's own database.
 
-## Authentication
+### Identity
 
-Gryt uses a centrally hosted **Keycloak** instance so users have a single "Gryt account" across all servers.
+| Variable | Default | What it does |
+|----------|---------|--------------|
+| `GRYT_IDENTITY_TIERS` | `account` | Which identities may join. Add `local` to allow device-only keypairs |
+| `GRYT_OIDC_ISSUER` | — | The account issuer to trust |
+| `GRYT_OIDC_AUDIENCE` | — | Expected audience |
+| `GRYT_TRUSTED_CERT_ISSUERS` | — | Which certificate authorities an identity may be signed by |
+| `GRYT_SERVER_ENABLED` | `true` | Whether the server accepts joins at all |
 
-- **Clients** authenticate via OIDC Authorization Code + PKCE (public client `gryt-web`)
-- **Servers** validate JWTs by checking the signature against the Keycloak JWKS endpoint
+<Callout title="GRYT_AUTH_MODE was renamed">
+`GRYT_SERVER_ENABLED` used to be `GRYT_AUTH_MODE`, with values `required` and
+`disabled`. The name suggested it controlled whether members needed an account.
+It never did: that is `GRYT_IDENTITY_TIERS`, and the two do not interact. All
+the old setting ever did was refuse every join.
 
-### Account identity settings
+The old name and its old values still work so that upgrading does not take a
+server offline, and the new name wins when both are set. An unrecognised value
+refuses joins and says so, rather than guessing.
+</Callout>
 
-```bash
-GRYT_IDENTITY_TIERS=account                        # default
-GRYT_OIDC_ISSUER=https://auth.gryt.chat/realms/gryt
-GRYT_OIDC_AUDIENCE=gryt-web
-```
+### Behind a proxy
 
-`GRYT_AUTH_MODE` doubles as the maintenance switch. Set it to `disabled` to
-reject all joins while leaving the server process running.
+| Variable | Default | What it does |
+|----------|---------|--------------|
+| `GRYT_TRUSTED_PROXY_HOPS` | `0` | How many proxies in front may be believed |
 
-## Changing the owner (CLI)
+Zero by default, and that matters: `x-forwarded-for` is a header any client can
+set, so trusting it blindly lets one client walk around every per-IP limit by
+varying a string. Hops are counted from the right, which is the only end
+infrastructure writes. A server behind a proxy or a tunnel has to set this, or
+every client arrives wearing the proxy's address and shares one rate-limit
+bucket.
 
-The **first user** to join a brand-new server automatically becomes the **owner/admin**.
+### Discovery
 
-To change the owner later (recovery/transfers), run:
+| Variable | Default | What it does |
+|----------|---------|--------------|
+| `SERVER_DISCOVERABLE` | — | Initial mDNS advertising state |
+| `MDNS_INTERFACE` | — | Pin advertising to one interface |
+| `EXTERNAL_HOST` | — | The address to advertise instead of the bound one |
 
-```bash
-node dist/admin/setOwner.js --grytUserId <keycloak_sub>
-```
+### Invite rate limiting
 
-When running in Docker Compose:
+| Variable | Default |
+|----------|---------|
+| `SERVER_INVITE_MAX_RETRIES` | `8` |
+| `SERVER_INVITE_RETRY_WINDOW_MS` | `300000` |
+| `SERVER_INVITE_IP_MAX_RETRIES` | — |
+| `SERVER_INVITE_RETRY_COOLDOWN_MS` | — |
+| `SERVER_INVITE_MAX_COOLDOWN_MS` | — |
 
-```bash
-docker compose exec server node admin-setOwner.js --grytUserId <keycloak_sub>
-```
+### The rest
 
-`<keycloak_sub>` is your Gryt user ID. You can find it in the desktop app or web client by going to **Settings → Profile** and scrolling to the bottom.
+`SERVER_ID`, `SERVER_INSTANCE_ID`, `SERVER_PASSWORD` and `SERVER_VERSION`
+identify the server to the SFU and to clients. `VOICE_CHANNEL_ID`,
+`VOICE_CHANNEL_NAME` and `ADDITIONAL_CHANNELS` seed the channel list on first
+boot. `NODE_ENV` and `DISABLE_STUN` behave as you would expect.
 
-### Local Keycloak (dev)
+## Settings that live in the database
 
-```bash
-docker compose -f packages/auth/docker-compose.keycloak.yml up
-```
+Four settings are not environment variables. They are stored in the server's own
+database, they can be changed while it runs, and changing one does more than
+write a row:
 
-Point client/server configs to `http://localhost:8080/realms/gryt`.
+| Setting | Values |
+|---------|--------|
+| `joinPolicy` | `invite`, `open` |
+| `discoverable` | on, off |
+| `lanOpen` | on, off |
+| `profanityMode` | `off`, `flag`, `censor`, `block` |
 
-## WebSocket events
+Turning `discoverable` off has to withdraw the mDNS advertisement, not just
+record the intent, so these go through an apply path rather than a direct write.
+Writing the row by hand leaves a server broadcasting itself while its own
+configuration says it is hidden.
 
-### Client → Server (high-level)
+Owners change these from a client. An operator who is not the owner changes them
+through the management API.
 
-| Event | Payload | Notes |
-|------|---------|------|
-| `server:join` | `{ nickname?, identityToken, inviteCode? }` | Join the server. **Invite-only** unless you are already a member or you are the first user (bootstrap owner). |
-| `server:leave` | `{}` | Leave (deactivate membership) and revoke refresh tokens for that user. |
-| `server:details` | `{}` | Get server details (requires joined session). |
-| `server:info` | `{}` | Public server preview (no join required). |
-| `token:refresh` | `{ refreshToken?, identityToken?, accessToken? }` | Refresh an access token (preferred: refreshToken + identityToken). |
-| `voice:room:request` | `roomId: string` | Request a voice join token + SFU URL(s). |
-| `voice:stream:set` | `streamID: string` | Mark user as joined/left voice; enables device-switch handling. |
-| `voice:state:update` | `{ isMuted, isDeafened, isAFK }` | Update voice presence flags. |
-| `chat:send` | `{ conversationId, accessToken, text?, attachments?, replyToMessageId?, nonce? }` | Send message (nonce supports idempotent retry). |
-| `chat:fetch` | `{ conversationId, accessToken?, limit?, before? }` | Fetch message history. |
+## The management API
 
-### Server → Client (high-level)
+A server administrator running Gryt on their own machine is not necessarily its
+owner, and should not have to be to turn off LAN discovery on a box they
+administer. So there is a second, tiny listener for exactly that.
 
-| Event | Payload | Notes |
-|------|---------|------|
-| `server:joined` | `{ accessToken, refreshToken?, nickname, avatarFileId?, isOwner, setupRequired }` | Join success. |
-| `server:error` | `{ error, message?, retryAfterMs?, canReapply? }` | Includes `invite_required`, `invalid_invite`, rate limits, etc. |
-| `server:details` | `serverDetails` | Full server state for the UI. |
-| `server:info` | `{ name, description?, members?, version?, lanOpen? }` | Public preview. |
-| `token:refreshed` | `{ accessToken }` | New access token. |
-| `token:error` / `token:revoked` | `{ error, message? }` | Token invalid/revoked. |
-| `voice:room:granted` | `{ room_id, join_token, sfu_url, sfu_urls?, timestamp }` | SFU join credentials. |
-| `voice:room:error` | `string \| { error, message?, retryAfterMs? }` | Voice join errors (rate-limited, full, unavailable). |
+| Variable | Default | What it does |
+|----------|---------|--------------|
+| `GRYT_ADMIN_TOKEN` | — | Enables the listener. Without it nothing starts |
+| `GRYT_ADMIN_PORT` | `5099` | Port for the management listener |
 
-## REST endpoints
+| Endpoint | What it does |
+|----------|--------------|
+| `GET /management/settings` | The four settings above |
+| `PATCH /management/settings` | Change some of them. Send only the keys you are changing |
+| `GET /management/health` | `{"ok":true}` |
 
-### Messages
-- `GET /api/messages/:conversationId?limit=50&before=<ISO>` — returns `{ items: Message[] }`
+All three need `Authorization: Bearer <GRYT_ADMIN_TOKEN>`, compared as digests
+in constant time.
 
-Messages are **created** via the WebSocket `chat:send` event, not REST.
+Two separate things protect this listener. The token covers other users and
+processes on the same machine. What covers everybody else is where the port is
+published: the Compose file the CLI generates publishes it to `127.0.0.1` only,
+which Docker enforces at the host before a packet reaches the container.
 
-### Uploads
-- `POST /api/uploads` (multipart) — stores file in S3, generates thumbnail if image, returns `{ fileId, key, thumbnailKey }`
+<Callout type="warn" title="Do not publish this port">
+There is deliberately no check on the caller's address, because a container
+cannot see a useful one. A request from the host's own loopback arrives at a
+container published on `127.0.0.1` with a source address of the Docker bridge
+gateway. A guard on `req.ip` would reject every legitimate request while proving
+nothing, which is worse than no guard because it reads like one.
 
-See the [API Reference](/docs/server/api-reference) for the full list of endpoints.
+The loopback publish is the boundary. Keep it.
+</Callout>
 
-## Signaling flow
+Requires server 1.5.0 or newer. Against anything older the endpoint is not there
+at all, and the `gryt` CLI says so.
 
-```mermaid
-sequenceDiagram
-    participant C as Client
-    participant S as Server
-    participant SFU as SFU
+## Endpoints
 
-    C->>S: voice:room:request(roomId)
-    S-->>C: voice:room:granted (join_token, sfu_url)
-    C->>SFU: WebSocket connect
-    C->>SFU: client_join (join_token)
-    SFU-->>C: room_joined
-    SFU-->>C: offer (SDP)
-    C->>SFU: answer (SDP)
+| Endpoint | What it does |
+|----------|--------------|
+| `GET /health` | `{ status, service, serverName, timestamp }` |
+| `GET /info` | The public join preview |
+| `GET /icon` | The server icon, 404 when none is set |
+| `GET /metrics` | Prometheus |
 
-    loop ICE
-        C->>SFU: candidate
-        SFU->>C: candidate
-    end
-
-    Note over C,SFU: Media flows directly via UDP (DTLS-SRTP)
-```
-
-## Health and metrics
-
-| Endpoint | Description |
-|----------|-------------|
-| `GET /health` | Health check |
-| `GET /metrics` | Prometheus metrics |
+The full REST and Socket.IO surface is in the [API reference](/docs/server/api-reference).
