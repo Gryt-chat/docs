@@ -84,9 +84,9 @@ vendors recommend blocking it, because QUIC on UDP 443 cannot be TLS-inspected
 and blocking it forces browsers back to TCP where it can be. On the networks you
 would pick 443 to get through, it is the one most likely to be shut on purpose.
 
-Worth knowing either way, because it catches people out: ports are per-protocol.
-UDP 443 and TCP 443 are different sockets, so an HTTPS server never collides with
-media on UDP 443. HTTP/3 does, because that is UDP 443 as well, and Caddy serves
+Ports are per-protocol either way. UDP 443 and TCP 443 are different sockets, so
+an HTTPS server never collides with media on UDP 443. HTTP/3 does, because that
+is UDP 443 as well, and Caddy serves
 it by default.
 
 The SFU binds this port at startup and refuses to start if something else holds

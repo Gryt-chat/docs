@@ -32,10 +32,9 @@ people are joining from outside your network.
 | `5005` | TCP | Voice signalling. Which is not the voice itself |
 | `3478` | UDP | The actual voice and video, `ICE_UDP_MUX_PORT` |
 
-That third one catches people out. Voice does not travel over the same
-connection as the chat, and it is UDP, not TCP. If you forward the first two and
-stop there, everything works until somebody joins a voice channel — and then
-nobody can hear anybody.
+Voice does not travel over the same connection as the chat, and it is UDP, not
+TCP. If you forward the first two and stop there, everything works until
+somebody joins a voice channel — and then nobody can hear anybody.
 
 It is one port, not a range, and 3478 everywhere: the SFU, the CLI and the
 compose files all use it. Change it with `ICE_UDP_MUX_PORT` and forward whatever
@@ -75,12 +74,11 @@ hostname -I | awk '{print $1}'   # LAN IP
 ```
 
 <Callout type="warn" title="Not 0.0.0.0">
-  `0.0.0.0` is the reasonable-looking guess here and it is the one thing these
-  two must never be. It means "every interface" when you are deciding what to
-  *listen* on, which is why `HOST=0.0.0.0` is correct — but these are addresses
-  handed to other people's clients, and to a client `0.0.0.0` means its own
-  machine. It goes out as an ICE candidate nobody can send to, and as an SFU
-  address that points each person at their own computer. Loopback and
+  `0.0.0.0` means "every interface" when you are deciding what to *listen* on,
+  which is why `HOST=0.0.0.0` is correct. These two are different: they are
+  addresses handed to other people's clients, and to a client `0.0.0.0` means
+  its own machine. It goes out as an ICE candidate nobody can send to, and as
+  an SFU address that points each person at their own computer. Loopback and
   `localhost` fail the same way. Put the address people type to reach you.
 </Callout>
 
@@ -114,7 +112,7 @@ the public one.
 
 ## Why the browser cannot
 
-Worth knowing, because it decides whether this setup fits you.
+Whether a browser can reach a plain IP decides whether this setup fits you.
 
 `app.gryt.chat` is served over HTTPS, and a browser refuses to let an HTTPS page
 open a plain connection to anything except localhost. That is a browser rule

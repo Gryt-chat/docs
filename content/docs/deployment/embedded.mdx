@@ -20,9 +20,9 @@ that is all you need: forward the ports, hand out your IP, and skip domains and
 certificates entirely. See [No domain, just an IP](/docs/deployment/no-domain).
 
 A [Cloudflare Tunnel](/docs/deployment/cloudflare-tunnel) is for letting people
-join from a browser, which needs a real hostname and certificate. Note that a
-tunnel covers the HTTPS and WebSocket side only. WebRTC media is UDP and a
-tunnel cannot carry it, so the SFU still needs its UDP port reachable directly.
+join from a browser, which needs a real hostname and certificate. A tunnel
+covers the HTTPS and WebSocket side only. WebRTC media is UDP and a tunnel
+cannot carry it, so the SFU still needs its UDP port reachable directly.
 
 ## Creating one
 
@@ -39,9 +39,9 @@ interface the server will bind. If you need a particular port — one your route
 already forwards, or one your firewall rules already name — type it and the
 field tells you whether anything else is on it.
 
-Worth doing rather than skipping past, because this is the moment the number is
-settled. The server keeps the ports it is given here, and does not go looking
-for new ones later. You can change them afterwards, but you have to mean it.
+The number is settled here. The server keeps the ports it is given and does not
+go looking for new ones later, so if your router already forwards something,
+type that.
 
 **Discoverable on LAN** decides whether anyone else running Gryt on the same
 network sees it appear on its own. Leave it on for a LAN party.
@@ -62,10 +62,9 @@ Open them on the machine's own firewall if anyone is joining from another
 computer at all, and forward them on your router as well if anyone is joining
 from outside your network.
 
-The third one is the one people miss, and it fails in a way that does not look
-like a firewall problem. Voice does not travel over the same connection as the
-chat, and it is UDP rather than TCP — so with that port shut, people join, the
-member list fills up, messages send, and then nobody can hear anybody.
+Voice does not travel over the same connection as the chat, and it is UDP
+rather than TCP. With that port shut, people join, the member list fills up,
+messages send, and nobody can hear anybody.
 
 The numbers are not always those three. If something already holds one when the
 server is created, the app takes the next one up — `5006` rather than `5005` —
@@ -91,9 +90,8 @@ That is deliberate, and it used to work the other way. A server that relocates
 itself is fine on the machine it runs on and quietly broken for everyone else:
 you forwarded `5000` on your router, something claimed `5000` one morning, the
 app moved to `5001`, and the server came back up looking perfectly healthy
-while nobody outside could reach it. With the media port it is worse, because
-chat keeps working and only voice goes quiet. Neither is something you can see
-from inside the app, which is the problem with fixing it silently.
+while nobody outside could reach it. With the media port, chat keeps working and
+only voice goes quiet. Neither shows up anywhere in the app.
 
 So when something else has the port, you get told, and you pick:
 
@@ -102,9 +100,7 @@ So when something else has the port, you get told, and you pick:
 
 The fields are editable while the server is stopped. Changing one rewrites the
 server's `config.env`, including the addresses derived from it, so nothing is
-left pointing at the old number. What it cannot do is update your router, which
-is the one part still on you.
-
+left pointing at the old number. It does not touch your router.
 
 ## More than one
 

@@ -116,9 +116,9 @@ refuses joins and says so, rather than guessing.
 |----------|---------|--------------|
 | `GRYT_TRUSTED_PROXY_HOPS` | `0` | How many proxies in front may be believed |
 
-Zero by default, and that matters: `x-forwarded-for` is a header any client can
-set, so trusting it blindly lets one client walk around every per-IP limit by
-varying a string. Hops are counted from the right, which is the only end
+Zero by default. `x-forwarded-for` is a header any client can set, so trusting
+it blindly lets one client walk around every per-IP limit by varying a string.
+Hops are counted from the right, which is the only end
 infrastructure writes. A server behind a proxy or a tunnel has to set this, or
 every client arrives wearing the proxy's address and shares one rate-limit
 bucket.
