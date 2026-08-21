@@ -23,9 +23,35 @@ Default port 5000. Endpoints marked **Bearer** want `Authorization: Bearer <acce
 | Method | Path | Returns |
 |--------|------|---------|
 | GET | `/health` | `{ status, service, serverName, timestamp }` |
-| GET | `/info` | The public join preview |
+| GET | `/info` | The join preview. See below |
 | GET | `/icon` | The server icon. 404 when none is set |
 | GET | `/metrics` | Prometheus, `text/plain` |
+
+### What `/info` returns
+
+```json
+{
+  "serverId": "...",
+  "name": "...",
+  "description": "...",
+  "members": "12",
+  "lanOpen": false,
+  "identityTiers": ["account"],
+  "joinPolicy": "invite"
+}
+```
+
+`identityTiers` and `joinPolicy` are deliberately unauthenticated. The point is
+that a client can say "you do not need an account for this one" before anybody
+tries, and neither field tells a caller anything they could not learn by
+attempting the join and reading the refusal.
+
+Two things depend on who is asking. A server whose `discoverable` setting is off
+answers **404** to anybody who is not already a member, so it disappears rather
+than advertising itself. And `version` is only included for members, because a
+precise build number lets anyone on the network scan for hosts running a version
+with a known vulnerability, and this endpoint has to stay open for the add-server
+flow.
 
 <Callout title="No JWKS endpoint">
 The server does not publish `/.well-known/jwks.json`. It fetches one, from the
