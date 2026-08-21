@@ -145,3 +145,31 @@ on, rather than the machine's own idea of itself. Getting that wrong looks
 exactly like a firewall problem.
 
 More in [troubleshooting](/docs/guide/troubleshooting).
+
+## Networks Gryt cannot get through
+
+Some cannot be fixed from your end, and it is worth knowing which before you
+spend an evening on your router.
+
+Gryt connects people directly. There is no relay in the middle, on purpose: a
+relay would put an extra hop between two people who could have talked directly
+and charge latency and bandwidth for it on every packet of the call. That is the
+trade this project makes, and it is why the port you forward matters so much.
+
+The cost of that trade is that some networks cannot carry a Gryt call at all:
+
+**Mobile data, usually.** Carriers put subscribers behind carrier-grade NAT,
+where the phone has no address anybody outside can reach. Neither end can be
+reached directly and there is nothing to forward. This is the common one, and it
+is not something a server setting fixes.
+
+**Networks that block outbound UDP.** Some corporate and school networks allow
+only TCP out. Voice is UDP and there is no TCP fallback, so it does not connect.
+Chat and everything else still work, because those are a WebSocket.
+
+The client says so rather than sitting on a spinner: when it has tried every
+path and found none, it says the network may not allow voice through. If you see
+that on mobile data, that is what happened, and switching to Wi-Fi is the fix.
+
+Everything else — a home connection, an office that permits UDP, anyone on the
+same LAN — works, provided the port is forwarded.
