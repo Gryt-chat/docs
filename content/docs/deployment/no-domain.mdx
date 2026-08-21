@@ -30,17 +30,22 @@ people are joining from outside your network.
 |------|----------|------------|
 | `5000` | TCP | The server itself. Chat, logins, everything except voice |
 | `5005` | TCP | Voice signalling. Which is not the voice itself |
-| `443` | UDP | The actual voice and video |
+| `443` or `3478` | UDP | The actual voice and video, `ICE_UDP_MUX_PORT` |
 
 That third one catches people out. Voice does not travel over the same
 connection as the chat, and it is UDP, not TCP. If you forward the first two and
 stop there, everything works until somebody joins a voice channel — and then
 nobody can hear anybody.
 
-UDP 443 is a default worth keeping. It is one port instead of a range, and it is
-a port that restrictive networks usually leave alone, so people behind a
-corporate or hotel firewall stand a better chance. If it is already taken on
-your machine, set `ICE_UDP_MUX_PORT` to something else and forward that instead.
+Whichever port you use, it is one port and not a range. Which one you get depends
+on how you started the server: the bundled compose files set `ICE_UDP_MUX_PORT`
+to 443, and the SFU on its own defaults to 3478.
+
+443 is worth keeping where you can. Restrictive networks usually leave it alone,
+so people behind a corporate or hotel firewall stand a better chance of getting
+through. It needs a privileged bind and clashes with anything already serving
+HTTPS on that machine, which is why 3478 is the fallback. Set
+`ICE_UDP_MUX_PORT` to whatever suits and forward that.
 
 ## Tell the server its own address
 

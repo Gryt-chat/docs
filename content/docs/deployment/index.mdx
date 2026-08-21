@@ -41,6 +41,11 @@ import { Card, Cards } from 'fumadocs-ui/components/card';
     href="/docs/deployment/cloudflare-tunnel"
   />
   <Card
+    title="Tailscale"
+    description="Carries voice as well as chat, because WireGuard is UDP and a tunnel is not."
+    href="/docs/deployment/tailscale"
+  />
+  <Card
     title="Monitoring"
     description="Optional Prometheus + Grafana stack for metrics and dashboards."
     href="/docs/deployment/monitoring"
@@ -64,7 +69,10 @@ These apply to **all** deployment methods.
 | [Embedded (desktop app)](/docs/deployment/embedded) | LAN parties, quick hosting, zero setup | N/A (local) | No (LAN only) |
 | [Docker Compose](/docs/deployment/docker-compose) | Self-hosting on a VPS or bare metal | Add Caddy/Nginx | Yes (443 TCP + UDP) |
 | [Windows (no Docker)](/docs/deployment/windows) | LAN parties, local teams, Windows PCs | Manual / reverse proxy | Yes |
+| [Terminal manager](/docs/cli) | A machine you administer, one or several servers | Add Caddy/Nginx | Yes |
 | [Cloudflare Tunnel](/docs/deployment/cloudflare-tunnel) | Hosting behind NAT / no static IP | Automatic | UDP only |
+| [Tailscale](/docs/deployment/tailscale) | A private group, no public exposure at all | N/A (inside the tailnet) | No |
+| [No domain, just an IP](/docs/deployment/no-domain) | Desktop-app users, no certificate | None | Yes |
 | Kubernetes (Helm) | Scaled / multi-node clusters | cert-manager | Yes |
 
 ## Docker Compose (recommended)
