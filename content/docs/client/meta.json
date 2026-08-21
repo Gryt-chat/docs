@@ -5,6 +5,7 @@
   "pages": [
     "index",
     "installation",
+    "updates",
     "build-from-source",
     "voice-communication",
     "audio-processing",

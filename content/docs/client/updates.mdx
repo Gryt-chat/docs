@@ -1,0 +1,72 @@
+---
+title: Updates
+description: How the desktop client updates itself, and what to do when it stops
+icon: RefreshCw
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Steps, Step } from 'fumadocs-ui/components/steps';
+
+The desktop client checks for a new release on startup, downloads it, and
+installs it before the main window opens. There is nothing to click and no
+setting to turn on. If you are on the beta channel it looks at prereleases too.
+
+A release you already have downloaded is not downloaded again, so the second
+attempt at the same version is quick even if the first one was interrupted.
+
+## The client will not update (Windows)
+
+Windows builds **v1.6.6 through v1.6.24** cannot install an update. They find
+the new release and download it correctly, then fail at the last step and start
+again on the version they were already on. Left alone, such an install
+re-downloads every new release forever and never moves.
+
+You are affected if Gryt says it is one of those versions in
+**Settings → Updates & about** and has been saying so for a while.
+
+<Callout type="warn">
+These installs cannot repair themselves. The part that is broken is the part
+that would install the fix, so no future release reaches them on its own. It
+takes one manual install, once.
+</Callout>
+
+### Fixing it
+
+The installer is almost certainly already on your machine — your client
+downloaded it and then could not run it. You do not need to download anything.
+
+<Steps>
+
+<Step>
+Close Gryt completely, including the tray icon.
+</Step>
+
+<Step>
+Open `%LOCALAPPDATA%\gryt-chat-updater\pending` — paste that into the File
+Explorer address bar or the Run dialog.
+</Step>
+
+<Step>
+Run the `Gryt-Chat-*.exe` in that folder.
+</Step>
+
+</Steps>
+
+If the folder is empty or missing, download the current installer from the
+[latest release](https://github.com/Gryt-chat/gryt/releases/latest) and run
+that instead.
+
+Updates install on their own again afterwards, and your settings, servers and
+identity are untouched — none of that lives in the installation directory.
+
+### What went wrong
+
+The Windows install step ran through a PowerShell helper that was assembled
+from a list of lines joined with `; `. Several of those lines continued an
+expression onto the next one, so the semicolons landed inside expressions
+rather than between statements. PowerShell parses a whole script before running
+any of it, which is why nothing happened at all rather than something partial:
+no installer, no log, and the app restarted on the version it already had.
+
+Fixed in v1.6.25. Windows also installs on quit again, so a handoff that fails
+now has a second route rather than being the only one.
