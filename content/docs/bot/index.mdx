@@ -1,0 +1,136 @@
+---
+title: Overview
+description: "Writing and running a Gryt bot"
+icon: Bot
+---
+
+`@gryt/bot` is an SDK for writing Gryt bots in TypeScript. A bot joins a server
+the way any other client does — a key it holds, a self-signed certificate, and a
+challenge-response over P-256 — so from the server's side it is a member like
+any other.
+
+```ts
+import { GrytBot } from "@gryt/bot";
+
+const bot = new GrytBot({
+  host: "chat.example.com",
+  nickname: "Helper",
+  wants: ["read_messages", "send_messages"],
+  description: "Answers questions in #support",
+});
+
+bot.command("ping", async (ctx) => ctx.reply("pong"), {
+  description: "Check I am alive",
+  requires: ["send_messages"],
+});
+
+void bot.start();
+```
+
+There is no bot account type, no bot token and no bot bypass. What a bot may do
+is what an admin agreed to let it do, enforced by the same checks that apply to
+a person.
+
+## How a bot gets in
+
+It knocks.
+
+1. The bot starts, knowing only the server's address. It says what it is called
+   and what it wants to be allowed to do.
+2. It is turned away, and a request is left behind.
+3. An admin opens **Server settings → Bots**, sees the ask, unticks anything
+   they would rather it did not have, and lets it in.
+4. The approval reaches the bot without a restart. Leave it running.
+
+Nothing to configure on the server, no invite, and no restart.
+
+<Callout type="warn" title="What a bot asks for is fixed">
+The first declaration is the only one. A later run asking for more gets the
+answer to the question the first one asked, and the server will not record the
+new list at all — a bot cannot even change its own name after approval.
+
+That is not about you. It is about the run that is not yours, after a published
+image has been taken over. If a bot genuinely needs more, an admin makes a new
+registration.
+</Callout>
+
+### Setting one up in advance
+
+For a compose file or CI, where nobody is watching the first launch: an admin
+creates the registration first, decides everything up front, and hands over a
+single-use token.
+
+```ts
+const bot = new GrytBot({ host, botToken: process.env.GRYT_BOT_TOKEN });
+```
+
+The token is shown once, when it is created. The first bot to present it becomes
+that registration; after that it stops working.
+
+## A bot is not a person, and cannot pretend to be
+
+Bots have their own identity namespace with a `BOT_` prefix, so a bot can never
+hold an id a person could hold. Every surface that shows a member shows a **BOT**
+tag beside the name — in the member list and on every message — derived from the
+identity rather than from anything the bot sends.
+
+People cannot take bot-shaped names either: `BOT_helper` and `Bot Helper` are
+refused. Robot and Botany are fine.
+
+## Running one
+
+A bot is a container. The [support bot
+example](https://github.com/Gryt-chat/bot/tree/main/examples/support-bot) is a
+folder to copy, with a Dockerfile and a compose file.
+
+```yaml
+services:
+  support-bot:
+    image: ghcr.io/you/support-bot:latest
+    restart: unless-stopped
+    environment:
+      GRYT_HOST: chat.example.com
+    volumes:
+      - support-bot-identity:/data
+
+volumes:
+  support-bot-identity:
+```
+
+<Callout type="warn" title="The volume is not optional">
+`gryt-bot-identity.json` **is** the bot — the id the server knows it by is
+derived from the key inside it. Keep it and the bot keeps its permissions across
+restarts and upgrades. Lose it and the server sees a stranger knocking, holding
+nothing.
+</Callout>
+
+## Asking for the least that works
+
+The permissions a bot declares are the list an admin has to decide about. A long
+one is a list they cannot check, and the ones they untick are the ones you find
+out about at runtime — so check before you act:
+
+```ts
+if (bot.can("add_reactions")) {
+  await bot.react(conversationId, messageId, "👋");
+}
+```
+
+`bot.can()` answers from what the server said, and stays current: an admin who
+widens or narrows a bot mid-run is obeyed without a restart.
+
+Commands declare what they need and are **skipped rather than attempted** when
+the bot does not hold it, so nobody types a command and watches nothing happen:
+
+```ts
+bot.command("purge", handler, { requires: ["manage_messages"] });
+```
+
+## For server admins
+
+Whether bots may knock at all is a switch at the top of the Bots tab. Turn it
+off and the only way in is a token you hand out yourself.
+
+Approving a bot needs the *manage bots* permission, which by default only the
+owner has — approving one is granting permissions to something nobody in the
+room can vouch for. See [Roles and permissions](/docs/guide/roles).
