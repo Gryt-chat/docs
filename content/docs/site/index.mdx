@@ -19,16 +19,35 @@ The Gryt site (`packages/site`) is the public-facing website at [gryt.chat](http
 ```
 site/
 ├── content/
-│   └── blog/           # MDX blog posts
+│   ├── blog/           # MDX blog posts
+│   └── changelog/      # MDX release notes, one file per version
 ├── public/             # Static assets (images, videos, logo)
+├── scripts/            # Image optimisation, prerendering, meta checks
 ├── src/
-│   ├── components/     # Navbar, Footer, Hero, Lightbox, etc.
+│   ├── components/     # Navbar, Footer, Hero, Download, Lightbox, etc.
 │   ├── lib/
-│   │   └── blog.ts     # Blog post loader (Vite glob import)
-│   ├── pages/          # Route components (BlogIndex, BlogPost, Home)
+│   │   ├── blog.ts     # Blog loader (Vite glob import)
+│   │   ├── changelog.ts
+│   │   └── title.ts
+│   ├── pages/          # Route components
+│   ├── styles/
+│   ├── App.tsx         # The route table
 │   └── index.css       # Global styles and CSS variables
 └── vite.config.ts
 ```
+
+## Routes
+
+| Path | Page |
+|------|------|
+| `/` | The landing page, including the download section |
+| `/why-gryt` | The longer argument |
+| `/blog`, `/blog/:slug` | Blog index and posts |
+| `/changelog`, `/changelog/:version` | Release notes, one MDX file per version |
+| `/privacy`, `/terms`, `/community-guidelines` | The policy pages. Each also answers a longer alias, `/privacy-policy`, `/terms-of-use` and `/guidelines` |
+| `/invite` | Where an invite link lands |
+| `/auth/callback` | The OIDC redirect target |
+| `*` | Not found |
 
 ## Getting started
 
@@ -46,3 +65,9 @@ Open [http://localhost:5173](http://localhost:5173).
 npm run build     # production bundle → dist/
 npm run preview   # preview the production build locally
 ```
+
+`build` is more than a bundle. In order it typechecks with `tsc -b`, optimises
+images, runs the Vite build, prerenders the blog and changelog so each post has
+real HTML for crawlers and link unfurls, and finishes with `check-meta`, which
+fails the build if any page is missing a title suffix, an `og:image` or a
+consistent canonical.
