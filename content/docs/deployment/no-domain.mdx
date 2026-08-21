@@ -74,6 +74,16 @@ curl -4 ifconfig.me          # public IP
 hostname -I | awk '{print $1}'   # LAN IP
 ```
 
+<Callout type="warn" title="Not 0.0.0.0">
+  `0.0.0.0` is the reasonable-looking guess here and it is the one thing these
+  two must never be. It means "every interface" when you are deciding what to
+  *listen* on, which is why `HOST=0.0.0.0` is correct — but these are addresses
+  handed to other people's clients, and to a client `0.0.0.0` means its own
+  machine. It goes out as an ICE candidate nobody can send to, and as an SFU
+  address that points each person at their own computer. Loopback and
+  `localhost` fail the same way. Put the address people type to reach you.
+</Callout>
+
 ## Hand out the address
 
 `203.0.113.10:5000` — that is the whole thing. People paste it into **Add a
