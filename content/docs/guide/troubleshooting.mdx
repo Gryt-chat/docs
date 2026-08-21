@@ -12,9 +12,16 @@ Windows SmartScreen may show **"Windows protected your PC"** when running the in
 
 If the option doesn't appear, your organization may have a Group Policy blocking unsigned apps. In that case, [build from source](/docs/client/build-from-source) instead.
 
-### macOS Gatekeeper blocks the app
+### macOS says the app cannot be checked
 
-macOS shows **"can't be opened because Apple cannot check it for malicious software"**. Right-click the app → **Open** → confirm **Open**. This bypass is remembered for future launches.
+Released macOS builds are code-signed and notarized, so this should not happen.
+If it does, you are most likely running a build you compiled yourself, or one
+that did not come from the [releases page](https://github.com/Gryt-chat/gryt/releases).
+
+For a local build, right-click the app → **Open** → confirm **Open**, which is
+remembered for future launches. For something you downloaded as a release,
+please report it rather than clicking through: a notarized app failing this
+check is worth knowing about.
 
 ### Linux AppImage won't launch
 

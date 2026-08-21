@@ -59,7 +59,7 @@ This section does not repeat it. What is here is the part that spans both packag
 
 A theme is a couple of dozen hex values. The generator on [ui.gryt.chat/theme/generator](https://ui.gryt.chat/theme/generator) produces one and gives you a link, and the Gryt client takes that link directly in **Settings → How Gryt looks → Theme**.
 
-Underneath, the ramps are built in OKLab by `neutralScale`, `hueScale` and `alphaScale`, exported from `@gryt/ui` and from its `./theme` entry. Both renderers call the same functions, so a curve tuned for the web moves to the phone with it.
+Underneath, the ramps are built by `neutralScale`, `hueScale` and `alphaScale`, exported from `@gryt/ui` and from its `./theme` entry. Each step is specified in OKLCh, as a lightness, a chroma and a hue, and converted to hex through the published OKLab matrices. There is no colour dependency; the conversion is in the package. Both renderers call the same functions, so a curve tuned for the web moves to the phone with it.
 
 ## Where the code is
 
