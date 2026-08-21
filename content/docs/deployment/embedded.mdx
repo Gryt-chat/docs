@@ -20,9 +20,9 @@ that is all you need: forward the ports, hand out your IP, and skip domains and
 certificates entirely. See [No domain, just an IP](/docs/deployment/no-domain).
 
 A [Cloudflare Tunnel](/docs/deployment/cloudflare-tunnel) is for letting people
-join from a browser, which needs a real hostname and certificate. Note that a
-tunnel covers the HTTPS and WebSocket side only. WebRTC media is UDP and a
-tunnel cannot carry it, so the SFU still needs its UDP port reachable directly.
+join from a browser, which needs a real hostname and certificate. A tunnel
+covers the HTTPS and WebSocket side only. WebRTC media is UDP and a tunnel
+cannot carry it, so the SFU still needs its UDP port reachable directly.
 
 ## Creating one
 
