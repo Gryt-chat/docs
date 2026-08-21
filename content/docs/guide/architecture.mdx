@@ -1,64 +1,46 @@
 ---
 title: Architecture
-description: System architecture and design decisions
-icon: Building
+description: What the pieces are and how they fit together
+icon: Network
 ---
 
-Gryt follows a microservices architecture:
+Gryt splits into two planes that barely talk to each other. The server knows who
+people are and what they said. The SFU moves audio and video and knows neither.
+
+That split is the reason a community server can be somebody's spare machine: it
+handles text, presence and permissions, which are cheap, and hands the expensive
+part to a service that does one thing.
 
 ```mermaid
 graph TB
-  subgraph clientLayer [Client Layer]
-    WC["Web Client\n(React / TypeScript)"]
-  end
+  C["Client<br/>desktop, web, mobile"]
+  S["Server<br/>chat, identity, permissions"]
+  SFU["SFU<br/>audio, video, screen"]
+  IW["Image worker"]
+  OS["Object storage"]
+  K["Keycloak"]
+  ID["Identity service"]
 
-  subgraph backend [Backend]
-    GS["Signaling Server\n(Node.js / Socket.IO)"]
-    SFU["SFU Server\n(Go / Pion WebRTC)"]
-    IW["Image Worker\n(Node.js / sharp)"]
-    DB["SQLite"]
-    S3["MinIO\n(S3-compatible)"]
-  end
-
-  subgraph identity [Identity]
-    Auth["Keycloak\n(OIDC / PKCE)"]
-    IS["Identity Service\n(certificate signing)"]
-  end
-
-  WC <-->|"WSS — signaling"| GS
-  WC -.->|"UDP — DTLS-SRTP media"| SFU
-  WC -->|"OIDC login"| Auth
-  WC -->|"Get certificate"| IS
-  IS -->|"Verify Keycloak token"| Auth
-  GS <-->|"WS — room mgmt"| SFU
-  GS --> DB
-  GS --> S3
-  IW -->|"poll jobs"| DB
-  IW -->|"read/write images"| S3
-  GS -->|"JWKS certificate verification"| IS
+  C -->|"Socket.IO"| S
+  C -->|"WebSocket + UDP"| SFU
+  S -->|"control"| SFU
+  S --> IW
+  IW --> OS
+  S --> OS
+  C -.->|"login"| K
+  C -.->|"certificate"| ID
+  S -.->|"JWKS"| ID
 ```
 
-## Web Client
+## The client
 
-```
-packages/client/src/
-├── packages/
-│   ├── audio/          # Audio processing and device management
-│   │   └── hooks/      # useMicrophone, usePushToTalk, usePipelineControls
-│   ├── webRTC/         # SFU connection and WebRTC handling
-│   │   └── hooks/      # useSFU, sfuConnection, sfuConnectFlow
-│   ├── socket/         # Server communication
-│   │   ├── hooks/      # useSockets, useServerState, useServerManagement
-│   │   └── components/ # Server list, member sidebar
-│   ├── settings/       # Configuration, theme, server management
-│   ├── common/         # Auth (Keycloak), shared hooks, utils
-│   └── dialogues/      # Dialog components
-├── components/         # Shared UI components (Radix Themes)
-├── lib/                # Utility modules (electron, theme, etc.)
-└── assets/             # Fonts, images
-```
+Electron on the desktop, the same React app in a browser, and a React Native app
+on phones. State lives in hooks and context; audio settings are kept in
+`localStorage`.
 
-### Audio processing pipeline
+### Audio
+
+Capture runs at a fixed 48 kHz through a chain of Web Audio nodes:
 
 ```mermaid
 graph LR
@@ -66,140 +48,174 @@ graph LR
   Vol --> RNN["RNNoise"]
   RNN --> AGC["AGC"]
   AGC --> Comp["Compressor"]
-  Comp --> Gate["Noise Gate"]
+  Comp --> Gate["Noise gate"]
   Gate --> Mute["Mute"]
   Mute --> SFU
 ```
 
-State management uses React hooks and context. Audio settings (volume, noise gate, device) are stored in `localStorage` and synced via custom hooks.
+Each stage can be turned off independently, and the mute node is last so that
+muting cannot be defeated by anything upstream of it.
 
-### Screen share audio (Electron)
+### Screen share audio on the desktop
 
-On the desktop app, screen share audio uses a native binary to capture system audio while excluding Gryt's own process tree. The binary communicates with the Electron main process via stdin/stdout (raw PCM), which forwards audio chunks to the renderer via IPC. An `AudioWorkletNode` converts the PCM stream into a `MediaStreamTrack` for WebRTC. See [Audio Processing](/docs/client/audio-processing#screen-share-audio--native-capture) for details.
+Capturing system audio without capturing Gryt's own output needs more than the
+browser offers, so the desktop app shells out to a native binary that excludes
+Gryt's process tree. It writes raw PCM to stdout, the Electron main process
+forwards chunks over IPC, and an `AudioWorkletNode` turns the stream back into a
+`MediaStreamTrack` WebRTC can send. Details on the
+[audio processing page](/docs/client/audio-processing#screen-share-audio--native-capture).
 
-## Signaling Server
+## The server
 
-```
-packages/server/src/
-├── socket/        # Socket.IO server, handlers, auth middleware, server state sync
-│   ├── handlers/  # server:join, chat:*, voice:*, admin:*, etc.
-│   ├── middleware/# accessToken validation + role enforcement
-│   └── utils/     # server details, client sync helpers
-├── routes/        # REST API endpoints (messages, uploads, members, emojis, etc.)
-├── db/            # SQLite access layer (users, messages, roles, invites, ...)
-├── auth/          # Identity certificate & assertion verification (JWKS)
-├── storage/       # S3/MinIO integration
-├── jobs/          # background workers (media sweep, emoji queue; image compression runs in the separate image-worker service)
-├── sfu/           # SFU client (server↔SFU sync)
-└── utils/         # jwt, rate limiter, profanity filter, server ID helpers
-```
+Express for HTTP, Socket.IO for everything interactive, SQLite through
+`node:sqlite` for storage. One process per community.
 
-### Room management
+Almost nothing goes over REST. Uploads and downloads do, because they want plain
+HTTP caching, and so does the join preview. Chat, presence, voice signalling,
+moderation and settings are all socket events: fifty-eight handlers, listed in
+the [API reference](/docs/server/api-reference).
 
-Rooms are created on first join and cleaned up when empty. Room IDs are constructed from the server name, port, and channel ID to prevent cross-server collisions in the SFU.
+### Two room identifiers
 
-## SFU Server
+A voice channel has two names and they are not interchangeable:
 
-```
-packages/sfu/
-├── cmd/sfu/           # Entry point
-├── internal/
-│   ├── config/        # Environment-based configuration
-│   ├── websocket/     # Thread-safe WebSocket wrapper
-│   ├── webrtc/        # Peer connection management
-│   ├── track/         # Media track lifecycle
-│   └── signaling/     # Signaling coordination
-└── pkg/types/         # Shared message structures
-```
+| Name | Shape | Used for |
+|------|-------|----------|
+| `voiceRoomName` | `voice:<serverId>:<channelId>` | The Socket.IO room, for broadcasting to participants |
+| `sfuRoomId` | `<serverId>_<channelId>` | What the SFU knows the room as, for media operations |
 
-### Selective forwarding
+Both live in `src/socket/utils/voiceRooms.ts` rather than being spelled out at
+each call site, because the hand-written copies had already drifted: server mute
+addressed the SFU as `serverUserId:streamID` and a forced disconnect used
+`serverId_streamID`, neither of which named a room the SFU had heard of. Both
+went out, matched nothing, and failed silently. A wrong room ID does not throw,
+it just quietly does nothing, which is the worst way for a moderation action to
+fail.
 
-The SFU receives audio, video, and screen-share tracks from each participant and forwards them to every other peer in the room without transcoding. Track management lives in `internal/track/manager.go`. Receiver RTCP feedback (PLI, REMB) is relayed back to senders so their congestion controllers can adapt bitrate in real time.
-
-## Image Worker
-
-A standalone service that handles image compression and thumbnail generation, keeping `sharp` (native image processing) out of the signaling server so that a corrupt image cannot crash the main process.
+## The SFU
 
 ```
-packages/image-worker/
+sfu/
+├── cmd/sfu/            # config, codecs, the UDP mux, HTTP, cleanup loops
+└── internal/
+    ├── config/         # every environment variable
+    ├── readiness/      # the STUN probe /health gates on
+    ├── recovery/       # panic containment
+    ├── room/           # rooms, registration, peer bookkeeping
+    ├── signaling/      # offer/answer, RTCP relay
+    ├── svc/            # Dependency Descriptor parsing, LayerForwarder
+    ├── track/          # track lifecycle
+    ├── webrtc/         # peer connections
+    ├── websocket/      # the server and client connection kinds
+    └── metrics/        # Prometheus gauges
+```
+
+It forwards without transcoding. Five people in a room means each client sends
+one copy up and receives four down, which is why an SFU costs so little CPU
+compared to something that mixes, and why upload bandwidth runs out first.
+
+Feedback goes back selectively. A receiver's PLI or FIR becomes a keyframe
+request to the original sender. REMB does not travel any further than the SFU and
+plays no part in choosing layers, because the sender already has better
+information from transport-cc, which measures the sender's own link. Every
+receiver gets every temporal layer unless it asks for fewer, so the frame rate
+stays where it was configured. More on the [SFU page](/docs/sfu).
+
+## The image worker
+
+A separate process so that `sharp` and the untrusted images it decodes cannot
+take the server down with them. Image parsers have a long history of
+memory-safety bugs, and this is the one place strangers' files get opened.
+
+```
+image-worker/
 ├── src/
-│   ├── index.ts         # Entry point, polling loop, health server
-│   ├── processImage.ts  # sharp compression + AVIF thumbnail generation
-│   ├── storage.ts       # S3 client (get / put / delete)
-│   └── db.ts            # SQLite queries (image jobs, file records)
+│   ├── index.ts         # polling loop, health server
+│   ├── processImage.ts  # compression and AVIF thumbnails
+│   ├── storage.ts       # object storage
+│   └── db.ts            # the job queue
 └── Dockerfile
 ```
 
-The worker polls the `image_jobs` table for queued entries. For each job it fetches the raw upload from S3, compresses to AVIF when it exceeds the server size limit, generates a 320 px thumbnail, writes the results back to S3, and updates the file record in the database.
+It polls `image_jobs` for queued rows. Each job pulls the raw upload out of
+object storage, compresses it to AVIF when it is over the size limit, makes a
+320 px thumbnail, writes both back, and updates the file record.
 
-## Authentication
+One worker runs per server rather than one per machine, because it reads that
+server's own SQLite database rather than being handed jobs over a network.
 
-Authentication uses two services: **Keycloak** for login and a lightweight **Identity Service** for certificate signing.
+## Identity
 
-Clients authenticate with Keycloak via OIDC Authorization Code + PKCE (public client, no client secret). After login, the client generates an ECDSA P-256 keypair and obtains a **signed certificate** from the Identity Service that binds the public key to the user's Gryt identity.
+Two services, and neither of them is the community server.
 
-When joining a community server, the client uses a **challenge-response** protocol — the Keycloak token is never sent to the server. This prevents malicious server operators from stealing and replaying credentials.
+Keycloak handles login: OIDC authorization code with PKCE, public client, no
+client secret. The client then generates an ECDSA P-256 keypair and asks the
+identity service for a certificate binding that public key to the account.
+
+Joining a server works by signing a challenge. The account token never reaches
+the community server at all, so a malicious operator has nothing to steal.
 
 ```mermaid
 sequenceDiagram
   participant C as Client
   participant K as Keycloak
-  participant ID as Identity Service
-  participant S as Community Server
+  participant ID as Identity service
+  participant S as Community server
 
   C->>K: OIDC login (PKCE)
-  K-->>C: Access token (JWT)
+  K-->>C: Access token
   C->>C: Generate ECDSA keypair
-  C->>ID: Request certificate (access token + public key)
-  ID->>K: Verify access token (JWKS)
-  ID-->>C: Signed identity certificate
+  C->>ID: Certificate request (token + public key)
+  ID->>K: Verify token against JWKS
+  ID-->>C: Signed certificate
 
-  C->>S: server:join (nickname)
+  C->>S: server:join
   S-->>C: server:challenge (nonce)
-  C->>C: Sign assertion (aud=server, nonce)
+  C->>C: Sign assertion (aud = server, nonce)
   C->>S: server:verify (certificate + assertion)
-  S->>ID: Fetch JWKS (cached)
-  S->>S: Verify certificate + assertion + nonce
-  S-->>C: Server access token
+  S->>ID: Fetch JWKS, cached
+  S->>S: Verify certificate, assertion and nonce
+  S-->>C: Server-scoped access token
 ```
 
-See the [Security](/docs/guide/security) page for a detailed breakdown of this flow and its security properties.
+The [Security page](/docs/guide/security) goes through what this does and does
+not protect against.
 
-## Data flow
+## Joining a voice channel
 
-```mermaid
-graph LR
-  C["Client"] --> S["Server"]
-  S --> SFU
-  SFU --> OC["Other Clients"]
+1. The client authenticates and holds a certificate.
+2. It opens a socket to the server and completes the challenge.
+3. The server issues a server-scoped access token.
+4. On joining a voice channel, the server registers the room with the SFU and
+   returns `room_id`, a join token and the SFU's address.
+5. The client opens its own WebSocket to the SFU and sends `client_join`.
+6. The SFU offers, the client answers, and ICE candidates go **over that
+   connection**, not back through the server.
+7. Media flows client to SFU over one UDP port.
 
-  C -.-> Auth["Auth Service"]
-  S -.-> RM["Room Manager"]
-  SFU -.-> MR["Media Relay"]
-```
+Step 6 is the part worth remembering when voice fails. Signalling to the server
+and signalling to the SFU are different connections over different paths, so the
+first working proves nothing about the second.
 
-1. Client authenticates with Keycloak and obtains a certificate from the Identity Service
-2. Client opens a WebSocket to the signaling server and completes challenge-response
-3. Server issues a server-scoped access token
-4. On voice channel join, the server requests a room from the SFU
-5. SFU sends a WebRTC offer; the client answers
-6. ICE candidates are exchanged via the signaling server
-7. Media flows directly between client and SFU over UDP
+## Deployment layouts
 
-## Deployment
-
-| Stack | Path | Use case |
-|-------|------|----------|
-| Cloudflare Tunnel | `ops/deploy/host/compose.yml` | Hosting with Tunnel + DB + S3 |
+| Stack | Path | For |
+|-------|------|-----|
+| CLI-generated | `~/.config/gryt` or the platform equivalent | A machine you administer |
 | Production | `ops/deploy/compose/prod.yml` | Behind a reverse proxy |
-| Dev | `ops/deploy/compose/dev.yml` | Local development |
-| Kubernetes | `ops/helm/gryt/` | Helm chart |
+| Tunnel | `ops/deploy/host/compose.yml` | Cloudflare Tunnel, with storage |
+| Dev | `ops/deploy/compose/dev.yml` | Working on Gryt |
+| Kubernetes | `ops/helm/gryt/` | Helm |
 
-See the [Deployment](/docs/deployment) section for details.
+The CLI writes two Compose projects: one shared per machine, holding the SFU and
+the object store, and one per server holding the server and its image worker.
 
-## Scalability
+## Scaling
 
-- **SFU**: Multiple instances behind a load balancer
-- **Signaling server**: Multiple instances with session affinity
-- **Database**: SQLite (single-file database per server data directory)
-- **Storage**: S3-compatible object storage
+The database is SQLite, one file per server, so a community scales up rather than
+out. That is a deliberate ceiling: the target is a community on one box, not a
+platform.
+
+The SFU is the part that runs out first, and it runs out of CPU and upload
+bandwidth rather than ports. One muxed UDP port carries far more peers than a
+machine can encode for. When one SFU is not enough, the answer is a second SFU.
