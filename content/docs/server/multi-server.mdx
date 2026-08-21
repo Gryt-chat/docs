@@ -71,14 +71,19 @@ LAN open join works with both manual connections and mDNS discovery. When a LAN-
 </Callout>
 
 <Callout type="warn" title="Behind a proxy this needs configuring">
-The server ignores `X-Forwarded-For` unless you tell it how many proxies to
-believe. `GRYT_TRUSTED_PROXY_HOPS` is zero by default, because that header is
-something any client can set, so trusting it blindly would let somebody claim a
-private address and walk straight past the invite requirement.
+Behind a reverse proxy or a tunnel, LAN open join does nothing until you set
+`GRYT_TRUSTED_PROXY_HOPS`.
 
-Left at zero behind a proxy, every client arrives wearing the proxy's address.
-If that address is private, which it usually is, LAN open join lets in everybody
-who can reach the proxy. Set the hop count to match your setup. See
+The server ignores `X-Forwarded-For` unless you tell it how many proxies to
+believe, and it defaults to zero, because that header is something any client
+can set. Left at zero behind a proxy, every request arrives wearing the proxy's
+address rather than the client's, and the server has no way to know who is
+actually on the local network.
+
+Rather than treat the proxy's address as the client's, which would let anybody
+who can reach the proxy join without an invite, the server keeps the invite
+requirement and says so in its log once. Set the hop count to the number of
+proxies in front of it and the feature works as intended. See
 [Behind a proxy](/docs/guide/configuration#behind-a-proxy).
 </Callout>
 
