@@ -1,79 +1,122 @@
 ---
 title: Rate Limiting
-description: Score-based rate limiting to prevent abuse
+description: How the server decides somebody is going too fast
 icon: Shield
 ---
 
-The signaling server uses a score-based rate limiting system. Each action adds points to a user's score, scores decay over time, and actions are blocked when the score exceeds a threshold.
+import { Callout } from 'fumadocs-ui/components/callout';
 
-## Overview
+Two limiters run on every rate-limited action, and both have to pass. One is a
+plain sliding window: how many times in the last N milliseconds. The other is a
+score that rises with each action and decays with time.
 
-The rate limiting system uses a **score-based approach**:
-- Each action adds points to a user's score
-- Scores decay over time
-- When a score exceeds a threshold, the action is blocked
-- The server returns a retry delay so the client can show a helpful wait message
+The window catches a burst. The score catches somebody who has worked out where
+the window sits and is pacing themselves just under it, because the score does
+not reset the way a window does. Cheap actions can be worth a fraction of a
+point, which is how typing indicators are allowed to be frequent without being
+free.
 
-## Architecture
+## The key
 
-```mermaid
-flowchart LR
-  Client["Client\nUser Actions\nError Display\nWait Times"] -->|requests| RL["Rate Limiter\nScore Tracking\nDecay Logic\nThresholds"]
-  RL -->|allowed| Server["Server\nEnforcement\nFeedback"]
-  Server -->|result| RL
-  RL -->|response| Client
-```
+Everything is counted per `event:userId:ip`. A member on two networks gets two
+buckets, and two members behind one address get two as well, which matters more
+than it sounds: without a correct
+[`GRYT_TRUSTED_PROXY_HOPS`](/docs/guide/configuration#behind-a-proxy), every
+client behind a proxy arrives with the proxy's address and shares one bucket.
 
-## Score-based algorithm
+## The score
 
-### How scores work (example)
+Each action adds `scorePerAction`. Before that, the score is reduced by one point
+for every `scoreDecayMs` that have passed since it was last touched, floored at
+zero. When the result is over `maxScore` the action is refused and the caller is
+told to wait `currentScore * scoreDecayMs`.
+
+Waiting longer than you need to costs nothing, since the score keeps decaying.
+
+## The window
+
+Timestamps outside `windowMs` are dropped, and the action is refused if `limit`
+of them remain. The wait is however long until the oldest one falls out.
+
+## Bans
+
+Some rules carry `banMs`. When one of those trips, the key is banned outright for
+that long and every check returns immediately without touching either counter.
+The ban is applied once, on the first refusal, rather than being extended by
+each retry.
+
+## What each action costs
+
+| Action | Window | Score | Ban |
+|--------|--------|-------|-----|
+| `chat:send` | 20 / 10s | 1 per action, max 10, decays 1 per 2s | 30s |
+| `chat:edit` | 20 / 60s | 1, max 10, 1 per 2s | — |
+| `chat:delete` | 30 / 60s | 1, max 15, 1 per 3s | — |
+| `chat:react` | 60 / 60s | 0.5, max 15, 1 per 3s | — |
+| `chat:fetch` | 15 / 10s | 0.3, max 8, 1 per 1.5s | — |
+| `chat:typing` | 30 / 10s | 0.2, max 6, 1 per 1.5s | — |
+| `server:join` | 20 / 60s | 0.5, max 10, 1 per 5s | 60s |
+| `join:requests` | 10 / 60min | 1, max 10, 1 per 60s | 10min |
+| `voice:room:request` | 10 / 60s | 1, max 8, 1 per 5s | — |
+| `voice:channel:joined` | 10 / 60s | 0.5, max 6, 1 per 3s | — |
+| `webhook:send` | 30 / 60s | 1, max 15, 1 per 2s | 60s |
+| Moderation actions | 15 / 60s | 2, max 10, 1 per 5s | — |
+| Reports | 10 / 60s | 2, max 10, 1 per 5s | — |
+| Handling reports | 30 / 60s | 1, max 15, 1 per 3s | — |
+| Settings changes | 30 / 60s | 1, max 20, 1 per 3s | — |
+| Invites | 20 / 60s | 1, max 10, 1 per 5s | — |
+
+Anything without its own rule falls back to 100 per 60 seconds with no score.
+
+Two of these are worth reading twice. Moderation and reports cost two points
+each, so an account cannot sit and mass-report. And `join:requests` is measured
+over an hour rather than a minute, with a ten minute ban, because a join request
+is a thing a human does once.
+
+## What the client gets back
 
 ```ts
-interface ScoreData {
-  score: number;
-  lastUpdate: number;
-}
-
-const calculateCurrentScore = (scoreData: ScoreData, rule: RateLimitRule): number => {
-  const now = Date.now();
-  const timeSinceUpdate = now - scoreData.lastUpdate;
-  const decayAmount = Math.floor(timeSinceUpdate / rule.scoreDecayMs);
-  return Math.max(0, scoreData.score - decayAmount);
-};
-```
-
-### Score decay
-
-Scores decay automatically as time passes:
-- **Decay rate**: configured as milliseconds per point
-- **Fair recovery**: users recover quickly by waiting
-
-## Client-side integration
-
-When rate limited, clients receive structured error info:
-
-```ts
-interface RateLimitError {
-  error: "rate_limited";
-  retryAfterMs: number;
-  currentScore: number;
-  maxScore: number;
-  message: string;
-}
-```
-
-Example payload:
-
-```json
 {
-  "error": "rate_limited",
-  "retryAfterMs": 3000,
-  "currentScore": 12,
-  "maxScore": 10,
-  "message": "You're doing things too quickly. Please wait 3 seconds."
+  error: "rate_limited",
+  retryAfterMs: number,
+  currentScore?: number,
+  maxScore?: number
 }
 ```
+
+`currentScore` and `maxScore` are only present when it was the score that
+refused, not the window. The message the client shows is built from
+`retryAfterMs` rounded up to whole seconds.
+
+## Invites are separate
+
+Invite codes have their own brute-force protection, configured by environment
+variable rather than in code, with cooldowns that escalate:
+
+| Variable | Default |
+|----------|---------|
+| `SERVER_INVITE_MAX_RETRIES` | `8` |
+| `SERVER_INVITE_RETRY_WINDOW_MS` | `300000` |
+| `SERVER_INVITE_RETRY_COOLDOWN_MS` | — |
+| `SERVER_INVITE_MAX_COOLDOWN_MS` | — |
+| `SERVER_INVITE_IP_MAX_RETRIES` | — |
+| `GRYT_INVITE_MAX_JOINS_PER_HOUR` | — |
+
+<Callout type="warn" title="Counters live in memory">
+The limiter is a process-local map. Restarting the server clears every score,
+window and ban, and running more than one server process means each keeps its
+own counts. Stale entries are evicted once a minute: bans when they expire,
+windows when their newest timestamp falls out, and scores when they reach zero
+or go five minutes untouched.
+</Callout>
 
 ## Debugging
 
-If you add debug endpoints for rate limiting, you can use them to inspect scores and rules. If you're troubleshooting chat/join issues, also see the main [Troubleshooting](/docs/guide/troubleshooting) page.
+Bans are logged as they are applied, with the key, the score and the ban length:
+
+```
+🚫 Rate limit ban applied (score-based) { key: 'chat:send:user123:203.0.113.10', score: 11, maxScore: 10, banMs: 30000 }
+```
+
+A key that reads `…:anonymous:unknown` means neither a user ID nor an address
+reached the limiter, and everybody in that state shares one bucket.
