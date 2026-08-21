@@ -75,6 +75,24 @@ Note the shape. `GRYT_VERSION=v0.1.2 curl -fsSL https://get.gryt.chat | sh`
 sets the variable for `curl` rather than for the shell running the script, so
 it is ignored and you get the newest release anyway, without being told.
 
+## Release channels
+
+Stable is the default. `gryt channel beta` switches this machine to beta:
+
+```bash
+gryt channel beta      # follow beta
+gryt channel           # print the channel this machine follows
+gryt channel stable    # go back
+```
+
+The channel covers two things at once. `gryt update` follows it, so the CLI
+itself moves to beta builds. Servers you start also run the `latest-beta`
+images rather than `latest`, for the server, the SFU and the image worker.
+
+Existing servers keep the image they already pulled until you restart them, so
+switching the channel changes nothing that is already up. Restart a server to
+move it.
+
 ## Features
 
 - **Live dashboard**: every server on one screen, refreshing itself, with the address you hand people rather than the address it binds to
@@ -123,6 +141,7 @@ you asking. `l` follows a server's log rather than showing a snapshot.
 | `enter` | One server, with its addresses grouped by who they are for |
 | `n` | New server |
 | `e` | Edit the selected server |
+| `c` | Change the settings the server keeps in its own database |
 | `s` `x` `r` | Start · stop · restart |
 | `l` | Follow the log |
 | `g` | Refresh now |
@@ -247,6 +266,61 @@ A cap is about the machine running the SFU, not about ports. With
 shares one UDP port, so there is no per-person port to run out of. What runs
 out first is CPU and upload bandwidth.
 
+## Settings a server keeps itself
+
+Some of a server's configuration lives in its own database rather than in the
+environment its container was started with: who may join, whether it advertises
+itself over mDNS, and what it does about profanity. `c` on the dashboard opens
+them.
+
+```
+gryt  settings                                       Pivert CLI Server
+
+› Who can join         invite
+  Invite means somebody needs a link. Open means anybody who can reach
+  the address.
+  LAN discovery        on
+  Open on the LAN      off
+  Profanity filter     off
+
+ ↑/↓ select   space change   esc back
+```
+
+`space` cycles the selected setting to its next value and sends it straight
+away. There is no save step. The line under the cursor says what the setting
+does, which is the part that is hard to guess from the name.
+
+| Setting | Values | What it does |
+|---------|--------|--------------|
+| Who can join | `invite` · `open` | `open` lets anybody who can reach the address join without a link |
+| LAN discovery | `on` · `off` | Advertises the server over mDNS, so clients on this network list it without being given the address |
+| Open on the LAN | `on` · `off` | Lets anybody already on this network join without an invite |
+| Profanity filter | `off` · `flag` · `censor` · `block` | `flag` marks a message, `censor` hides the word, `block` refuses the message |
+
+These reach the server through a management API it publishes on loopback, which
+is also what makes a change take effect rather than only recording it. Turning
+LAN discovery off has to withdraw the mDNS advertisement, and only the server
+can do that.
+
+Two consequences. The server has to be running: stopped, the screen says so and
+suggests `s`. And the server has to be new enough to carry the API, which means
+1.5.0 or later; against anything older the screen says the server has no
+management API and to update its image and restart it.
+
+## Which version a server runs
+
+`enter` on a server shows the version it is running, under **Version**. When a
+newer one exists it shows both:
+
+```
+  Version
+  1.4.6 → 1.5.0   restart to pull it
+```
+
+Restarting is what pulls the newer image. The version is read off the container
+rather than asked of the server, so it works on images built long before the
+server had any way to report it.
+
 ## Commands
 
 | Command | What it does |
@@ -255,6 +329,8 @@ out first is CPU and upload bandwidth.
 | `gryt doctor` | Check Docker, the config directory and the ports. Exits non-zero when something is wrong |
 | `gryt list` | Print each server's ID, address and name |
 | `gryt env <server>` | Print the settings, each marked `live` or `restart`. Secrets are masked |
+| `gryt channel` | Print the release channel this machine follows |
+| `gryt channel beta` | Follow beta, for this CLI and for the images its servers run |
 | `gryt update` | Replace this binary with the newest release |
 | `gryt version` | Print the CLI version |
 
@@ -310,9 +386,9 @@ database.
 So voice and uploads work on a server made with the defaults, with nothing to
 configure and no external service.
 
-<Callout title="Live settings still need a restart">
+<Callout title="Which settings need a restart">
 Settings marked `live` are ones that belong in the server's own database rather
-than its environment. The label tells you which is which. Applying them without
-a restart needs a local management API in the server, which does not exist yet,
-so for now every change takes effect on restart.
+than its environment, and those are the ones `c` changes, without a restart.
+Everything marked `restart` lives in the generated `.env`, so it takes effect
+the next time the server starts.
 </Callout>
