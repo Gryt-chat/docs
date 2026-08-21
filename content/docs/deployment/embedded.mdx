@@ -42,6 +42,41 @@ field tells you whether anything else is on it.
 **Discoverable on LAN** decides whether anyone else running Gryt on the same
 network sees it appear on its own. Leave it on for a LAN party.
 
+## Ports to open
+
+Three, and the app tells you which — **Settings → My servers** lists them under
+the server, with the numbers it actually picked. They are typically:
+
+| Port | Protocol | What it is |
+|------|----------|------------|
+| `5000` | TCP | The server itself. Chat, logins, joining |
+| `5005` | TCP | Voice signalling |
+| `3478` | UDP | The voice and video themselves |
+
+Open them on the machine's own firewall if anyone is joining from another
+computer at all, and forward them on your router as well if anyone is joining
+from outside your network.
+
+The third one is the one people miss, and it fails in a way that does not look
+like a firewall problem. Voice does not travel over the same connection as the
+chat, and it is UDP rather than TCP — so with that port shut, people join, the
+member list fills up, messages send, and then nobody can hear anybody.
+
+The numbers are not always those three. If something else on the machine
+already holds one, the app moves to the next free port and writes the new one
+into the server's `config.env` — which is why the list in **My servers** is
+worth reading rather than assuming.
+
+<Callout type="warn" title="Windows: the SFU asks separately">
+  Voice runs in its own executable, `gryt_sfu.exe`, so Windows Firewall prompts
+  for it separately from Gryt itself — and clicking **Allow** on that prompt
+  usually ticks **Private networks** only. A VPN adapter like Radmin, Hamachi
+  or ZeroTier is normally classified as a **Public** network, so friends
+  connecting over one are blocked by a rule you thought you had already
+  answered. Check both boxes, or add an inbound rule for UDP 3478 by hand under
+  **Windows Security → Firewall → Advanced settings → Inbound Rules**.
+</Callout>
+
 ## More than one
 
 You can host several. Each server is genuinely separate — its own messages, its
@@ -112,7 +147,7 @@ so the limits are the machine's:
   stops the servers it is hosting.
 - Anyone outside your network needs a route in. A
   [tunnel](/docs/deployment/cloudflare-tunnel) covers signalling; the SFU's UDP
-  range still has to be forwarded.
+  port still has to be forwarded directly.
 - Only one hosted server can advertise itself over mDNS on Linux at a time. All
   of them still work by address.
 
