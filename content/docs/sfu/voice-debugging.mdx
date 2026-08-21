@@ -1,148 +1,161 @@
 ---
 title: Voice Debugging
-description: Steps for diagnosing voice transmission issues
+description: Finding out why voice will not connect
 icon: Bug
 ---
 
-When voice works locally but other peers don't hear anything, the issue is usually in the WebRTC connection path (ICE / UDP reachability) or SFU forwarding.
+import { Callout } from 'fumadocs-ui/components/callout';
 
-## Checklist
+Voice that works for you and for nobody else is nearly always ICE, which in
+practice means UDP reachability. Signalling runs over the same WebSocket as the
+rest of the app, so signalling working tells you nothing about whether media
+can get through.
 
-### 1) Check SFU logs
+## Start here
 
-```bash
-docker logs <sfu-container-name> -f
-```
-
-Look for:
-- server registration
-- client joins
-- forwarding / RTP activity
-- connection state changes
-
-### 2) Check server logs
+**Is the SFU actually ready?**
 
 ```bash
-docker logs <server-container-name> -f
+curl -s http://localhost:5005/health
 ```
 
-Look for:
-- SFU client connect status
-- room registration
-- voice channel join/leave events
+Three answers matter:
 
-### 3) Check browser console
+| Response | What it means |
+|----------|---------------|
+| `{"status":"healthy",…}` | The SFU is up and its outbound UDP works |
+| `{"status":"starting","detail":"verifying UDP connectivity"}`, HTTP 503 | Still probing. It sends a STUN Binding Request and retries up to eight times, backing off to five seconds |
+| Connection refused | Not running, or the UDP mux port was already taken and it refused to start |
 
-Open dev tools and look for:
-- ICE connection failures
-- SFU websocket connection issues
-- audio track errors
+That last one is worth knowing about. The SFU binds `ICE_UDP_MUX_PORT` at
+startup and exits if something else holds it, rather than coming up and quietly
+handing out candidates on ports nobody opened. Check the logs for
+`failed to create ICE UDP mux on port`.
 
-### 4) Verify SFU health endpoint
+**Is the one UDP port open?**
 
-```bash
-curl -I http://localhost:5005/health
+All media goes over `ICE_UDP_MUX_PORT` — 3478 unless you set it. That single
+port has to be reachable from wherever your participants are, and if the SFU is
+in a container it has to be published:
+
+```yaml
+ports:
+  - "3478:3478/udp"
 ```
 
-### 5) Verify STUN + UDP configuration
+<Callout type="warn">
+Cloudflare Tunnel does not carry UDP. If your signalling goes through a tunnel,
+the media port still has to be exposed directly.
+</Callout>
 
-Ensure STUN is configured:
+## The failure that looks like a configuration problem
 
-```bash
-STUN_SERVERS="stun:stun.l.google.com:19302,stun:stun1.l.google.com:19302"
+Users outside your network reach the server, see the channel, and sit on
+"connecting" forever.
+
+The usual cause is a NAT between the SFU's UDP socket and the internet — a
+Docker bridge, a cloud VPC — that rewrites the source port. Look for the
+candidate lines in the SFU log:
+
+```
+ICE candidate for <peer>: type=host  protocol=udp address=203.0.113.10:3478
+ICE candidate for <peer>: type=srflx protocol=udp address=203.0.113.10:57599
 ```
 
-Recommended: use ICE UDP mux on a single port (and open it publicly). This improves success rates on networks that block high UDP port ranges:
+The `host` candidate says 3478 because that is what the SFU bound. The `srflx`
+candidate says 57599 because that is what the outside world actually saw. When
+those differ, external peers need the second one, and they only get it if STUN
+is on.
 
-```bash
-ICE_UDP_MUX_PORT=443
-```
+So: keep `DISABLE_STUN=false`, which is the default. Turning STUN off is only
+safe when the SFU has a direct, port-preserving path out — host networking, bare
+metal, or a 1:1 NAT. Docker and most cloud networking are neither.
 
-Alternative: pin a dedicated UDP port range on the SFU (and open it publicly):
-
-```bash
-ICE_UDP_PORT_MIN=10000
-ICE_UDP_PORT_MAX=10019
-```
-
-If the SFU is behind NAT / has multiple NICs, set the public IP it should advertise:
+If the SFU is behind NAT or has several interfaces and you know the address it
+should be advertising:
 
 ```bash
 ICE_ADVERTISE_IP=203.0.113.10
 ```
 
-## Interactive test steps
+Comma-separate it for a machine that should be reachable over both a LAN and the
+internet. Clients are given every candidate and use whichever answers first.
 
-Use these steps in order when debugging a voice channel join.
-
-### Step 1 -- verify voice channel click handler
-
-1. Open browser dev tools (F12)
-2. Go to Console
-3. Click on a voice channel
-4. Look for messages like:
-
-```text
-VOICE CHANNEL CLICK DEBUG: ...
-Proceeding with new connection attempt
-Room access granted: { room_id: "...", join_token: "...", sfu_url: "..." }
-```
-
-If you don't see these messages, the click handler isn't running or the channel type isn't set to `voice`.
-
-### Step 2 -- check server logs
-
-After clicking a voice channel, check server logs for room-access messages. If they're missing, the room request event isn't reaching the server -- check WebSocket connectivity.
-
-### Step 3 -- verify SFU is reachable
+## Reading the logs
 
 ```bash
-curl -I http://localhost:5005/health
+docker logs <sfu-container> -f
 ```
 
-### Step 4 -- verify microphone permissions
+In order, a working join produces: a server connection and
+`Server … registered room … successfully`, then a client connection, then
+`Client … validated for room`, then peer connection state changes. Where it
+stops tells you which side to look at.
 
-Run in the browser console:
+Two rejections have specific messages:
+
+- `Join validation failed` — the room is not registered, or the server
+  credentials do not match. That is the Gryt server's side, not the client's.
+- `there are no seats left in this voice server (n/200)` — `MAX_PEERS`. It
+  counts every peer across every room on this SFU, not per server.
+
+`DEBUG` is on unless you set it to `false`. `VERBOSE_LOG=true` adds per-packet
+RTP detail and is genuinely too noisy for anything but a short capture.
+
+## From the client
+
+Everything the client knows about the connection is in **Settings → Advanced**,
+in the latency panel. It only fills in while you are connected to voice:
+
+| Field | What to look for |
+|-------|------------------|
+| SFU endpoint | Which SFU you actually reached. Confirms LAN versus WAN path |
+| ICE remote | The address media is really going to |
+| ICE local | Your side of the pair |
+| Candidate type | `host` on a LAN, `srflx` through NAT |
+| Round-trip time | Yours, next to the other participants' |
+| Jitter buffer | Highlighted above 80 ms |
+
+If you are on the same network as the SFU and ICE remote shows a `192.168.x.x`
+address at near-zero latency, the LAN path won. A public address at 20 ms means
+traffic is going out and back.
+
+The same screen has toggles for two floating overlays, one for the microphone
+and one for video, showing live capture, codec, resolution and bitrate. Both are
+off by default and are separate from the latency panel. There is no third
+overlay for the connection itself; the latency panel is where that lives.
+
+## Checks in the browser
+
+Microphone permission:
 
 ```javascript
 navigator.mediaDevices.getUserMedia({ audio: true })
   .then(stream => {
-    console.log("Microphone access granted:", stream);
-    console.log("Audio tracks:", stream.getAudioTracks());
-    stream.getTracks().forEach(track => track.stop());
+    console.log("granted", stream.getAudioTracks());
+    stream.getTracks().forEach(t => t.stop());
   })
-  .catch(err => console.error("Microphone error:", err));
+  .catch(err => console.error("denied", err));
 ```
 
-### Step 5 -- sanity-check WebRTC + STUN
+Whether the browser can form candidates at all:
 
 ```javascript
-console.log("RTCPeerConnection supported:", !!window.RTCPeerConnection);
 const pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
-console.log("WebRTC configuration test passed");
-pc.close();
+pc.createDataChannel("x");
+pc.onicecandidate = e => e.candidate && console.log(e.candidate.candidate);
+await pc.setLocalDescription(await pc.createOffer());
 ```
 
-## Client-side voice debug overlay
+No `srflx` line means STUN is not getting out from the client either, which is a
+different problem from the server side of the same symptom.
 
-The Gryt client includes a built-in debug overlay for voice connections. Enable it via **Settings > Advanced** (in the Diagnostics section).
+## What to include when asking for help
 
-The overlay displays:
-
-- **SFU endpoint** — the WebSocket URL the client connected to (useful for verifying LAN vs. WAN path selection)
-- **ICE remote** — the remote IP:port where WebRTC media is actually sent
-- **ICE local** — the local IP:port used by the client
-- **Candidate type** — the ICE candidate type and transport (e.g. `srflx (udp)`, `host (udp)`)
-- **Self-latency** — your own round-trip time to the SFU, shown alongside peer latencies
-
-This is the fastest way to verify that a multi-network setup is working correctly. For example, if you're on the same LAN as the SFU and see a remote IP of `192.168.x.x` with ~0ms latency, the LAN path is being used. If you see the public IP with ~20ms, traffic is going out to the internet.
-
-## What to report
-
-When asking for help, include:
-- SFU logs (last ~50 lines)
-- server logs (last ~50 lines)
-- browser console errors
-- STUN config and SFU UDP port range
-- voice debug overlay screenshot (SFU endpoint, ICE remote/local, candidate type)
-- steps to reproduce
+- The last ~50 lines of SFU logs, and the same from the Gryt server
+- Browser console errors
+- `ICE_UDP_MUX_PORT`, whether it is published, and whether it is open in the
+  firewall
+- `DISABLE_STUN` and `STUN_SERVERS`
+- The latency panel: SFU endpoint, ICE remote and local, candidate type
+- Whether it fails for everyone or only for people outside your network
