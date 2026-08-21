@@ -59,7 +59,7 @@ These apply to **all** deployment methods.
 </Callout>
 
 - **HTTPS/WSS required** — browsers require a secure context for WebRTC microphone access.
-- **One UDP media port** — the SFU needs `ICE_UDP_MUX_PORT` (default `3478/udp`) reachable from the internet. Every participant's media shares it.
+- **One UDP media port** — the SFU needs `ICE_UDP_MUX_PORT` reachable from the internet, and every participant's media shares it. The compose files here set it to 443; a server made with the `gryt` CLI uses 3478.
 - **JWT_SECRET** — used by the signaling server for session tokens. Generate with `openssl rand -base64 48`.
 
 ## Quick comparison
@@ -121,7 +121,7 @@ Each image is tagged with `latest` and semver tags (e.g. `1.2.3`, `1.2`, `1`). M
 | `3666` | TCP | Web client (dev / direct access) |
 | `5000` | TCP | Signaling server |
 | `5005` | TCP | SFU WebSocket |
-| `3478` | UDP | SFU WebRTC media, `ICE_UDP_MUX_PORT`. Must be public |
+| `443` | UDP | SFU WebRTC media, `ICE_UDP_MUX_PORT`. Must be public |
 
 ## Health checks
 
