@@ -4,6 +4,8 @@ description: The API you actually call
 icon: Code
 ---
 
+import { Callout } from 'fumadocs-ui/components/callout';
+
 Every hook here is a singleton. Its body runs once inside `<VoiceSingletonHooks />` and every caller reads the same value, so calling `useMicrophone()` in five components does not open five microphones.
 
 ## useSFU
@@ -91,6 +93,51 @@ const { devices, getOutputDevices, applyOutputDevice, remoteBusNode } = useSpeak
 ```
 
 `applyOutputDevice(deviceId)` calls `setSinkId` on the shared audio context. `remoteBusNode` is the gain node everyone else's audio is mixed into.
+
+## Reading the configuration back
+
+`useVoiceConfig` returns the `VoiceConfig` the provider was given, `useVoiceTarget`
+returns the current `VoiceTarget` or null, and `useVoiceCallbacks` returns the
+callbacks the engine reports through. All three read from `VoiceConfigProvider`
+and are there for code sitting between the provider and the engine that needs the
+same values without threading them down by hand.
+
+## Native capture, on the desktop
+
+Two hooks wrap the native binaries the desktop app ships. Both are no-ops
+elsewhere: `available` comes back `false` and nothing else does anything.
+
+`useNativeAudioCapture` returns `{ available, active, stream, start, stop }`.
+`start(audioContext, sourceId?)` captures one application's audio when given a
+window source id, and otherwise everything except Gryt's own process tree, which
+is the part a browser cannot do. `stream` is a `MediaStream` you can hand
+straight to WebRTC.
+
+`useNativeScreenCapture` returns `{ available, active, videoStream, encodedCodec,
+subscribeEncodedFrames, start, stop }`. `start(monitorIndex, fps, maxWidth?,
+maxHeight?, bitrate?, codec?)` drives the hardware encoder, `encodedCodec` reports
+`"h264"`, `"hevc"` or null, and `subscribeEncodedFrames` hands you pre-encoded NAL
+frames so they can be forwarded without a decode and re-encode. It returns its own
+unsubscribe function.
+
+<Callout type="warn" title="Two exported types share these names">
+`NativeAudioCapture` and `NativeScreenCapture` each name two different interfaces
+in this package: the shapes above, and the host-side APIs in `host/`. The host
+ones win at the package root, so `import type { NativeAudioCapture } from "@gryt/voice"`
+gives you the host interface rather than the hook's return. Until that is sorted
+out, let the hook's return type be inferred instead of annotating it.
+</Callout>
+
+## The lower level
+
+`useSFUStreams` is the stream bookkeeping `useSFU` uses internally: it takes the
+stream maps and their setters and keeps them in step as tracks arrive and leave.
+`usePipelineControls` is the same idea for audio, taking the microphone buffer,
+the audio context and every setting the chain reads, and pushing changes into the
+running graph.
+
+Neither is needed to make a call. They are exported for an embedder rebuilding
+`useSFU` or the microphone pipeline rather than using them.
 
 ## Smaller pieces
 
