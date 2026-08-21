@@ -115,7 +115,7 @@ If other devices need to connect, allow these ports through Windows Firewall:
 |------|----------|---------|
 | `5000` | TCP | Signaling server (API + WebSocket) |
 | `5005` | TCP | SFU WebSocket |
-| `10000–10019` | UDP | WebRTC media (voice/video) |
+| `3478` | UDP | WebRTC media, `ICE_UDP_MUX_PORT` |
 
 To open a port: **Windows Security → Firewall → Advanced settings → Inbound Rules → New Rule → Port**.
 
@@ -182,7 +182,7 @@ Another process is using port 5000 or 5005. Either close that process or change 
 **Voice not working (remote users)**
 The server uses STUN to automatically discover your public IP and punch through most home NATs — in many
 cases voice will work for remote users without manual port forwarding. If it still doesn't connect,
-open TCP 5005 + UDP 10000–10019 in your firewall and forward them in your router, then set
+open TCP 5005 and the UDP media port in your firewall and forward them in your router, then set
 `SFU_PUBLIC_HOST` to your public IP.
 
 **Can't connect from another device on the network**

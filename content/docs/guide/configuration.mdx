@@ -1,463 +1,249 @@
 ---
 title: Configuration
-description: Environment variables and settings for each Gryt service
+description: How each Gryt service is configured, and the settings that span more than one
 icon: Settings
 ---
 
-## Web Client
+import { Callout } from 'fumadocs-ui/components/callout';
 
-<Callout type="warn">
-The web client is intended for **local development and contributing** to Gryt. Self-hosting it in production won't work with the centralized auth at `auth.gryt.chat` because your domain won't be registered as a redirect URI. Use the [Gryt desktop app](https://github.com/Gryt-chat/gryt/releases) or [app.gryt.chat](https://app.gryt.chat) to connect to servers. If you self-host your own Keycloak, the web client will work, but your users will have separate identities that don't carry across other Gryt servers.
+Every service takes its settings from the environment. The full variable lists
+live with the service they belong to:
+
+- [Server](/docs/server) — the largest set, plus the four settings that live in its database
+- [SFU](/docs/sfu) — nine variables, most of which you will never touch
+- [CLI](/docs/cli) — writes all of this for you, if you would rather not
+
+This page covers the client, and the settings that only make sense across
+services: CORS, proxies, TLS, and which address the SFU is reachable on.
+
+## The client
+
+The desktop and web clients need to know which identity stack to trust. Nothing
+else about them is configured this way; audio devices, volume and the noise gate
+are runtime settings in the UI, and capture is fixed at 48 kHz.
+
+| Setting | Default |
+|---------|---------|
+| `GRYT_OIDC_ISSUER` | `https://auth.gryt.chat/realms/gryt` |
+| `GRYT_OIDC_REALM` | `gryt`, or derived from the issuer |
+| `GRYT_OIDC_CLIENT_ID` | `gryt-web` |
+| `GRYT_IDENTITY_URL` | `https://id.gryt.chat` |
+| `GRYT_AUTH_API` | `https://auth.gryt.chat`, or derived from the issuer |
+| `GRYT_AUTH_CALLBACK_URL` | `https://gryt.chat/auth/callback` |
+
+### Three places these come from
+
+In development, Vite reads them from `packages/client/.env` with a `VITE_`
+prefix:
+
+```bash
+VITE_GRYT_OIDC_ISSUER=http://localhost:8080/realms/gryt
+VITE_GRYT_IDENTITY_URL=http://localhost:8081
+```
+
+In production, the nginx container writes `/config.js` at startup from its own
+environment, which sets `window.__GRYT_CONFIG__` with the unprefixed names. No
+`VITE_` variable is set in a production build at all, which is why the same
+image can be pointed at a different identity stack without rebuilding.
+
+A user can also override the issuer and the identity URL from the account
+settings screen; those are stored in `localStorage` and beat both of the above.
+
+<Callout type="warn" title="Which one wins depends on the build">
+A development build reads `VITE_` first and falls back to the window config. A
+production build reads the window config first and falls back to `VITE_`.
+
+That flip is deliberate. Reading the window first everywhere meant the tracked
+`public/config.js`, which holds production defaults, beat the local values in
+development. A dev session would sign in against production Keycloak while the
+dev servers trusted only the local certificate authority. The only symptom was a
+401 from the identity service saying "no applicable key found in the JWKS",
+which describes what happened and not why: the token was genuine, it was just
+signed by the wrong Keycloak.
 </Callout>
 
-Optional settings in `packages/client/.env`. All of them point the client at an identity
-stack, and all of them default to Gryt's own:
+### Realm and auth API are usually derived
+
+Set `GRYT_OIDC_ISSUER` to something like
+`https://keycloak.example.com/realms/mycommunity` and the realm and the auth API
+base are pulled out of it. You only set those two by hand for a layout that does
+not follow the `/realms/<name>` convention.
+
+`GRYT_IDENTITY_URL` is never derived, because there is nothing in an issuer URL
+to derive it from. It is a different service on a different host: `id.gryt.chat`
+sits next to `auth.gryt.chat`, and your own certificate authority sits next to
+your own Keycloak.
+
+<Callout type="warn" title="The identity URL has to move too">
+Pointing the client at your own Keycloak without also moving `GRYT_IDENTITY_URL`
+gets you a token from your issuer posted to Gryt's certificate authority, which
+validates against its own configured issuer and rejects it. Same 401, same
+misleading message.
+</Callout>
+
+### Self-hosting the web client
+
+The web client is built for local development and for contributing. Self-hosting
+it against `auth.gryt.chat` does not work, because your domain is not a
+registered redirect URI there. Use the desktop app or
+[app.gryt.chat](https://app.gryt.chat) to reach your server.
+
+With your own Keycloak it works, and your members get identities that are yours
+rather than ones that carry across other Gryt servers.
+
+## Reaching the SFU
+
+Two variables, and they are usually different values for the same thing.
 
 ```bash
-VITE_GRYT_OIDC_ISSUER=https://auth.gryt.chat/realms/gryt
-VITE_GRYT_OIDC_REALM=gryt
-VITE_GRYT_OIDC_CLIENT_ID=gryt-web
-VITE_GRYT_AUTH_API=https://auth.gryt.chat
-VITE_GRYT_AUTH_CALLBACK_URL=https://gryt.chat/auth/callback
-VITE_GRYT_IDENTITY_URL=https://id.gryt.chat
-```
-
-These are read at build time. The prebuilt web image can also be pointed somewhere else at
-runtime, without a rebuild, through matching `window.GRYT_*` globals.
-
-Audio settings (volume, noise gate, device selection) are configured through the UI at
-runtime, not through the environment. The capture pipeline runs at a fixed 48 kHz.
-
-## Signaling Server
-
-Create a `.env` file in `packages/server/` based on `example.env`:
-
-```bash
-PORT=5000
-
-# SFU websocket (internal, container-to-container)
 SFU_WS_HOST="ws://sfu:5005"
-
-# SFU websocket that browsers connect to (public URL).
-# Comma-separated for multi-network (client auto-selects fastest).
 SFU_PUBLIC_HOST="wss://sfu.example.com"
-
-STUN_SERVERS="stun:stun.l.google.com:19302"
-
-SERVER_NAME="My Brand New Server"
-CORS_ORIGIN="http://127.0.0.1:15738,https://app.gryt.chat"
-
-# Optional: server-to-SFU shared secret (NOT a user join password)
-# SERVER_PASSWORD="your-internal-sfu-shared-secret"
-#
-# If you set SERVER_PASSWORD, keep it stable. Changing it may require restarting the SFU,
-# because the SFU caches the password per server ID.
-
-# Invite brute-force protection (optional)
-# Two-tier: per (IP + user) and per IP. Cooldowns escalate exponentially.
-# SERVER_INVITE_MAX_RETRIES=8            # invalid invites before lockout (per IP+user)
-# SERVER_INVITE_RETRY_WINDOW_MS=300000   # sliding window (5 min)
-# SERVER_INVITE_RETRY_COOLDOWN_MS=60000  # base cooldown (1 min)
-# SERVER_INVITE_MAX_COOLDOWN_MS=3600000  # escalation cap (1 hour)
-# SERVER_INVITE_IP_MAX_RETRIES=20        # invalid invites before lockout (per IP)
-
-# How many proxies in front of this server may be believed when they say who a
-# client is. Set this to 1 if anything sits in front — a reverse proxy, a load
-# balancer, a Cloudflare tunnel. See "Running behind a proxy" below.
-GRYT_TRUSTED_PROXY_HOPS=0
-
-# Authentication
-# Where accounts come from. Only override these if you run your own auth.
-GRYT_OIDC_ISSUER=https://auth.gryt.chat/realms/gryt
-GRYT_OIDC_AUDIENCE=gryt-web
-# Certificate authorities this server trusts to vouch for a user's key.
-# Comma-separated. Add to the end of the list, never the front — see below.
-GRYT_TRUSTED_CERT_ISSUERS=https://id.gryt.chat
-
-# Which identities this server admits, comma-separated.
-#   account  a certificate from a trusted CA, which means a Gryt account
-#   local    a certificate signed by the key it describes — no account at all
-# Adding "local" lets people join without signing up for anything. The trade is
-# that a local identity can be regenerated in seconds, so a ban on one holds
-# only until somebody clears their browser data. See the Identity page.
-GRYT_IDENTITY_TIERS=account
-
-# S3 / Object storage
-S3_REGION=auto
-S3_ACCESS_KEY_ID=
-S3_SECRET_ACCESS_KEY=
-S3_BUCKET=gryt-bucket          # must be 3–63 characters (S3 naming rules)
-S3_FORCE_PATH_STYLE=false
-
-NODE_ENV=development
-DEBUG=gryt:*
 ```
 
-### Running behind a proxy
+`SFU_WS_HOST` is how the server reaches the SFU, on the internal Docker network.
+`SFU_PUBLIC_HOST` is what the server hands to clients. A browser cannot resolve
+`sfu`, so getting these the same way round is the difference between voice
+working and voice sitting on "connecting".
 
-The server rate-limits by address, and it decides your address from the
-connection it can see. Put a reverse proxy, load balancer or tunnel in front and
-every connection it sees is the proxy's — so everybody shares one bucket, and one
-person tripping a limit throttles the whole server. The per-IP invite lockout
-above becomes server-wide in the same way.
+`SFU_PUBLIC_HOST` takes a comma-separated list. Clients are given all of them and
+use whichever answers fastest, which is how one server can be reachable over a
+LAN and over the internet at the same time:
 
-`GRYT_TRUSTED_PROXY_HOPS` is how you fix that. It says how many entries at the
-end of `x-forwarded-for` were written by infrastructure you control:
+```bash
+SFU_PUBLIC_HOST="ws://192.168.1.50:5005,wss://sfu.example.com"
+```
+
+### The media port
+
+Signalling is a WebSocket and goes wherever your other traffic goes. Media is
+UDP, on one port, and it has to be reachable directly:
+
+```yaml
+ports:
+  - "3478:3478/udp"
+```
+
+<Callout type="warn" title="Tunnels do not carry UDP">
+Cloudflare Tunnel proxies HTTP and WebSockets, so signalling works through it and
+voice does not. `ICE_UDP_MUX_PORT` has to be exposed some other way. This is the
+single most common reason voice connects for people on the LAN and for nobody
+else.
+</Callout>
+
+There used to be a UDP port *range*. There is not any more. See the
+[SFU page](/docs/sfu) for what replaced it and why.
+
+## CORS
+
+`CORS_ORIGIN` is a comma-separated list of origins allowed to connect. Unset, it
+is:
+
+```
+http://127.0.0.1:15738,https://app.gryt.chat,https://beta.gryt.chat
+```
+
+`127.0.0.1:15738` is what the desktop app loads from. Outside production,
+`http://localhost:3666` and `http://127.0.0.1:3666` are added as well, which is
+the Vite dev port in both spellings. A server started by hand without those
+rejects the dev client with a bare 400 on the Socket.IO handshake and no
+explanation.
+
+Origins are matched exactly, port included, so a server on `:5001` does not
+accept an origin at `:5002` on the same machine.
+
+Two things get in without being listed. `Origin: null` is allowed, which is what
+a `file://` Electron build sends. And an origin naming the same host the request
+was sent to is allowed, which is what lets the mobile app in: React Native sets
+`Origin` from the URL it dials, so a phone connecting to `chat.example.com`
+arrives claiming `http://chat.example.com`.
+
+That second rule matches the exact host, so `chat.example.com` does not get to
+speak for `evil.example`, and a different port on the same machine is still a
+different origin. The reasoning is that CORS exists to stop one site reading
+another through a browser. An origin naming the host it is talking to is
+same-origin, and a page served from that server could do all of it already.
+
+## Behind a proxy
 
 ```bash
 GRYT_TRUSTED_PROXY_HOPS=1
 ```
 
-**One is the answer for a single proxy or tunnel**, which is nearly everyone.
-Go higher only if you have genuinely chained them — two, if you run your own
-nginx behind Cloudflare.
+Zero unless you say otherwise. `x-forwarded-for` is a header any client can set,
+so believing it blindly lets one client walk around every per-IP limit by
+varying a string. Hops are counted from the right, which is the only end
+infrastructure writes.
 
-The default is `0`, which ignores the header completely and uses the connection's
-own address. That is the right answer for a server exposed directly, and it is
-deliberately the default: `x-forwarded-for` is a header any client can set to
-anything, so a server that believed it without being told to could be handed a
-fresh address per request.
+A server behind a reverse proxy or a tunnel has to set this. Without it every
+client arrives wearing the proxy's address and shares a single rate-limit bucket,
+so one noisy visitor locks out everybody.
 
-<Callout type="warn">
-Do not set this higher than the number of proxies you actually run. The server
-counts from the **right** of the header, because that end is written by
-infrastructure and the left end is whatever the client claimed. Counting further
-left than your own proxies reach lands on the part a client controls, and the
-per-IP limits stop meaning anything.
-</Callout>
+One for a single reverse proxy. More only if you genuinely chained them.
 
-### Additional signaling server options
+## Object storage
+
+`STORAGE_BACKEND` is `s3` by default. Point it at any S3-compatible store:
 
 ```bash
-# Limit voice seats explicitly (otherwise derived from SFU UDP port range)
-VOICE_MAX_USERS=100
-
-# Refresh token lifetime (days)
-REFRESH_TOKEN_TTL_DAYS=7
-
-# Advanced: disable dependencies (mostly useful in development)
-DISABLE_S3=true       # disables uploads + icon/avatar endpoints
-
-# Advanced: chat history cache TTL (ms)
-MESSAGE_CACHE_TTL_MS=30000
-```
-
-### Changing the server owner (CLI)
-
-Servers do not support an env-based owner override. Ownership is claimed by the **first user to join** a fresh server.
-
-If you need to change the owner later (recovery, transfers), run the one-shot admin CLI **inside the server container**:
-
-```bash
-# Docker Compose
-docker compose exec server node admin-setOwner.js --grytUserId <keycloak_sub>
-
-# Or plain Docker
-docker exec gryt-server node admin-setOwner.js --grytUserId <keycloak_sub>
-```
-
-`<keycloak_sub>` is the user's Gryt ID (OIDC subject). You can find it in the desktop app or web client by going to **Settings → Profile** and scrolling to the bottom. The target user should already be a **member** of the server (has joined before), otherwise they may be unable to join an invite-only server.
-
-### MinIO (self-hosted S3)
-
-<Callout type="warn">
-`S3_BUCKET` must be **3–63 characters** (standard S3 bucket naming rules). A name like `"nt"` will be rejected — use something like `"gryt-nt"` instead.
-</Callout>
-
-```bash
-S3_ENDPOINT=http://localhost:9000
-S3_ACCESS_KEY_ID=admin
-S3_SECRET_ACCESS_KEY=change-me-please
-S3_BUCKET=gryt-bucket
+STORAGE_BACKEND=s3
+S3_ENDPOINT=http://minio:9000
+S3_BUCKET=gryt
+S3_REGION=us-east-1
+S3_ACCESS_KEY_ID=...
+S3_SECRET_ACCESS_KEY=...
 S3_FORCE_PATH_STYLE=true
 ```
 
-```bash
-docker run -d --name minio \
-  -p 9000:9000 -p 9001:9001 \
-  -v /srv/minio/data:/data \
-  -e MINIO_ROOT_USER=admin \
-  -e MINIO_ROOT_PASSWORD=change-me-please \
-  quay.io/minio/minio server /data --console-address ":9001"
+`S3_FORCE_PATH_STYLE=true` is what MinIO and most self-hosted stores want.
 
-docker run --rm --network host \
-  -e MC_HOST_minio=http://admin:change-me-please@localhost:9000 \
-  quay.io/minio/mc mb --ignore-existing minio/gryt-bucket
-```
+`STORAGE_BACKEND=filesystem` puts uploads under `DATA_DIR` instead. No extra
+containers, and no thumbnails, because those come from the image worker.
 
-## SFU Server
+Object keys are flat, `uploads/<uuid>.<ext>`, with nothing naming the server in
+them. Several servers can share one bucket: nothing ever lists it, and every
+delete uses a key stored in that server's own database.
 
-Create a `.env` file in `packages/sfu/`:
+## Settings that are not environment variables
 
-```bash
-PORT=5005
-STUN_SERVERS=stun:stun.l.google.com:19302,stun:stun1.l.google.com:19302
+Four of the server's settings live in its database rather than its environment,
+because changing them has to do something rather than just record something.
+Turning discovery off has to withdraw the mDNS advertisement.
 
-# Recommended: run WebRTC over a single UDP port (better on restrictive networks)
-ICE_UDP_MUX_PORT=443
+| Setting | Values |
+|---------|--------|
+| `joinPolicy` | `invite`, `open` |
+| `discoverable` | on, off |
+| `lanOpen` | on, off |
+| `profanityMode` | `off`, `flag`, `censor`, `block` |
 
-# Alternative (if not using ICE_UDP_MUX_PORT): pin a UDP port range
-ICE_UDP_PORT_MIN=10000
-ICE_UDP_PORT_MAX=10019
+`lanOpen` lets anybody already on the same network join without an invite. It is
+worth being deliberate about: it treats "can reach this machine" as good enough,
+which is reasonable on a home network and not on a coffee shop's.
 
-# Cap on peers across the whole SFU, not per room. Unset or 0 means no cap.
-# Mainly there so you cannot accept more peers than the ICE UDP port range can bind.
-MAX_PEERS=1000
+Owners change these from a client. An operator who is not the owner changes them
+through the [management API](/docs/server#the-management-api), which is what the
+`gryt` CLI's settings screen uses.
 
-# Logging. DEBUG adds per-connection detail, VERBOSE_LOG adds RTP packet logging.
-DEBUG=false
-VERBOSE_LOG=false
-```
+## Administrative commands
 
-For production, also set `ICE_ADVERTISE_IP` if the SFU host is behind NAT.
-
-### LAN / local network
-
-If the SFU is on the same network as your users (e.g. a LAN party, office, or home server),
-add the machine's local IP to `ICE_ADVERTISE_IP`. This lets the SFU advertise a direct LAN
-candidate so clients connect instantly over the local network instead of routing through an
-external STUN server:
+Run inside the server container, or beside a built server:
 
 ```bash
-ICE_ADVERTISE_IP=192.168.1.100
+yarn admin:set-owner
+yarn admin:rotate-identity
 ```
 
-For mixed setups (LAN + internet), use comma-separated values for both the SFU
-and the signaling server — the client pings each endpoint and picks the fastest:
-
-```bash
-# SFU (packages/sfu/.env)
-ICE_ADVERTISE_IP=203.0.113.10,192.168.1.100
-
-# Signaling server (packages/server/.env or docker .env)
-SFU_PUBLIC_HOST=wss://sfu.example.com,ws://192.168.1.100:5005
-```
-
-### Running without TLS
-
-You do not need a domain or a certificate to run a server. A plain `ws://` address on a LAN
-IP works, and for a lot of self-hosters that is the whole setup.
-
-The one limit is the browser. A page served over https cannot open a `ws://` or `http://`
-connection, and the browser blocks it before anything reaches the network. So a server that
-only advertises `ws://` is reachable from:
-
-- the desktop app, which is not a web page and has no such restriction
-- a web client you serve yourself over plain http, on a LAN or on localhost
-
-and is not reachable from [app.gryt.chat](https://app.gryt.chat), because that is served
-over https. The client drops `ws://` endpoints from its list there rather than trying them
-and failing, so the server does not appear broken so much as absent.
-
-The desktop app goes a step further and downgrades `wss://` to `ws://` for addresses on a
-private network, since LAN addresses rarely have a certificate that would validate. It
-treats `10.x`, `127.x`, `192.168.x`, `172.16.x` through `172.31.x`, `169.254.x`, anything
-ending in `.local`, and the Tailscale range `100.64.x` through `100.127.x` as private.
-
-If you want both, advertise both. The comma-separated form above is there for exactly this:
-browsers take the `wss://` entry and everything else takes whichever is faster.
-
-## Authentication
-
-Authentication is centrally hosted at `auth.gryt.chat`. No additional configuration is needed by default.
-
-To require Gryt accounts on your server:
-
-```bash
-GRYT_IDENTITY_TIERS=account
-GRYT_OIDC_ISSUER=https://auth.gryt.chat/realms/gryt
-GRYT_OIDC_AUDIENCE=gryt-web
-```
-
-### Self-hosted authentication (bring your own Keycloak)
-
-If you want to run a **completely separate** Gryt deployment with your **own** authentication provider, you can self-host
-Keycloak and point your server/client to your issuer.
-
-There are two halves to it, and both are needed. Keycloak says who somebody is; a separate
-identity service turns that into a certificate your servers can check. Running one without
-the other does not work.
-
-On the client, under Settings → Account with advanced settings shown, there are two fields:
-
-- **Auth server** — the address of your Keycloak realm, not the server root. For example
-  `https://auth.example.com/realms/gryt`.
-- **Identity service** — where your certificate authority runs, for example
-  `https://id.example.com`. It cannot be worked out from the address above, because it is a
-  separate service on a separate host.
-
-On each server, name the issuer and trust the certificates your identity service signs:
-
-```bash
-GRYT_OIDC_ISSUER=https://auth.example.com/realms/gryt
-GRYT_OIDC_AUDIENCE=gryt-web
-GRYT_TRUSTED_CERT_ISSUERS=https://id.example.com
-```
-
-Your realm needs a `gryt-web` client whose redirect URIs include the address you serve the
-client from. [`realm/gryt-realm.json`](https://github.com/Gryt-chat/auth/blob/main/realm/gryt-realm.json)
-in the auth repository is the one Gryt runs, and is a reasonable starting point.
-
-A fuller guide, covering running the identity service itself, is still to come.
-
-### Trusting more than one certificate authority
-
-`GRYT_TRUSTED_CERT_ISSUERS` takes a list, and a server will accept a user vouched for by any
-issuer on it. Which issuer signed a certificate is part of who that user *is*: two authorities
-can hand out the same underlying account id without those being the same person, so the server
-records the issuer alongside it.
-
-The **first** issuer in the list is the one whose users are stored under a plain id. Everyone
-else is stored with their issuer attached.
-
-<Callout type="warn">
-  **Add to the end of the list, never the front.** Putting a different issuer first changes
-  which one owns the plain ids, and every account identity on the server silently becomes a
-  different user — roles, ownership and bans included. Reordering an existing list does the
-  same thing.
-
-  Adding an issuer to the end is safe and changes nothing about the users you already have.
-</Callout>
-
-A single-issuer list, which is the default and what almost every server wants, has none of this
-to think about.
-
-### Locking the server
-
-To reject **all** join attempts (temporarily lock the server):
-
-```bash
-GRYT_AUTH_MODE=disabled
-```
-
-`GRYT_AUTH_MODE` is the only variable involved. It defaults to `required`, which
-is the value that lets people in. `disabled` rejects every join with
-`auth_disabled`, and any other value rejects every join with
-`auth_misconfigured` and names the bad setting in the error.
-
-So there are two ways to lock a server and only one of them is deliberate. If
-joins are failing with `auth_misconfigured`, the value is a typo rather than a
-policy.
-
-See the [Server docs](/docs/server) for more on auth integration.
-
-## STUN + SFU UDP ports (production)
-
-This project does **not** require a TURN server. Instead:
-
-1. Configure STUN servers (`STUN_SERVERS`)
-2. Either:
-   - **Recommended**: use ICE UDP mux on a single port (`ICE_UDP_MUX_PORT`, typically `443`) and open **UDP 443**
-   - Or pin a dedicated SFU UDP port range (`ICE_UDP_PORT_MIN` / `ICE_UDP_PORT_MAX`) and open that range
-
-If `ICE_UDP_MUX_PORT` is set, the SFU can carry ICE + DTLS + SRTP over that single UDP port, so you typically don't need to expose the high-port UDP range.
-
-```bash
-STUN_SERVERS=stun:stun.l.google.com:19302,stun:stun1.l.google.com:19302
-
-# Recommended: single-port UDP for WebRTC
-ICE_UDP_MUX_PORT=443
-
-# Alternative: high-port UDP range
-ICE_UDP_PORT_MIN=10000
-ICE_UDP_PORT_MAX=10019
-```
-
-### Cloudflare Tunnel / proxy and WebRTC
-
-Cloudflare Tunnel (and Cloudflare’s “orange cloud” proxying) can be used for the **SFU WebSocket** (`SFU_PUBLIC_HOST` over `wss://...`), but WebRTC **media is still direct UDP** to the SFU host.
-
-This is a good way to get TLS/WSS for production without running your own HTTPS reverse proxy for the SFU WebSocket.
-
-If you're tunneling the SFU WebSocket, make sure you still:
-
-- Set the DNS record for the SFU hostname to **Proxied** (orange cloud) — the WebSocket needs to go through the tunnel
-- Open the SFU UDP media port(s) on the host (recommended: `ICE_UDP_MUX_PORT/udp`, typically `443/udp`)
-- Set `ICE_ADVERTISE_IP` to your **real public IPv4/IPv6** (not a Cloudflare anycast IP)
-
-See [Cloudflare Tunnel](/docs/deployment/cloudflare-tunnel) for a full walkthrough.
-
-## Docker Compose stacks
-
-| Stack | Path | Use case |
-|-------|------|----------|
-| **Production / self-host** | `ops/deploy/compose/prod.yml` | [Recommended self-hosting](/docs/deployment/docker-compose) — pre-built GHCR images |
-| Cloudflare Tunnel | `ops/deploy/host/compose.yml` | Hosting with Tunnel + S3 |
-| Dev deps | `ops/deploy/compose/dev-deps.yml` | MinIO for local dev |
-| Dev app | `ops/deploy/compose/dev.yml` | SFU + servers + client (builds from source) |
+The first hands ownership to a different member, which is how you recover a
+server whose owner is gone. The second replaces the server's identity keypair.
 
 ## Health checks
 
-```bash
-curl http://localhost:5000/health   # server
-curl http://localhost:5005/health   # SFU
-```
+| Service | Endpoint | Notes |
+|---------|----------|-------|
+| Server | `GET /health` | `{ status, service, serverName, timestamp }` |
+| SFU | `GET /health` | Answers 503 with `"status":"starting"` until its UDP probe passes |
+| Image worker | `GET /` on `HEALTH_PORT`, 8080 | Any path other than `/version` answers health. `/version` gives just the version |
 
-## Access control with CORS
-
-The `CORS_ORIGIN` environment variable controls which web origins can talk to your server.
-This acts as a simple access gate: only clients loaded from a listed origin will be able to connect.
-
-### Common origins
-
-| Origin | What it is |
-|--------|-----------|
-| `http://127.0.0.1:15738` | **Gryt desktop app** (Electron) — always include this |
-| `https://app.gryt.chat` | Official hosted web client |
-| `http://localhost:3666` | Local web client (development only) |
-
-A typical production setup:
-
-```bash
-CORS_ORIGIN="http://127.0.0.1:15738,https://app.gryt.chat"
-```
-
-### Environment isolation
-
-You can separate dev and production servers by listing different web client origins:
-
-```bash
-# Production server
-CORS_ORIGIN="http://127.0.0.1:15738,https://app.gryt.chat"
-
-# Dev server — only accepts the local dev client
-CORS_ORIGIN="http://127.0.0.1:15738,http://localhost:3777"
-```
-
-A dev web client on `localhost:3777` cannot connect to a production server that only allows
-`https://app.gryt.chat`, and vice versa. The desktop app (`127.0.0.1:15738`) is typically
-included in both since it connects to whichever server the user selects.
-
-<Callout type="info">
-CORS is enforced by the browser and by the server's Socket.IO and REST middleware.
-It is not a security boundary against non-browser clients — someone could still connect
-with `curl` or a modified client. Require account identities with
-[`GRYT_IDENTITY_TIERS=account`](/docs/guide/configuration#authentication).
-</Callout>
-
-## Dynamic server settings
-
-The following settings are managed in the UI at **Server Settings → Overview** and take effect immediately without a server restart:
-
-- **Display name** and **description**
-- **Server icon**
-- **Upload limits** (avatar, file, emoji)
-- **Profanity filter** (off / flag / censor / block) and censor style
-- **System messages channel**
-- **LAN open join** — allow anyone on the local network to join without an invite code (see below)
-
-### LAN open join
-
-Enable **Allow anyone on LAN to join** in Server Settings → Overview. When enabled, clients connecting from private IP ranges (`10.x.x.x`, `172.16–31.x.x`, `192.168.x.x`, localhost, IPv6 link-local/unique-local) can join without an invite code. Connections from public IPs still require an invite.
-
-This is ideal for LAN parties and local events where you want frictionless access for everyone on the network while keeping the server invite-only for remote users.
-
-## Security best practices
-
-- Never commit `.env` files to version control
-- Use HTTPS/WSS in production
-- Configure CORS origins to match your domain
-- Use `GRYT_IDENTITY_TIERS=account` if every member must have a Gryt account
-- Use invite links to control membership (Server settings → Invites)
-- For LAN events, enable **LAN open join** in Server Settings instead of creating mass invite codes
-- Run containers as non-root users
+The SFU's starting state is worth knowing about in Compose: it is what stops
+dependent services coming up before the container's UDP forwarding is actually
+in place.

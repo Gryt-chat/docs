@@ -185,9 +185,7 @@ SERVER_DESCRIPTION=Testing Gryt 1.2.3-beta.4
 |----------|---------|-------------|
 | `SERVER_PORT` | `5000` | Signaling API + WebSocket |
 | `SFU_PORT` | `5005` | SFU WebSocket |
-| `ICE_UDP_MUX_PORT` | `443` | **Recommended**: run WebRTC over a single UDP port (open UDP 443) |
-| `SFU_UDP_MIN` | `10000` | WebRTC UDP range start (if not using `ICE_UDP_MUX_PORT`) |
-| `SFU_UDP_MAX` | `10019` | WebRTC UDP range end (if not using `ICE_UDP_MUX_PORT`) |
+| `ICE_UDP_MUX_PORT` | `443` | The one UDP port all WebRTC media flows over. The SFU itself defaults to `3478`; this compose file sets 443 |
 
 ### Server
 
@@ -250,7 +248,7 @@ docker compose exec server node admin-setOwner.js --grytUserId <keycloak_sub>
 <Callout type="warn" title="Before going public">
 - [ ] Set a strong `JWT_SECRET` — generate with `openssl rand -base64 48`
 - [ ] Change `MINIO_ROOT_USER` and `MINIO_ROOT_PASSWORD`
-- [ ] Open **UDP 443** for the SFU (recommended), or open UDP `10000-10019` if using the high-port range
+- [ ] Open `ICE_UDP_MUX_PORT` as **UDP** for the SFU
 - [ ] Set `ICE_ADVERTISE_IP` if behind NAT
 - [ ] Set `SFU_PUBLIC_HOST` to your public `wss://` URL
 - [ ] Ensure `CORS_ORIGIN` includes `http://127.0.0.1:15738` (desktop app) and `https://app.gryt.chat` (hosted web client)

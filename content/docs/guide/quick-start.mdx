@@ -1,6 +1,6 @@
 ---
 title: Quick Start
-description: Get Gryt running in under 5 minutes
+description: Getting a Gryt server running
 icon: Rocket
 ---
 
@@ -8,134 +8,141 @@ import { Callout } from 'fumadocs-ui/components/callout';
 import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
 
 <Callout type="info">
-Want to try Gryt without setting anything up? Visit [app.gryt.chat](https://app.gryt.chat) to use the web client instantly. Note: some desktop-only features like global push-to-talk are not available in the browser.
+To try Gryt without hosting anything, [app.gryt.chat](https://app.gryt.chat) is
+the web client. Push-to-talk that works while the window is in the background
+needs the desktop app; a browser cannot do it.
 </Callout>
 
-## Desktop App (easiest)
+There are four ways to run a server, and they suit different things.
 
-The simplest way to host a Gryt server — directly from the desktop app, no separate software needed.
+## The CLI
 
-1. Download and install the [Gryt desktop app](https://github.com/Gryt-chat/gryt/releases)
-2. Open the app and click **Add Server**
-3. Under **Host a server**, enter a name and click **Create server**
-4. The server starts automatically — you're connected
+One command installs it, one command builds a server with working voice and
+uploads.
 
-Other users on your LAN will see your server automatically via mDNS discovery. Toggle **Discoverable on LAN** to control this. Enable **Start automatically with app** to resume hosting on every launch.
+```bash
+curl -fsSL https://get.gryt.chat | sh
+```
 
-<Callout type="info">
-The embedded server is ideal for LAN parties, local teams, and quick hosting. For internet-facing production deployments, use Docker Compose or Windows standalone instead.
-</Callout>
+```bash
+gryt
+```
 
-## Docker Compose (recommended)
+`n` makes a server. It asks eight questions with sensible defaults, writes the
+Compose files, picks ports nothing else is holding, and starts a shared SFU and
+object store the first time. After that the same screen starts, stops, restarts
+and follows the logs of every server on the machine, and `c` changes the
+settings that live in a running server's database.
 
-The fastest way to run Gryt on a server. Pre-built images from GitHub Container Registry — no cloning needed.
+This is the least fiddly path for a machine you administer. Full details on the
+[CLI page](/docs/cli).
 
-<Tabs items={["curl", "wget"]}>
-<Tab value="curl">
+## The desktop app
+
+No separate software at all. Good for a LAN party or a few people.
+
+1. Install the [desktop app](https://github.com/Gryt-chat/gryt/releases)
+2. **Add Server**, then **Host a server**
+3. Name it, **Create server**
+
+It starts and connects you. Others on the same network find it over mDNS
+without being given an address, which **Discoverable on LAN** controls. **Start
+automatically with app** brings it back on every launch.
+
+For anything internet-facing, use Compose or the CLI instead.
+
+## Docker Compose
+
 ```bash
 mkdir gryt && cd gryt
 curl -Lo docker-compose.yml https://raw.githubusercontent.com/Gryt-chat/gryt/main/ops/deploy/compose/prod.yml
 curl -Lo .env https://raw.githubusercontent.com/Gryt-chat/gryt/main/ops/deploy/compose/.env.example
 ```
-</Tab>
-<Tab value="wget">
-```bash
-mkdir gryt && cd gryt
-wget -O docker-compose.yml https://raw.githubusercontent.com/Gryt-chat/gryt/main/ops/deploy/compose/prod.yml
-wget -O .env https://raw.githubusercontent.com/Gryt-chat/gryt/main/ops/deploy/compose/.env.example
-```
-</Tab>
-</Tabs>
 
-Open `.env` in your editor and configure:
+Edit `.env`:
 
 ```bash
-SERVER_NAME=My Gryt Server              # display name shown to users
-JWT_SECRET=<run: openssl rand -base64 48>  # IMPORTANT: generate a real secret
+SERVER_NAME=My Gryt Server
+JWT_SECRET=              # openssl rand -base64 48
 
-# Public URL(s) of the SFU that browsers connect to (ws:// or wss://)
-SFU_PUBLIC_HOST=wss://sfu.example.com   # or ws://<your-ip>:5005 for non-TLS
+# Where browsers should reach the SFU. wss:// with a domain, or ws://<ip>:5005
+SFU_PUBLIC_HOST=wss://sfu.example.com
 
-# Public IP of the SFU host (required if behind NAT)
-ICE_ADVERTISE_IP=203.0.113.10
-
-# Single UDP port for WebRTC media (open this in your firewall)
+# The single UDP port media flows over. Open this.
 ICE_UDP_MUX_PORT=443
 
-# No need for STUN when ICE_ADVERTISE_IP and ICE_UDP_MUX_PORT are set
-DISABLE_STUN=true
+# Only if the SFU is behind NAT and you know the address to advertise
+ICE_ADVERTISE_IP=203.0.113.10
 ```
 
-See the [Configuration](/docs/guide/configuration) page for all `.env` options.
+<Callout type="warn" title="Leave STUN on">
+`DISABLE_STUN=true` looks like a reasonable thing to set once you have given the
+SFU an explicit address, and it is the single most reliable way to break voice
+for everybody outside your network.
 
-Then start the server:
+Docker and most cloud networking rewrite the UDP source port. When they do, the
+address the SFU thinks it has and the address the world can reach are different,
+and STUN is the only thing that finds the second one. Turning it off is safe
+only with a direct, port-preserving path out: host networking, bare metal, or a
+1:1 NAT.
+</Callout>
 
 ```bash
 docker compose up -d
 ```
 
-This starts the core backend: **signaling server**, **SFU media server**, and **MinIO**.
-The server uses an embedded SQLite database in its data directory, so no separate database container is required.
+That brings up the server, the SFU and MinIO. The database is SQLite inside the
+server's data directory, so there is no database container.
 
-### Connecting
-
-Connect with the [Gryt desktop app](https://github.com/Gryt-chat/gryt/releases) and enter your
-server address. A bare IP and port works: `203.0.113.10:5000`. So does a hostname if you have one.
-
-[app.gryt.chat](https://app.gryt.chat) needs a hostname with a certificate, like
-`gryt.example.com`. A browser will not connect to a plain IP, because it refuses to open an
-insecure connection from an HTTPS page. If you have no domain, see
-[No domain, just an IP](/docs/deployment/no-domain).
-
-**Invite-only**: the **first user** to join a brand-new server automatically becomes the **owner/admin**.
-After that, the server is **invite-only**. Create invite links in **Server settings → Invites** and share them.
-
-**LAN party?** Enable **Allow anyone on LAN to join** in **Server settings → Overview** to let anyone on the local network join without an invite code. Remote users still need an invite. See [Multi-Server → LAN open join](/docs/server/multi-server#lan-open-join-skip-invite-codes-on-lan).
-
-To also self-host the web client:
+To serve the web client too:
 
 ```bash
 docker compose --profile web up -d
 ```
 
-The web client will be available at [http://localhost:3666](http://localhost:3666).
-
 ### Ports
 
-Make sure the following ports are accessible (forwarded in your router / open in your firewall if hosting remotely):
+| Port | Protocol | What |
+|------|----------|------|
+| `5000` | TCP | Server: API and WebSocket |
+| `5005` | TCP | SFU signalling WebSocket |
+| `3478` | UDP | All WebRTC media, one port |
 
-| Port | Protocol | Service |
-|------|----------|---------|
-| `5000` | TCP | Signaling server (API + WebSocket) |
-| `5005` | TCP | SFU WebSocket |
-| `443` | UDP | WebRTC media — recommended single-port mode (`ICE_UDP_MUX_PORT`) |
-| `10000–10019` | UDP | WebRTC media — alternative high-port range (if not using UDP mux) |
+`SERVER_PORT`, `SFU_PORT` and `ICE_UDP_MUX_PORT` change them. The example `.env`
+sets the media port to 443, which gets through more restrictive networks than
+3478 does, at the cost of a privileged bind.
 
-These are configurable via `SERVER_PORT`, `SFU_PORT`, `ICE_UDP_MUX_PORT`, `SFU_UDP_MIN`, and `SFU_UDP_MAX` in `.env`.
+Media is the one that catches people out. It is UDP, it does not go through a
+reverse proxy or a tunnel, and it has to reach the SFU host directly.
 
-<Callout type="info">
-See the full [Docker Compose guide](/docs/deployment/docker-compose) for TLS setup, monitoring,
-upgrades, and advanced configuration.
-</Callout>
+## Windows, without Docker
 
-## Windows (no Docker)
+1. Install [Node.js 22.13 or newer](https://nodejs.org/)
+2. Download `gryt-server-windows-x64-v*.zip` from
+   [the releases page](https://github.com/Gryt-chat/server/releases)
+3. Extract it, open `config.env`, set `SERVER_NAME`
+4. Run `start.bat`
 
-Run Gryt on any Windows PC without Docker. Just Node.js and a zip file.
+Connect at `localhost:5000`. The [Windows guide](/docs/deployment/windows) covers
+firewall rules and reaching it from other machines.
 
-1. Install [Node.js 22.13+](https://nodejs.org/)
-2. Download `gryt-server-windows-x64-v*.zip` from the [releases page](https://github.com/Gryt-chat/server/releases)
-3. Extract and open `config.env` — set your `SERVER_NAME`
-4. Double-click `start.bat`
+## Connecting
 
-Connect with the desktop app or [app.gryt.chat](https://app.gryt.chat) at `localhost:5000`.
+The desktop app takes a bare address: `203.0.113.10:5000`, or a hostname.
 
-<Callout type="info">
-See the full [Windows deployment guide](/docs/deployment/windows) for firewall setup, remote access, and troubleshooting.
-</Callout>
+[app.gryt.chat](https://app.gryt.chat) needs a hostname with a certificate. A
+browser will not open an insecure connection from an HTTPS page, so a plain IP
+does not work there. [No domain, just an IP](/docs/deployment/no-domain) covers
+the ways around that.
 
-## Docker (development — from source)
+The first person to join a new server becomes its owner. After that it is
+invite-only, and invites come from **Server settings → Invites**.
 
-If you want to hack on Gryt itself:
+For a LAN party, **Allow anyone on LAN to join** in **Server settings → Overview**
+lets anybody on the local network in without a code. People from outside still
+need one.
+
+## From source
 
 ```bash
 git clone --recurse-submodules https://github.com/Gryt-chat/gryt.git
@@ -143,51 +150,42 @@ cd gryt
 ops/start_dev.sh
 ```
 
-Open [http://localhost:3666](http://localhost:3666).
+That runs MinIO, the SFU, two servers and the Vite client in a tmux session, and
+the client is on [localhost:3666](http://localhost:3666).
 
-## Docker (Cloudflare Tunnel)
-
-Self-host with automatic HTTPS tunnels — no port forwarding needed for HTTP traffic:
+## Behind a tunnel
 
 ```bash
 cp ops/deploy/host/.env.example ops/deploy/host/.env
-# edit .env with your Cloudflare tunnel token
 docker compose -f ops/deploy/host/compose.yml up -d --build
 ```
 
-See the [Cloudflare Tunnel guide](/docs/deployment/cloudflare-tunnel) for details.
+Put your tunnel token in the `.env` first. The tunnel carries HTTP and
+WebSockets, so it handles signalling; the media port still has to be exposed
+directly. See the [Cloudflare Tunnel guide](/docs/deployment/cloudflare-tunnel).
 
-## Kubernetes with Helm
+## Kubernetes
 
 ```bash
 helm install gryt oci://ghcr.io/gryt-chat/charts/gryt
 ```
 
-Or from the repo:
+Or from a checkout:
 
 ```bash
-git clone --recurse-submodules https://github.com/Gryt-chat/gryt.git
-cd gryt
 helm install gryt ./ops/helm/gryt \
   --set gryt.domain=yourdomain.com \
   --set server.secrets.serverPassword=your-internal-sfu-shared-secret
 ```
 
-## Configuration
+## When it does not work
 
-See the [Configuration](/docs/guide/configuration) page for all environment variables, authentication, CORS, and networking options.
+Voice is the part that fails, and it nearly always fails the same way: everybody
+on the local network is fine, everybody else sits on "connecting". That is the
+media port not being reachable, or STUN being off. The
+[voice debugging page](/docs/sfu/voice-debugging) walks through it.
 
-## Next steps
-
-- [Docker Compose guide](/docs/deployment/docker-compose) — full self-hosting walkthrough
-- [Configuration](/docs/guide/configuration) — all environment variables
-- [Architecture](/docs/guide/architecture) — how the pieces fit together
-- [Troubleshooting](/docs/guide/troubleshooting) — common issues
-
-**Can't connect?** Check logs:
-
-```bash
-docker compose logs -f
-```
-
-**Audio not working?** WebRTC requires HTTPS in production — see the [TLS section](/docs/deployment/docker-compose#tls-with-caddy-recommended).
+- [Configuration](/docs/guide/configuration) — every setting
+- [Docker Compose guide](/docs/deployment/docker-compose) — TLS, upgrades, monitoring
+- [Architecture](/docs/guide/architecture) — what the pieces are
+- [Troubleshooting](/docs/guide/troubleshooting)
