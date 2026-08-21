@@ -261,10 +261,9 @@ way.
 
 `0`, the default, means no cap, which is what the server does on its own.
 
-A cap is about the machine running the SFU, not about ports. With
-`ICE_UDP_MUX_PORT` set, which is the recommended arrangement, every participant
-shares one UDP port, so there is no per-person port to run out of. What runs
-out first is CPU and upload bandwidth.
+A cap is about the machine running the SFU rather than about ports. Every
+participant's media shares one UDP port, so there is no per-person port to run
+out of. What runs out first is CPU and upload bandwidth.
 
 ## Settings a server keeps itself
 
