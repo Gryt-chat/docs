@@ -30,21 +30,21 @@ people are joining from outside your network.
 |------|----------|------------|
 | `5000` | TCP | The server itself. Chat, logins, everything except voice |
 | `5005` | TCP | Voice signalling. Which is not the voice itself |
-| `443` | UDP | The actual voice and video, `ICE_UDP_MUX_PORT` |
+| `3478` | UDP | The actual voice and video, `ICE_UDP_MUX_PORT` |
 
 That third one catches people out. Voice does not travel over the same
 connection as the chat, and it is UDP, not TCP. If you forward the first two and
 stop there, everything works until somebody joins a voice channel — and then
 nobody can hear anybody.
 
-It is one port, not a range, and 443 is what the compose files here set it to.
-Restrictive networks usually leave 443 alone, so people behind a corporate or
-hotel firewall stand a better chance of getting through.
+It is one port, not a range, and 3478 everywhere: the SFU, the CLI and the
+compose files all use it. Change it with `ICE_UDP_MUX_PORT` and forward whatever
+you pick.
 
-Change it with `ICE_UDP_MUX_PORT` and forward whatever you pick. Two reasons you
-might: 443 needs a privileged bind, and it clashes with anything already serving
-HTTPS on that machine. A server made with the `gryt` CLI uses 3478 instead, which
-is also what the SFU falls back to when nothing sets the variable.
+3478 is the IANA STUN port, which is the reason to keep it. A corporate or school
+firewall has most likely opened outbound UDP 3478 already, because Microsoft
+Teams requires 3478–3481 and Zoom uses it too. You are borrowing a hole somebody
+else's software already argued for.
 
 ## Tell the server its own address
 
@@ -137,7 +137,7 @@ Chat working and voice not working is almost always UDP.
 curl http://203.0.113.10:5005/health
 
 # Is UDP actually getting through? Run on another machine.
-nc -vzu 203.0.113.10 443
+nc -vzu 203.0.113.10 3478
 ```
 
 Then check that `ICE_ADVERTISE_IP` says the address people actually reach you
