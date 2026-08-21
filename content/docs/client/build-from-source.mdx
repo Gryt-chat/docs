@@ -112,7 +112,13 @@ Exact byte-for-byte reproducibility between your local build and the CI release 
 
 ## Code signing and OS trust
 
-Pre-built releases from GitHub may trigger security warnings on Windows (SmartScreen) or macOS (Gatekeeper) because the binaries are not yet signed with a trusted certificate. This is normal for open-source projects and does **not** mean the software is malicious.
+macOS releases are code-signed and notarized, so they open without a warning.
+Windows releases are not signed yet, so SmartScreen still has something to say
+about them.
+
+A build you make yourself is signed by nobody on either platform, and both
+operating systems will tell you so. That is expected and does **not** mean the
+software is malicious.
 
 ### Windows SmartScreen
 
@@ -122,13 +128,16 @@ SmartScreen builds reputation over time — the more users download and run the 
 
 ### macOS Gatekeeper
 
-macOS may show **"Gryt Chat can't be opened because Apple cannot check it for malicious software."** To open it:
+A build you compiled yourself is unsigned, so macOS shows **"Gryt Chat can't be
+opened because Apple cannot check it for malicious software."** To open it:
 
 1. Right-click (or Control-click) the app
 2. Select **Open**
 3. Click **Open** in the confirmation dialog
 
 This only needs to be done once. Subsequent launches work normally.
+
+Releases from GitHub are notarized and do not need any of this.
 
 ### Linux
 
