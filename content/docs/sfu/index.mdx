@@ -75,9 +75,19 @@ All media shares `ICE_UDP_MUX_PORT`. One port is far easier to get through a
 firewall than a range, and restrictive networks that drop UDP on high ports
 often let a port they recognise through.
 
-The default is 3478 — unprivileged, and already open on hosts that run STUN.
-Production Gryt uses 443, which almost nothing blocks, at the cost of a
-privileged bind and a clash with anything already serving HTTPS.
+The default is 3478, the IANA STUN port. It needs no privileged bind, and it is
+the UDP port a locked-down network has most likely already opened, since
+Microsoft Teams requires outbound 3478–3481.
+
+UDP 443 looks like the better choice and generally is not. Enterprise firewall
+vendors recommend blocking it, because QUIC on UDP 443 cannot be TLS-inspected
+and blocking it forces browsers back to TCP where it can be. On the networks you
+would pick 443 to get through, it is the one most likely to be shut on purpose.
+
+Worth knowing either way, because it catches people out: ports are per-protocol.
+UDP 443 and TCP 443 are different sockets, so an HTTPS server never collides with
+media on UDP 443. HTTP/3 does, because that is UDP 443 as well, and Caddy serves
+it by default.
 
 The SFU binds this port at startup and refuses to start if something else holds
 it. That is deliberate: the alternative is coming up healthy and handing out
