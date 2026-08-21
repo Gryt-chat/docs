@@ -4,7 +4,7 @@ description: Our commitment and roadmap toward full accessibility
 icon: Accessibility
 ---
 
-Gryt's goal is to be a fully accessible voice chat platform. Accessibility is not an afterthought — it is a core design principle that shapes every decision we make, from the fonts we ship to the components we build. We’re working toward full accessibility across the entire product.
+Gryt is not fully accessible yet. This page says what works, what does not, and what is being done about it, because a page that only listed the good parts would be worse than nothing to somebody deciding whether they can use this.
 
 ## Why accessibility matters
 
@@ -26,19 +26,19 @@ The mono variant applies these same legibility principles to fixed-width text, m
 ## Current accessibility features
 
 ### Keyboard navigation
-Core flows — chat input, voice-control hotkeys, and Radix-based dialogs — are operable with the keyboard. However, some interactive elements (video cards, reply links, the image lightbox, and the focused-video overlay) are not yet keyboard-accessible, and list views (channels, servers, members) do not support arrow-key navigation. We are working toward full keyboard operability for every interactive element.
+Core flows, meaning the chat input, the voice-control hotkeys and dialogs, are operable with the keyboard. However, some interactive elements (video cards, reply links, the image lightbox, and the focused-video overlay) are not yet keyboard-accessible, and list views (channels, servers, members) do not support arrow-key navigation. We are working toward full keyboard operability for every interactive element.
 
 ### Configurable hotkeys
 Users can rebind **push-to-talk**, **mute**, **deafen**, and **disconnect** to any key combination via _Settings → Hotkeys_. This lets users with limited mobility choose key placements that work for them. Camera and screen-share toggles are not yet rebindable.
 
 ### Screen reader support
-The client is built on Radix UI primitives, which provide a baseline of ARIA roles and keyboard interactions for dialogs, menus, and form controls. However, comprehensive screen-reader support is still in progress: many icon-only buttons lack `aria-label` attributes, the layout does not yet use semantic HTML landmarks (`<nav>`, `<main>`, `<aside>`), and voice-state changes (mute, deafen, speaking) are not yet announced via ARIA live regions.
+The client is built on `@gryt/ui`, which sits on Base UI primitives. Those provide a baseline of ARIA roles and keyboard interaction for dialogs, menus and form controls. However, comprehensive screen-reader support is still in progress: many icon-only buttons lack `aria-label` attributes, the layout does not yet use semantic HTML landmarks (`<nav>`, `<main>`, `<aside>`), and voice-state changes (mute, deafen, speaking) are not yet announced via ARIA live regions.
 
 ### Theme support
-Gryt supports light and dark themes with system-preference detection. Both themes use the Radix UI color system, which targets WCAG AA contrast ratios. A formal, independent contrast audit has not yet been completed, and we are working toward full AAA compliance.
+Gryt supports light and dark themes with system-preference detection, and accepts imported themes. Both built-in themes use a scale-based colour system, where each hue runs from a background step up to a high-contrast text step, so a component picks a step by its role rather than picking a colour. No formal contrast audit has been done against either theme, and an imported theme is only as accessible as whoever made it.
 
 ### Focus management
-Radix-based modals and dialogs trap focus correctly, and tab order follows a logical reading sequence (no `tabIndex > 0` values). Custom overlays — the image lightbox, the emoji picker, and the focused-video view — do not yet trap focus or restore focus on close. We are actively closing these gaps.
+Modals and dialogs trap focus correctly, and tab order follows a logical reading sequence, with no `tabIndex` above zero anywhere. Custom overlays — the image lightbox, the emoji picker, and the focused-video view — do not yet trap focus or restore focus on close. We are actively closing these gaps.
 
 ## Roadmap
 

@@ -12,19 +12,22 @@ The Gryt client is a React/TypeScript application (packaged with Electron for de
 - **Voice controls**: Mute/unmute, deafen, device hot-swapping
 - **Chat**: Text messaging with attachments, replies, editing, message retry with nonce deduplication
 - **Multi-server**: Seamless server switching with room isolation
-- **UI**: Radix UI components, dark/light themes, Framer Motion animations
+- **UI**: `@gryt/ui` components, light and dark themes plus imported ones, Motion for animation
 
 ## Project structure
 
 ```
 client/src/
 ├── packages/
+│   ├── addons/     # The plugin API and addon loading
 │   ├── audio/      # Sound assets, the visualizer, global hotkeys
-│   ├── webRTC/     # @gryt/voice adapters, call controls, encoded transform
-│   ├── socket/     # useSockets, server views, user components
+│   ├── common/     # Auth, keypairs, shared hooks
+│   ├── dialogues/  # Dialogs and modals
+│   ├── mobile/     # Touch gestures, responsive helpers
 │   ├── settings/   # useSettings, useTheme, persistent storage
-│   └── mobile/     # Touch gestures, responsive helpers
-├── components/     # Shared UI (Radix UI)
+│   ├── socket/     # useSockets, server views, user components
+│   └── webRTC/     # @gryt/voice adapters, call controls, encoded transform
+├── components/     # Top-level components: titlebar, overlays, banners
 ├── hooks/          # Global React hooks
 └── types/          # TypeScript definitions
 ```
