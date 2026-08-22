@@ -25,15 +25,12 @@ You are affected if Gryt says it is one of those versions in
 **Settings → Updates & about** and has been saying so for a while.
 
 <Callout type="warn">
-These installs cannot repair themselves. The part that is broken is the part
-that would install the fix, so no future release reaches them on its own. It
-takes one manual install, once.
+These installs cannot repair themselves. Installing is the step that fails, so
+nothing published after the fix reaches them on its own. It takes one manual
+install.
 </Callout>
 
 ### Fixing it
-
-The installer is almost certainly already on your machine — your client
-downloaded it and then could not run it. You do not need to download anything.
 
 <Steps>
 
@@ -42,13 +39,8 @@ Close Gryt completely, including the tray icon.
 </Step>
 
 <Step>
-Open `%LOCALAPPDATA%\gryt-chat-updater\pending` — paste that into the File
-Explorer address bar or the Run dialog.
-</Step>
-
-<Step>
-Check the version in the filename. It has to be `Gryt-Chat-1.6.25-win-x64.exe`
-or newer.
+Download the installer from the
+[latest release](https://github.com/Gryt-chat/gryt/releases/latest).
 </Step>
 
 <Step>
@@ -56,18 +48,6 @@ Run it.
 </Step>
 
 </Steps>
-
-<Callout type="error">
-Do not run an installer older than 1.6.25 out of that folder. It carries the
-same broken updater, so it leaves you exactly where you started while looking
-like it worked — and the version that is sitting there is whichever one your
-client last tried to install, which may well be one of the broken ones.
-</Callout>
-
-If the file there is older than 1.6.25, or the folder is empty or missing,
-download the current installer from the
-[latest release](https://github.com/Gryt-chat/gryt/releases/latest) and run
-that instead.
 
 Updates install on their own again afterwards, and your settings, servers and
 identity are untouched — none of that lives in the installation directory.
