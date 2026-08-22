@@ -61,5 +61,7 @@ rather than between statements. PowerShell parses a whole script before running
 any of it, which is why nothing happened at all rather than something partial:
 no installer, no log, and the app restarted on the version it already had.
 
-Fixed in v1.6.25. Windows also installs on quit again, so a handoff that fails
-now has a second route rather than being the only one.
+Fixed in v1.6.25, and the helper has since been removed. It turned out never to
+have completed an install on any machine in any version, including after the
+parse was fixed. Windows now installs on quit, the way every other platform
+already did.
