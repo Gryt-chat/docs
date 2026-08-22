@@ -27,9 +27,10 @@ Changes here always go through a pull request, and I read every line before merg
 | Identity service | `packages/auth` | The certificate authority that ties public keys to Gryt identities. |
 | Client identity & keys | `packages/client/src/packages/common/src/auth/` | Where your keypair is generated and stored on your device. |
 | Image processing | `packages/image-worker` | Decodes untrusted uploads. Image parsing has a long history of memory-safety bugs. |
+| Bug reports and feedback | `packages/reports` | The service the in-app report forms post to. Anyone on the internet can POST to it, and it stores what they send. |
 | Server data layer | `packages/server/src/db`, `src/storage` | Persistence and object storage. |
 
-The image worker probably looks out of place. It compresses avatars and generates thumbnails, which isn't high-stakes work. But it takes a file someone else uploaded and hands it to a decoder, so it handles untrusted input and I treat it like the rest.
+The image worker probably looks out of place. It compresses avatars and generates thumbnails, which isn't high-stakes work. But it takes a file someone else uploaded and hands it to a decoder, so it handles untrusted input and I treat it like the rest. The report service is on the list for the same reason. It is the one endpoint in Gryt that anyone can post to without joining a server first, so what it accepts and what it keeps get read line by line.
 
 ## Normal review
 
