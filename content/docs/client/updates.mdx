@@ -7,12 +7,35 @@ icon: RefreshCw
 import { Callout } from 'fumadocs-ui/components/callout';
 import { Steps, Step } from 'fumadocs-ui/components/steps';
 
-The desktop client checks for a new release on startup, downloads it, and
-installs it before the main window opens. There is nothing to click and no
-setting to turn on. If you are on the beta channel it looks at prereleases too.
+The desktop client looks for a new release shortly after it starts and once an
+hour after that. When it finds one it downloads it in the background, tells you
+in the corner, and installs it the next time you quit. You can carry on using
+Gryt through all of it.
+
+The message in the corner fills a progress bar while the download runs, and
+turns into **restart and update now** when it finishes. Taking it restarts Gryt
+straight away, which will drop you out of a call. Ignoring it is fine. The
+update installs when you quit anyway.
+
+If you are on the beta channel it looks at prereleases too.
 
 A release you already have downloaded is not downloaded again, so the second
 attempt at the same version is quick even if the first one was interrupted.
+
+Gryt downloads only the parts of the app that changed, which is usually about a
+third of it. When it cannot work out the difference it downloads the whole app
+instead.
+
+## Turning automatic updates off
+
+**Settings → Updates & about → Automatic updates.**
+
+Off, Gryt still tells you when a release exists and still shows you the version,
+but nothing is downloaded until you press **download now** in that message. The
+progress bar and the restart work the same way after that.
+
+An update that has already been downloaded still installs when you quit. With
+this off, the only way one gets downloaded is that you asked for it.
 
 ## The client will not update (Windows)
 
