@@ -16,13 +16,13 @@ join, this is that. Download, host, play. On a LAN it really is that simple:
 [discovery](/docs/server/multi-server) does what Hamachi used to.
 
 From outside your network you still open a port. For people on the desktop app
-that is all you need: forward the ports, hand out your IP, and skip domains and
+that's all you need: forward the ports, hand out your IP, and skip domains and
 certificates entirely. See [No domain, just an IP](/docs/deployment/no-domain).
 
 A [Cloudflare Tunnel](/docs/deployment/cloudflare-tunnel) is for letting people
 join from a browser, which needs a real hostname and certificate. A tunnel
 covers the HTTPS and WebSocket side only. WebRTC media is UDP and a tunnel
-cannot carry it, so the SFU still needs its UDP port reachable directly.
+can't carry it, so the SFU still needs its UDP port reachable directly.
 
 ## Creating one
 
@@ -32,14 +32,14 @@ cannot carry it, so the SFU still needs its UDP port reachable directly.
 4. Take the port it offers, or set your own
 5. **Create**
 
-It starts and you are in it. There is no second step.
+It starts and you're in it. There's no second step.
 
-The port is prefilled with one that is genuinely free, checked against every
+The port is prefilled with one that's genuinely free, checked against every
 interface the server will bind. If you need a particular port — one your router
 already forwards, or one your firewall rules already name — type it and the
 field tells you whether anything else is on it.
 
-The number is settled here. The server keeps the ports it is given and does not
+The number is settled here. The server keeps the ports it's given and doesn't
 go looking for new ones later, so if your router already forwards something,
 type that.
 
@@ -50,7 +50,7 @@ network sees it appear on its own. Leave it on for a LAN party.
 
 Three, and the app tells you which. **Settings → My servers → Open these
 ports** lists them under the server with the numbers it actually picked, and is
-also where you change them. They are typically:
+also where you change them. They're typically:
 
 | Port | Protocol | What it is |
 |------|----------|------------|
@@ -62,11 +62,11 @@ Open them on the machine's own firewall if anyone is joining from another
 computer at all, and forward them on your router as well if anyone is joining
 from outside your network.
 
-Voice does not travel over the same connection as the chat, and it is UDP
+Voice doesn't travel over the same connection as the chat, and it's UDP
 rather than TCP. With that port shut, people join, the member list fills up,
 messages send, and nobody can hear anybody.
 
-The numbers are not always those three. If something already holds one when the
+The numbers aren't always those three. If something already holds one when the
 server is created, the app takes the next one up — `5006` rather than `5005` —
 and that becomes the server's port. So read the panel rather than assuming the
 table.
@@ -86,12 +86,12 @@ table.
 The server refuses to start and says which port, rather than quietly moving to
 a free one.
 
-That is deliberate, and it used to work the other way. A server that relocates
-itself is fine on the machine it runs on and quietly broken for everyone else:
-you forwarded `5000` on your router, something claimed `5000` one morning, the
-app moved to `5001`, and the server came back up looking perfectly healthy
-while nobody outside could reach it. With the media port, chat keeps working and
-only voice goes quiet. Neither shows up anywhere in the app.
+That's deliberate, and it used to work the other way. A server that moves itself
+is fine on the machine it runs on and quietly broken for everyone else. Say you
+forwarded `5000` on your router. Something claims `5000` one morning, the app
+moves to `5001`, and the server comes back up looking perfectly healthy while
+nobody outside can reach it. With the media port it's worse: chat keeps working
+and only voice goes quiet. Neither shows up anywhere in the app.
 
 So when something else has the port, you get told, and you pick:
 
@@ -100,7 +100,7 @@ So when something else has the port, you get told, and you pick:
 
 The fields are editable while the server is stopped. Changing one rewrites the
 server's `config.env`, including the addresses derived from it, so nothing is
-left pointing at the old number. It does not touch your router.
+left pointing at the old number. It doesn't touch your router.
 
 ## More than one
 
@@ -109,9 +109,9 @@ own members, its own invites, its own database — and they cost far less than
 running two of anything else:
 
 - **The SFU is shared.** One media process serves every server you host, because
-  voice rooms are namespaced per server. Hosting a second server does not mean a
+  voice rooms are namespaced per server. Hosting a second server doesn't mean a
   second SFU.
-- **The image worker is not.** Each server gets one, because a worker reads
+- **The image worker isn't.** Each server gets one, because a worker reads
   exactly one database.
 
 So server number two costs a server process and an image worker, not another
@@ -120,7 +120,7 @@ stack.
 <Callout type="info">
   Give each one a different name. A server identifies itself to the SFU using
   its name, its port and its instance id — two servers that produce the same
-  identity will fight over voice rooms, and the second one's voice will not
+  identity will fight over voice rooms, and the second one's voice won't
   start.
 </Callout>
 
@@ -134,13 +134,13 @@ stack.
 - **Start automatically with app**, per server
 - **Advertised addresses**, which is where voice is told how to reach you
 - **Open these ports**, the three numbers and the fields to change them
-- **Server logs**, which do not fetch anything until you open them
+- **Server logs**, which don't fetch anything until you open them
 - **Open**, which puts it in your server rail
 - **Delete**
 
 Delete is exactly as final as it sounds. It stops the server, removes its
 database, its uploads and its identity key, and asks you to type the server's
-name first. There is no second copy anywhere.
+name first. There's no second copy anywhere.
 
 <Callout type="warn">
   Deleting a server destroys the key it identifies itself with. Everyone who
@@ -163,15 +163,15 @@ Each server gets its own directory under your app data folder:
 `<userData>` is `~/Library/Application Support/gryt-chat` on macOS,
 `%APPDATA%/gryt-chat` on Windows, and `~/.config/gryt-chat` on Linux.
 
-Back up a server by copying its directory while it is stopped.
+Back up a server by copying its directory while it's stopped.
 
-## What it does not do
+## What it doesn't do
 
-Hosting from the app is a real server, but it is running on a desktop machine,
+Hosting from the app is a real server, but it's running on a desktop machine,
 so the limits are the machine's:
 
-- It is reachable while the app is open and the machine is awake. Closing Gryt
-  stops the servers it is hosting.
+- It's reachable while the app is open and the machine is awake. Closing Gryt
+  stops the servers it's hosting.
 - Anyone outside your network needs a route in. A
   [tunnel](/docs/deployment/cloudflare-tunnel) covers signalling; the SFU's UDP
   port still has to be forwarded directly.
@@ -180,4 +180,4 @@ so the limits are the machine's:
 
 For something that should stay up without a person nearby, run it with
 [Docker Compose](/docs/deployment/docker-compose) instead — the same server,
-pointed at a disk that is not your laptop.
+pointed at a disk that isn't your laptop.

@@ -77,7 +77,7 @@ Release time is configurable. Smoothing is 0.8 normally and 0.3 in eSports mode.
 
 <Callout title="Push-to-talk turns the gate off">
 With push-to-talk selected the threshold is set to 0, which disables gating
-entirely. The gating is done by the mute node instead, since that is exactly what
+entirely. The gating is done by the mute node instead, since that's exactly what
 push-to-talk is. The noise gate slider is hidden in that mode rather than
 sitting there doing nothing.
 </Callout>
@@ -93,7 +93,7 @@ actually doing, including when a moderator mutes you.
 A final `AnalyserNode` drives the level meters, and a `MediaStreamDestination`
 hands the result to WebRTC.
 
-There is a separate monitor tap before the mute node, which is what loopback
+There's a separate monitor tap before the mute node, which is what loopback
 monitoring listens to. That placement means you hear yourself as others would,
 minus the mute.
 
@@ -112,7 +112,7 @@ filling a packet before it can be sent.
 
 ## Screen share audio on the desktop
 
-Capturing system audio without also capturing Gryt's own output is not something
+Capturing system audio without also capturing Gryt's own output isn't something
 the browser APIs will do. The desktop app runs a native binary that excludes
 Gryt's process tree, writes raw PCM to stdout, and hands it to the Electron main
 process. That forwards chunks over IPC to the renderer, where an
@@ -123,7 +123,7 @@ send.
 
 Input and output devices are chosen in **Settings → Audio** and remembered in
 `localStorage` along with volume, gate threshold and every toggle above. None of
-it is server-side, so it follows the installation rather than the account.
+it's server-side, so it follows the installation rather than the account.
 
 ## When something sounds wrong
 

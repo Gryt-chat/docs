@@ -1,6 +1,6 @@
 ---
 title: Voice Debugging
-description: Finding out why voice will not connect
+description: Finding out why voice won't connect
 icon: Bug
 ---
 
@@ -44,7 +44,7 @@ ports:
 ```
 
 <Callout type="warn">
-Cloudflare Tunnel does not carry UDP. If your signalling goes through a tunnel,
+Cloudflare Tunnel doesn't carry UDP. If your signalling goes through a tunnel,
 the media port still has to be exposed directly.
 </Callout>
 
@@ -62,8 +62,8 @@ ICE candidate for <peer>: type=host  protocol=udp address=203.0.113.10:3478
 ICE candidate for <peer>: type=srflx protocol=udp address=203.0.113.10:57599
 ```
 
-The `host` candidate says 3478 because that is what the SFU bound. The `srflx`
-candidate says 57599 because that is what the outside world actually saw. When
+The `host` candidate says 3478 because that's what the SFU bound. The `srflx`
+candidate says 57599 because that's what the outside world actually saw. When
 those differ, external peers need the second one, and they only get it if STUN
 is on.
 
@@ -94,8 +94,8 @@ stops tells you which side to look at.
 
 Two rejections have specific messages:
 
-- `Join validation failed` — the room is not registered, or the server
-  credentials do not match. That is the Gryt server's side, not the client's.
+- `Join validation failed` — the room isn't registered, or the server
+  credentials don't match. That's the Gryt server's side, not the client's.
 - `there are no seats left in this voice server (n/200)` — `MAX_PEERS`. It
   counts every peer across every room on this SFU, not per server.
 
@@ -105,7 +105,7 @@ RTP detail and is genuinely too noisy for anything but a short capture.
 ## From the client
 
 Everything the client knows about the connection is in **Settings → Advanced**,
-in the latency panel. It only fills in while you are connected to voice:
+in the latency panel. It only fills in while you're connected to voice:
 
 | Field | What to look for |
 |-------|------------------|
@@ -116,13 +116,13 @@ in the latency panel. It only fills in while you are connected to voice:
 | Round-trip time | Yours, next to the other participants' |
 | Jitter buffer | Highlighted above 80 ms |
 
-If you are on the same network as the SFU and ICE remote shows a `192.168.x.x`
+If you're on the same network as the SFU and ICE remote shows a `192.168.x.x`
 address at near-zero latency, the LAN path won. A public address at 20 ms means
 traffic is going out and back.
 
 The same screen has toggles for two floating overlays, one for the microphone
 and one for video, showing live capture, codec, resolution and bitrate. Both are
-off by default and are separate from the latency panel. There is no third
+off by default and are separate from the latency panel. There's no third
 overlay for the connection itself; the latency panel is where that lives.
 
 ## Checks in the browser
@@ -147,14 +147,14 @@ pc.onicecandidate = e => e.candidate && console.log(e.candidate.candidate);
 await pc.setLocalDescription(await pc.createOffer());
 ```
 
-No `srflx` line means STUN is not getting out from the client either, which is a
+No `srflx` line means STUN isn't getting out from the client either, which is a
 different problem from the server side of the same symptom.
 
 ## What to include when asking for help
 
 - The last ~50 lines of SFU logs, and the same from the Gryt server
 - Browser console errors
-- `ICE_UDP_MUX_PORT`, whether it is published, and whether it is open in the
+- `ICE_UDP_MUX_PORT`, whether it's published, and whether it's open in the
   firewall
 - `DISABLE_STUN` and `STUN_SERVERS`
 - The latency panel: SFU endpoint, ICE remote and local, candidate type

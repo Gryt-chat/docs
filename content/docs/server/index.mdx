@@ -1,6 +1,6 @@
 ---
 title: Overview
-description: The Gryt server — chat, identity, permissions and everything that is not media
+description: The Gryt server — chat, identity, permissions and everything that isn't media
 icon: Server
 ---
 
@@ -10,14 +10,14 @@ The Gryt server is the part that knows who people are. It holds the messages,
 the members, the permissions and the invites, it decides who may join, and it
 tells the SFU which voice rooms exist. Media never touches it.
 
-It is a Node service: Express for HTTP, Socket.IO for the live connection,
+It's a Node service: Express for HTTP, Socket.IO for the live connection,
 SQLite through `node:sqlite` for storage. One process per community.
 
 ## What runs alongside it
 
 A working server is usually three or four containers:
 
-| Piece | Why it is there |
+| Piece | Why it's there |
 |-------|-----------------|
 | The server | Chat, identity, permissions, invites, the database |
 | The SFU | Voice and video. One per machine, shared by every server on it |
@@ -33,7 +33,7 @@ them over a network.
 The server reads its settings from the environment, except for the handful that
 live in the database and are covered further down.
 
-### The ones you will actually set
+### The ones you'll actually set
 
 | Variable | Default | What it does |
 |----------|---------|--------------|
@@ -50,7 +50,7 @@ live in the database and are covered further down.
 
 <Callout type="warn" title="HOST defaults to loopback">
 A server left on `127.0.0.1` still advertises itself over mDNS, so clients on
-the network find it and then cannot connect. The server says so in its log at
+the network find it and then can't connect. The server says so in its log at
 startup. Set `HOST=0.0.0.0` for a server other machines should reach.
 </Callout>
 
@@ -102,10 +102,10 @@ from a key stored in that server's own database.
 <Callout title="GRYT_AUTH_MODE was renamed">
 `GRYT_SERVER_ENABLED` used to be `GRYT_AUTH_MODE`, with values `required` and
 `disabled`. The name suggested it controlled whether members needed an account.
-It never did: that is `GRYT_IDENTITY_TIERS`, and the two do not interact. All
+It never did: that is `GRYT_IDENTITY_TIERS`, and the two don't interact. All
 the old setting ever did was refuse every join.
 
-The old name and its old values still work so that upgrading does not take a
+The old name and its old values still work so that upgrading doesn't take a
 server offline, and the new name wins when both are set. An unrecognised value
 refuses joins and says so, rather than guessing.
 </Callout>
@@ -150,7 +150,7 @@ boot. `NODE_ENV` and `DISABLE_STUN` behave as you would expect.
 
 ## Settings that live in the database
 
-Four settings are not environment variables. They are stored in the server's own
+Four settings aren't environment variables. They're stored in the server's own
 database, they can be changed while it runs, and changing one does more than
 write a row:
 
@@ -164,16 +164,16 @@ write a row:
 Turning `discoverable` off has to withdraw the mDNS advertisement, not just
 record the intent, so these go through an apply path rather than a direct write.
 Writing the row by hand leaves a server broadcasting itself while its own
-configuration says it is hidden.
+configuration says it's hidden.
 
-Owners change these from a client. An operator who is not the owner changes them
+Owners change these from a client. An operator who isn't the owner changes them
 through the management API.
 
 ## The management API
 
-A server administrator running Gryt on their own machine is not necessarily its
-owner, and should not have to be to turn off LAN discovery on a box they
-administer. So there is a second, tiny listener for exactly that.
+A server administrator running Gryt on their own machine isn't necessarily its
+owner, and shouldn't have to be to turn off LAN discovery on a box they
+administer. So there's a second, tiny listener for exactly that.
 
 | Variable | Default | What it does |
 |----------|---------|--------------|
@@ -183,7 +183,7 @@ administer. So there is a second, tiny listener for exactly that.
 | Endpoint | What it does |
 |----------|--------------|
 | `GET /management/settings` | The four settings above |
-| `PATCH /management/settings` | Change some of them. Send only the keys you are changing |
+| `PATCH /management/settings` | Change some of them. Send only the keys you're changing |
 | `GET /management/health` | `{"ok":true}` |
 
 All three need `Authorization: Bearer <GRYT_ADMIN_TOKEN>`, compared as digests
@@ -194,9 +194,9 @@ processes on the same machine. What covers everybody else is where the port is
 published: the Compose file the CLI generates publishes it to `127.0.0.1` only,
 which Docker enforces at the host before a packet reaches the container.
 
-<Callout type="warn" title="Do not publish this port">
-There is deliberately no check on the caller's address, because a container
-cannot see a useful one. A request from the host's own loopback arrives at a
+<Callout type="warn" title="Don't publish this port">
+There's deliberately no check on the caller's address, because a container
+can't see a useful one. A request from the host's own loopback arrives at a
 container published on `127.0.0.1` with a source address of the Docker bridge
 gateway. A guard on `req.ip` would reject every legitimate request while proving
 nothing, which is worse than no guard because it reads like one.
@@ -204,7 +204,7 @@ nothing, which is worse than no guard because it reads like one.
 The loopback publish is the boundary. Keep it.
 </Callout>
 
-Requires server 1.5.0 or newer. Against anything older the endpoint is not there
+Requires server 1.5.0 or newer. Against anything older the endpoint isn't there
 at all, and the `gryt` CLI says so.
 
 ## Endpoints

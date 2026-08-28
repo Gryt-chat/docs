@@ -83,15 +83,15 @@ If everything checks out, the server issues a **server-scoped access token** (a 
 | Your private key | **No** — never leaves your device |
 | Messages and uploads you send | Yes — that's how server-hosted chat works |
 
-## What a malicious server cannot do
+## What a malicious server can't do
 
 Even if a server operator captures everything sent during the join flow:
 
-- **Cannot impersonate you on another server.** The assertion contains `aud: "evil-server.com"` — any other server rejects it because the audience doesn't match.
-- **Cannot replay the assertion.** The nonce is single-use and expires in 60 seconds.
-- **Cannot forge new assertions.** They don't have your private key.
-- **Cannot use your certificate alone.** A certificate is not a bearer token — it only links a public key to an identity. Without the corresponding private key, it's useless.
-- **Cannot pose as a server you already trust.** Servers are pinned by their identity key, so answering at a known address with a different key gets refused before anything is sent. See [Authenticating the server](#authenticating-the-server).
+- **Can't impersonate you on another server.** The assertion contains `aud: "evil-server.com"` — any other server rejects it because the audience doesn't match.
+- **Can't replay the assertion.** The nonce is single-use and expires in 60 seconds.
+- **Can't forge new assertions.** They don't have your private key.
+- **Can't use your certificate alone.** A certificate isn't a bearer token — it only links a public key to an identity. Without the corresponding private key, it's useless.
+- **Can't pose as a server you already trust.** Servers are pinned by their identity key, so answering at a known address with a different key gets refused before anything is sent. See [Authenticating the server](#authenticating-the-server).
 
 ## Authenticating the server
 
@@ -99,7 +99,7 @@ Everything above proves *you* to the server. The other direction matters too: ho
 your client know the server answering at an address is the one you joined before?
 
 On `app.gryt.chat` TLS answers that — a certificate for the domain proves the endpoint.
-On a LAN there is no TLS, no DNS authority, and mDNS advertisements are unauthenticated.
+On a LAN there's no TLS, no DNS authority, and mDNS advertisements are unauthenticated.
 Anyone on the network can advertise a service with any name and any server ID, so a
 server ID is a **discovery hint and never a credential**.
 
@@ -118,14 +118,14 @@ client sends a token, a certificate or anything else:
 3. The client checks that signature against the key it pinned.
 
 Because the pin is filed under the **key** rather than the address, a server that moves
-to a new host or port is still recognised as the same server. That is what makes
+to a new host or port is still recognised as the same server. That's what makes
 automatic recovery safe when a server changes port — recognising it by server ID alone
 would let anyone who read that ID over mDNS take its place.
 
 ### When a server's identity changes
 
 If a different key answers at an address you have joined before, Gryt refuses the
-connection and records it. Nothing is sent to that server. You will see
+connection and records it. Nothing is sent to that server. You'll see
 **"Server identity not recognised"**, and the server appears under
 **Settings → You → Server identities**, showing the key that was expected and the one
 that answered.
@@ -134,7 +134,7 @@ This is deliberately a refusal rather than a warning you can click through. A di
 warning trains people to dismiss it.
 
 The common innocent cause is that you rebuilt or reinstalled the server and its data
-directory was not preserved, so it generated a new identity. To confirm that is what
+directory wasn't preserved, so it generated a new identity. To confirm that's what
 happened, check the server's startup log — it prints its identity key on boot:
 
 ```
@@ -150,16 +150,16 @@ the old identity and pins the new one on the next connection.
   refuse to connect until each user unblocks the server by hand.
 </Callout>
 
-### What this does not cover
+### What this doesn't cover
 
 Pinning stops anyone **forging or impersonating** a server: without the private key they
-cannot produce a valid proof. It does not stop someone **relaying** a genuine server's
-proof in order to sit in the middle of an unencrypted LAN connection. They still cannot
+can't produce a valid proof. It doesn't stop someone **relaying** a genuine server's
+proof in order to sit in the middle of an unencrypted LAN connection. They still can't
 authenticate as you — your assertion is bound to the address you dialled — but they can
 read traffic that was already plaintext over `ws://`.
 
 Encrypting LAN traffic is a separate, larger question. Over TLS (`wss://`), which is what
-any internet-facing deployment should use, this does not apply.
+any internet-facing deployment should use, this doesn't apply.
 
 ### Rotating a server's key
 
@@ -202,7 +202,7 @@ device's keypair becomes useless without a valid Keycloak session to obtain a ne
 
 ## No server registration required
 
-Servers do not need to be registered anywhere. Any server can verify certificates by
+Servers don't need to be registered anywhere. Any server can verify certificates by
 fetching the Identity Service's public JWKS — the same way any server already validates
 Keycloak tokens today. This means you can run a server binary, point it at the JWKS URL,
 and it works.

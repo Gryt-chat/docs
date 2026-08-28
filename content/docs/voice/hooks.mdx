@@ -6,7 +6,7 @@ icon: Code
 
 import { Callout } from 'fumadocs-ui/components/callout';
 
-Every hook here is a singleton. Its body runs once inside `<VoiceSingletonHooks />` and every caller reads the same value, so calling `useMicrophone()` in five components does not open five microphones.
+Every hook here is a singleton. Its body runs once inside `<VoiceSingletonHooks />` and every caller reads the same value, so calling `useMicrophone()` in five components doesn't open five microphones.
 
 ## useSFU
 
@@ -28,7 +28,7 @@ const {
 
 `connectionState` is a `SFUConnectionState`: `disconnected`, `requesting_access`, `connecting`, `connected`, `reconnecting` or `failed`.
 
-`connectionError` says why a connection ended when the engine has something to say. `"reconnect-failed"` means it retried and gave up. Null covers everything else, including an ordinary hang-up. Without it, `disconnected` alone cannot tell a dropped call from somebody pressing leave, which left embedders guessing.
+`connectionError` says why a connection ended when the engine has something to say. `"reconnect-failed"` means it retried and gave up. Null covers everything else, including an ordinary hang-up. Without it, `disconnected` alone can't tell a dropped call from somebody pressing leave, which left embedders guessing.
 
 `streams` is keyed by id and carries `{ stream, isLocal, kind }`. `streamSources` gives you the Web Audio nodes per remote stream, a gain and an analyser, which is what a speaking indicator or a per-person volume slider reads. `videoStreams` is the plain map of camera and screen streams.
 
@@ -48,7 +48,7 @@ const {
 
 `microphoneBuffer` is the whole audio graph: the raw and processed analysers, the gain nodes, the noise gate worklet, the RNNoise node, the AGC nodes and the compressor. A meter reads `analyser` or `finalAnalyser` from it.
 
-`micUnavailable` is `"denied"`, `"no-device"`, `"failed"`, or null once a microphone is live. The three cases want different advice, which is why they are not one boolean. Joining a voice channel still works in this state on purpose, because listening without a microphone is useful, so this is what lets the UI say so out loud instead of looking healthy while nobody can hear you.
+`micUnavailable` is `"denied"`, `"no-device"`, `"failed"`, or null once a microphone is live. The three cases want different advice, which is why they aren't one boolean. Joining a voice channel still works in this state on purpose, because listening without a microphone is useful, so this is what lets the UI say so out loud instead of looking healthy while nobody can hear you.
 
 `isTransmitting` is true while audio is actually leaving the client, and `getGateLevel()` returns the level the noise gate is deciding on. Both are null when the gate worklet is unavailable.
 
@@ -82,7 +82,7 @@ const {
 
 `startScreenShare(withAudio, sourceId?)` takes the source id from whatever picker the embedder shows.
 
-The native fields only matter where the host provides native screen capture. `nativeScreenCaptureAvailable` says whether it is there, `nativeEncodedCodec` is `"h264"`, `"hevc"` or null, and `subscribeEncodedFrames` hands you pre-encoded NAL frames from the hardware encoder. `nativeAudioActive` is true when the OS is capturing audio directly, which is the case where no phase cancellation is needed.
+The native fields only matter where the host provides native screen capture. `nativeScreenCaptureAvailable` says whether it's there, `nativeEncodedCodec` is `"h264"`, `"hevc"` or null, and `subscribeEncodedFrames` hands you pre-encoded NAL frames from the hardware encoder. `nativeAudioActive` is true when the OS is capturing audio directly, which is the case where no phase cancellation is needed.
 
 `STANDARD_FPS_OPTIONS` and `EXPERIMENTAL_FPS_OPTIONS` are the two frame rate lists, and `estimateBitrate(quality, fps)` returns a bitrate for a combination, or null.
 
@@ -110,7 +110,7 @@ elsewhere: `available` comes back `false` and nothing else does anything.
 `useNativeAudioCapture` returns `{ available, active, stream, start, stop }`.
 `start(audioContext, sourceId?)` captures one application's audio when given a
 window source id, and otherwise everything except Gryt's own process tree, which
-is the part a browser cannot do. `stream` is a `MediaStream` you can hand
+is the part a browser can't do. `stream` is a `MediaStream` you can hand
 straight to WebRTC.
 
 `useNativeScreenCapture` returns `{ available, active, videoStream, encodedCodec,
@@ -124,7 +124,7 @@ unsubscribe function.
 `NativeAudioCapture` and `NativeScreenCapture` each name two different interfaces
 in this package: the shapes above, and the host-side APIs in `host/`. The host
 ones win at the package root, so `import type { NativeAudioCapture } from "@gryt/voice"`
-gives you the host interface rather than the hook's return. Until that is sorted
+gives you the host interface rather than the hook's return. Until that's sorted
 out, let the hook's return type be inferred instead of annotating it.
 </Callout>
 
@@ -136,7 +136,7 @@ stream maps and their setters and keeps them in step as tracks arrive and leave.
 the audio context and every setting the chain reads, and pushing changes into the
 running graph.
 
-Neither is needed to make a call. They are exported for an embedder rebuilding
+Neither is needed to make a call. They're exported for an embedder rebuilding
 `useSFU` or the microphone pipeline rather than using them.
 
 ## Smaller pieces
