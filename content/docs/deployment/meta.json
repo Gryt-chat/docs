@@ -10,6 +10,7 @@
     "windows",
     "cloudflare-tunnel",
     "tailscale",
+    "backups",
     "monitoring"
   ]
 }

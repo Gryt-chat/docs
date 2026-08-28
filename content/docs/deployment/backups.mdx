@@ -1,0 +1,130 @@
+---
+title: Backups
+description: What to copy, why copying gryt.db on its own can hand you an empty database, and how to check a backup before you need it.
+icon: DatabaseBackup
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+Everything a Gryt server is lives in one directory. Backing it up is copying
+that directory. There's one trap in the way, and it's the reason this page exists.
+
+<Callout type="warn" title="Copying gryt.db while the server runs is not a backup">
+  The database is in [WAL mode](https://www.sqlite.org/wal.html), so recent
+  writes live in `gryt.db-wal` until SQLite folds them back in. Copy `gryt.db`
+  on its own and you get whatever had been folded in last, which on a young
+  server is **nothing at all**. The file you end up with is an empty database,
+  and nothing says so until the day you restore it.
+</Callout>
+
+## What to back up
+
+`DATA_DIR` — `/data` inside the container, the `gryt-prod-server-data` volume
+under Compose, and `./data` if you're running the server directly.
+
+```
+<DATA_DIR>/
+├── gryt.db                    messages, members, roles, invites, settings
+├── gryt.db-wal                writes that have not been folded in yet
+├── gryt.db-shm                shared-memory index for the WAL
+├── server-identity-key.json   the key clients pinned you by
+└── <bucket>/                  uploads, if you're on filesystem storage
+```
+
+**`server-identity-key.json` is who your server is.** Clients pin it the first
+time they connect and check it every time after. A server that comes back with a
+new key is a different server to everybody who had joined: no roles, no history,
+and a warning on their screen. It's a few hundred bytes, and it's the one file here
+you can't regenerate.
+
+**The `-wal` file is part of the database.** It isn't a temporary file you can
+skip.
+
+If your uploads go to MinIO or another S3-compatible store rather than to the
+filesystem, that's a separate volume, `gryt-prod-minio-data` under Compose, and
+it needs its own copy.
+
+## Stop, copy, start
+
+The simplest correct backup, and the one to use unless downtime is a problem.
+
+```bash
+docker compose stop server image-worker
+docker run --rm \
+  -v gryt-prod-server-data:/data:ro \
+  -v "$PWD:/out" \
+  alpine tar czf /out/gryt-backup-$(date +%F).tar.gz -C /data .
+docker compose start server image-worker
+```
+
+Both services stop because they share the volume and both write to the
+database. Stopping only the server leaves the image worker holding it open.
+
+## Backing up without stopping
+
+SQLite can copy a live database properly, and the server image already has
+Node, which is all you need to ask it to. Nothing extra to install.
+
+```bash
+docker compose exec server node -e '
+  const { DatabaseSync, backup } = require("node:sqlite");
+  const src = new DatabaseSync("/data/gryt.db", { readOnly: true });
+  backup(src, "/data/gryt-backup.db").then(() => console.log("ok"));
+'
+```
+
+That produces one consistent file with the WAL already folded in, while people
+are still talking. Copy it out, then delete it so it isn't sitting inside the
+thing it's a backup of:
+
+```bash
+docker compose cp server:/data/gryt-backup.db ./gryt-backup-$(date +%F).db
+docker compose exec server rm /data/gryt-backup.db
+```
+
+The identity key and the uploads still have to be copied separately. This
+covers the database and nothing else.
+
+## Check it before you need it
+
+Run these against the file you just made. Both take seconds:
+
+```bash
+sqlite3 gryt-backup-2026-08-28.db "PRAGMA integrity_check;"
+sqlite3 gryt-backup-2026-08-28.db "SELECT count(*) FROM messages;"
+```
+
+`integrity_check` answers `ok`. A row count of zero on a server that has
+history means you hit the WAL trap above.
+
+## Restoring
+
+Stop everything, put the directory back, start it again.
+
+```bash
+docker compose down
+docker run --rm \
+  -v gryt-prod-server-data:/data \
+  -v "$PWD:/in" \
+  alpine sh -c "rm -rf /data/* && tar xzf /in/gryt-backup-2026-08-28.tar.gz -C /data"
+docker compose up -d
+```
+
+If you're restoring only the database from a hot backup, put it back as
+`gryt.db` and delete any `gryt.db-wal` and `gryt.db-shm` sitting beside it. They
+belong to the database you're replacing. Leave them there and SQLite gets a WAL
+that doesn't match the file it's attached to.
+
+## Hosting from the app
+
+The desktop app keeps each server under its own directory and the app is the
+only thing writing to it, so stopping the app is the whole procedure.
+[Hosting from the app](/docs/deployment/embedded#where-things-live) has the
+paths.
+
+## What isn't in it
+
+Anyone's identity except the server's own. A person's keypair lives on their
+own device, so restoring your server doesn't restore anybody's account.
+There's nothing of theirs on your disk to lose. See
+[accounts](/docs/guide/accounts).
