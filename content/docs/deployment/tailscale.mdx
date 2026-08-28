@@ -1,6 +1,6 @@
 ---
 title: Tailscale
-description: Play with friends who are not on your network, without touching your router
+description: Play with friends who aren't on your network, without touching your router
 icon: Network
 ---
 
@@ -13,18 +13,18 @@ between the two machines, and that has historically meant a router page nobody
 enjoys.
 
 Tailscale is the shortcut. It puts every machine you sign in on into one private
-network, whatever building they are in, and Gryt cannot tell the difference
+network, whatever building they're in, and Gryt can't tell the difference
 between that and a real LAN.
 
 ## Why this and not a tunnel
 
 A [Cloudflare Tunnel](/docs/deployment/cloudflare-tunnel) carries HTTPS and the
-WebSocket, which is enough for chat and for getting into a server. It cannot
-carry voice. WebRTC media is UDP, and a tunnel is not.
+WebSocket, which is enough for chat and for getting into a server. It can't
+carry voice. WebRTC media is UDP, and a tunnel isn't.
 
 Tailscale is WireGuard, which is UDP, so it carries everything: signalling, chat,
-uploads and voice, over the same connection. That is the reason this page exists
-and the tunnel page does not tell you to do this.
+uploads and voice, over the same connection. That's the reason this page exists
+and the tunnel page doesn't tell you to do this.
 
 ## The short version
 
@@ -34,7 +34,7 @@ and the tunnel page does not tell you to do this.
 ### Install Tailscale on both machines
 
 [tailscale.com/download](https://tailscale.com/download), and sign in to the
-same account on each. That is the whole network setup. Nothing to forward,
+same account on each. That's the whole network setup. Nothing to forward,
 nothing to open.
 </Step>
 
@@ -44,7 +44,7 @@ nothing to open.
 The **+** in the server rail, **Create my own**, give it a name, **Create**. It
 starts and puts you in it.
 
-Note the port it chose. It is on the server's card under
+Note the port it chose. It's on the server's card under
 **Settings &rarr; My servers**.
 </Step>
 
@@ -74,22 +74,22 @@ A new server is invite-only, so send them a code from
 **Server settings &rarr; Invites**.
 
 Invites are the way in here, and they stay the way in. "Allow anyone on LAN to
-join" does not cover a tailnet: it admits the private ranges, `10.0.0.0/8`,
+join" doesn't cover a tailnet: it admits the private ranges, `10.0.0.0/8`,
 `172.16.0.0/12`, `192.168.0.0/16` and link-local, and Tailscale hands out
-`100.64.0.0/10`, which is not one of them. Turning that setting on will look
+`100.64.0.0/10`, which isn't one of them. Turning that setting on will look
 like it has done nothing.
 </Step>
 
 </Steps>
 
-That is chat working. Voice needs one more thing.
+That's chat working. Voice needs one more thing.
 
 ## Voice needs the SFU address to be right
 
-Your server tells joining clients where to find the media server, and it fills
-that in for you when the server is created, using the address it thinks people
-will reach you on. On a laptop that is also on a home network, it picks the home
-address: something like `192.168.1.20`. Your friend on Tailscale cannot reach
+Your server tells joining clients where to find the media server. It fills that
+in when the server is created, using the address it thinks people will reach you
+on. On a laptop that's also on a home network, it picks the home
+address: something like `192.168.1.20`. Your friend on Tailscale can't reach
 that, so they join fine, chat fine, and hear nothing.
 
 The fix is to list both. Open the server's config:
@@ -121,15 +121,15 @@ the second.
   overwrites it.
 </Callout>
 
-## What does not carry over
+## What doesn't carry over
 
-**Servers do not appear on their own.** LAN discovery works by shouting on the
-local link, and that shout does not cross a tailnet. Your friend types the
-address once; after that it is in their rail like any other server.
+**Servers don't appear on their own.** LAN discovery works by shouting on the
+local link, and that shout doesn't cross a tailnet. Your friend types the
+address once; after that it's in their rail like any other server.
 
-**Everyone needs Tailscale running.** It is a private network between machines
-signed in to it, so someone who has not installed it cannot reach your server at
-all. That is the trade against a public address: nothing is exposed to the
+**Everyone needs Tailscale running.** It's a private network between machines
+signed in to it, so someone who hasn't installed it can't reach your server at
+all. That's the trade against a public address: nothing is exposed to the
 internet, and nothing works without the client.
 
 **Your machine still has to be awake.** Hosting from the app means the server

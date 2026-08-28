@@ -14,7 +14,7 @@ what they hold, and add your own.
 
 | | Rank | Roughly |
 |---|---|---|
-| Owner | 100 | Everything. Cannot be edited or handed out. |
+| Owner | 100 | Everything. Can't be edited or handed out. |
 | Admin | 80 | Everything except roles, server settings and identity replacement. |
 | Moderator | 60 | Kick, mute, deafen, pull people out of voice. |
 | Member | 40 | Talk, upload, join voice, change their own name. |
@@ -23,10 +23,10 @@ what they hold, and add your own.
 ## Reading is a permission
 
 This is the part that surprises people. *Read messages* is something a role can
-lack, and a role without it is somebody who is in your server and cannot see it.
+lack, and a role without it's somebody who is in your server and can't see it.
 
-That is what makes a genuinely read-only tier possible — and it is why the Guest
-role is not empty. A read-only role that cannot read is not read-only.
+That's what makes a genuinely read-only tier possible — and it's why the Guest
+role isn't empty. A read-only role that can't read isn't read-only.
 
 ## Who gets what when they join
 
@@ -35,17 +35,17 @@ role is not empty. A read-only role that cannot read is not read-only.
 Two settings, not one, and the split is the point:
 
 - **With an account** — a durable identity, vouched for by a certificate
-  authority. Losing a device does not lose it.
+  authority. Losing a device doesn't lose it.
 - **As a guest** — a key generated in the browser. Anybody can throw one away
   and mint another in about two seconds.
 
 A public server usually wants accounts on `Member` and guests on `Guest`: come
 in, read everything, and make an account if you want to talk. That combination
-is not expressible with a single default, which is why there are two.
+isn't expressible with a single default, which is why there are two.
 
 <Callout title="Guests only reach your server if you let them">
 Whether a server accepts keys-without-accounts at all is `GRYT_IDENTITY_TIERS`
-on the server, and it does not include them by default. Where it does not, the
+on the server, and it doesn't include them by default. Where it doesn't, the
 guest default is never used.
 </Callout>
 
@@ -58,29 +58,29 @@ A role can say what it asks of somebody before it grants itself: days since they
 joined, messages they have sent, or both.
 
 Fill in **both** and it means both — a fortnight *and* fifty messages. Time on
-its own is something a patient stranger also has, and it is exactly what
+its own is something a patient stranger also has, and it's exactly what
 somebody planning to abuse a server would wait out.
 
 It only ever promotes. Nobody is moved down for going quiet, and anybody already
-holding a higher role stays where they are. It is checked when somebody joins
+holding a higher role stays where they are. It's checked when somebody joins
 and after they post, so a role earned while they were away arrives the next time
 they turn up.
 
-Built-in roles do not offer this. A server that wants an automatic tier wants a
+Built-in roles don't offer this. A server that wants an automatic tier wants a
 new role for it, rather than `Moderator` quietly acquiring people.
 
 ## Rank, and who can act on whom
 
 Kicks, bans, mutes and role changes all refuse against an **equal or higher**
-rank. One admin cannot kick another; only the owner can act on an admin.
+rank. One admin can't kick another; only the owner can act on an admin.
 
-The same rule applies to handing roles out. You cannot grant a role at or above
-your own rank, and you cannot put a permission into a role that you do not hold
+The same rule applies to handing roles out. You can't grant a role at or above
+your own rank, and you can't put a permission into a role that you don't hold
 yourself — otherwise delegating *manage roles* would be delegating everything.
 
 ## A worked example
 
-Say you are running a public support server.
+Say you're running a public support server.
 
 1. **Guests read.** Set the guest joining default to `Guest`. People can turn up
    with no account and read every answer already given.

@@ -6,18 +6,18 @@ icon: Network
 
 import { Callout } from 'fumadocs-ui/components/callout';
 
-You do not need a domain name to host Gryt. You do not need a certificate, a
+You don't need a domain name to host Gryt. You don't need a certificate, a
 reverse proxy, or a tunnel. Open a few ports, tell people your IP, and they
 connect.
 
 This is the setup most people actually want for a LAN party or a server for
-friends, and it is the least documented, because the rest of these guides are
+friends, and it's the least documented, because the rest of these guides are
 about the harder cases.
 
 <Callout type="warn" title="Desktop app only">
   People joining this way need the [desktop app](/docs/client/installation).
-  A browser at app.gryt.chat cannot connect to a plain IP, and the reason is
-  worth understanding before you plan around it. See [Why the browser cannot](#why-the-browser-cannot)
+  A browser at app.gryt.chat can't connect to a plain IP, and the reason is
+  worth understanding before you plan around it. See [Why the browser is blocked](#why-the-browser-is-blocked)
   at the end.
 </Callout>
 
@@ -29,20 +29,20 @@ people are joining from outside your network.
 | Port | Protocol | What it is |
 |------|----------|------------|
 | `5000` | TCP | The server itself. Chat, logins, everything except voice |
-| `5005` | TCP | Voice signalling. Which is not the voice itself |
+| `5005` | TCP | Voice signalling. Which isn't the voice itself |
 | `3478` | UDP | The actual voice and video, `ICE_UDP_MUX_PORT` |
 
-Voice does not travel over the same connection as the chat, and it is UDP, not
+Voice doesn't travel over the same connection as the chat, and it's UDP, not
 TCP. If you forward the first two and stop there, everything works until
 somebody joins a voice channel — and then nobody can hear anybody.
 
-It is one port, not a range, and 3478 everywhere: the SFU, the CLI and the
+It's one port, not a range, and 3478 everywhere: the SFU, the CLI and the
 compose files all use it. Change it with `ICE_UDP_MUX_PORT` and forward whatever
 you pick.
 
 3478 is the IANA STUN port, which is the reason to keep it. A corporate or school
 firewall has most likely opened outbound UDP 3478 already, because Microsoft
-Teams requires 3478–3481 and Zoom uses it too. You are borrowing a hole somebody
+Teams requires 3478–3481 and Zoom uses it too. You're borrowing a hole somebody
 else's software already argued for.
 
 ## Tell the server its own address
@@ -74,8 +74,8 @@ hostname -I | awk '{print $1}'   # LAN IP
 ```
 
 <Callout type="warn" title="Not 0.0.0.0">
-  `0.0.0.0` means "every interface" when you are deciding what to *listen* on,
-  which is why `HOST=0.0.0.0` is correct. These two are different: they are
+  `0.0.0.0` means "every interface" when you're deciding what to *listen* on,
+  which is why `HOST=0.0.0.0` is correct. These two are different: they're
   addresses handed to other people's clients, and to a client `0.0.0.0` means
   its own machine. It goes out as an ICE candidate nobody can send to, and as
   an SFU address that points each person at their own computer. Loopback and
@@ -84,10 +84,10 @@ hostname -I | awk '{print $1}'   # LAN IP
 
 ## Hand out the address
 
-`203.0.113.10:5000` — that is the whole thing. People paste it into **Add a
+`203.0.113.10:5000` — that's the whole thing. People paste it into **Add a
 server** in the desktop app.
 
-The first person to join a new server becomes its owner. After that it is
+The first person to join a new server becomes its owner. After that it's
 invite-only, so make an invite in **Server settings → Invites** and share the
 link.
 
@@ -99,7 +99,7 @@ one.
 ## If people are on your LAN and elsewhere at once
 
 Both values take a comma-separated list, and the client pings each one and uses
-whichever answers fastest. So a machine that is both `192.168.1.100` at the
+whichever answers fastest. So a machine that's both `192.168.1.100` at the
 party and `203.0.113.10` from outside:
 
 ```bash
@@ -110,18 +110,18 @@ SFU_PUBLIC_HOST=ws://203.0.113.10:5005,ws://192.168.1.100:5005
 People in the room get the LAN path and near-zero latency. People at home get
 the public one.
 
-## Why the browser cannot
+## Why the browser is blocked
 
 Whether a browser can reach a plain IP decides whether this setup fits you.
 
 `app.gryt.chat` is served over HTTPS, and a browser refuses to let an HTTPS page
-open a plain connection to anything except localhost. That is a browser rule
+open a plain connection to anything except localhost. That's a browser rule
 about page origins — not something Gryt configures, and no server setting turns
 it off. The connection is blocked before it reaches you.
 
 The desktop app runs its own copy of the client from `http://127.0.0.1`, which
-is not an HTTPS page, so the rule never applies. It also counts as a trusted
-origin for microphone access, which a plain IP in a browser does not. Both of
+isn't an HTTPS page, so the rule never applies. It also counts as a trusted
+origin for microphone access, which a plain IP in a browser doesn't. Both of
 those come for free and neither is something you configure.
 
 So if browser access matters to you, you need a real hostname and a real
@@ -131,12 +131,12 @@ certificate, which means one of:
 - [Tailscale](/docs/deployment/tailscale), which issues certificates for its own
   hostnames without you owning anything
 
-A self-signed certificate for something like `dev.lan` is not a way around this.
+A self-signed certificate for something like `dev.lan` isn't a way around this.
 No certificate authority issues for made-up domain endings, so every device
-would have to install your certificate authority by hand, and at a LAN party
-that means asking a room full of people to trust you with all of their traffic.
+would have to install yours by hand. At a LAN party that means asking a room
+full of people to trust you with all of their traffic.
 
-## When voice does not work
+## When voice doesn't work
 
 Chat working and voice not working is almost always UDP.
 
@@ -154,30 +154,30 @@ exactly like a firewall problem.
 
 More in [troubleshooting](/docs/guide/troubleshooting).
 
-## Networks Gryt cannot get through
+## Networks Gryt can't get through
 
-Some cannot be fixed from your end, and it is worth knowing which before you
+Some can't be fixed from your end, and it's worth knowing which before you
 spend an evening on your router.
 
-Gryt connects people directly. There is no relay in the middle, on purpose: a
+Gryt connects people directly. There's no relay in the middle, on purpose: a
 relay would put an extra hop between two people who could have talked directly
-and charge latency and bandwidth for it on every packet of the call. That is the
-trade this project makes, and it is why the port you forward matters so much.
+and charge latency and bandwidth for it on every packet of the call. That's the
+trade this project makes, and it's why the port you forward matters so much.
 
-The cost of that trade is that some networks cannot carry a Gryt call at all:
+The cost of that trade is that some networks can't carry a Gryt call at all:
 
 **Mobile data, usually.** Carriers put subscribers behind carrier-grade NAT,
 where the phone has no address anybody outside can reach. Neither end can be
-reached directly and there is nothing to forward. This is the common one, and it
-is not something a server setting fixes.
+reached directly and there's nothing to forward. This is the common one, and it
+isn't something a server setting fixes.
 
 **Networks that block outbound UDP.** Some corporate and school networks allow
-only TCP out. Voice is UDP and there is no TCP fallback, so it does not connect.
+only TCP out. Voice is UDP and there's no TCP fallback, so it doesn't connect.
 Chat and everything else still work, because those are a WebSocket.
 
 The client says so rather than sitting on a spinner: when it has tried every
 path and found none, it says the network may not allow voice through. If you see
-that on mobile data, that is what happened, and switching to Wi-Fi is the fix.
+that on mobile data, that's what happened, and switching to Wi-Fi is the fix.
 
 Everything else — a home connection, an office that permits UDP, anyone on the
 same LAN — works, provided the port is forwarded.

@@ -12,7 +12,7 @@ This setup uses Cloudflare Tunnel for **HTTPS/WSS** (server, SFU websocket) whil
   - Server HTTP + WebSocket (Socket.IO)
   - SFU websocket (HTTP upgraded to WSS at the edge)
 - **Not OK via Tunnel**:
-  - WebRTC media (UDP). You must open and forward `ICE_UDP_MUX_PORT` to the SFU host. It is one port.
+  - WebRTC media (UDP). You must open and forward `ICE_UDP_MUX_PORT` to the SFU host. It's one port.
 
 ### Important: Tunnel/proxy is only for the SFU WebSocket
 
@@ -64,8 +64,8 @@ ignored.
 
 Go to `2` only if you run your own reverse proxy *behind* the tunnel as well.
 Leave it at the default of `0` and the setting does nothing; set it higher than
-the number of proxies you really have and you are trusting a header the client
-can write. There is more on this in
+the number of proxies you really have and you're trusting a header the client
+can write. There's more on this in
 [Configuration → Running behind a proxy](/docs/guide/configuration).
 
 ## Start
@@ -107,7 +107,7 @@ ingress:
 
 ## WebSocket connection stability
 
-Cloudflare Tunnel may occasionally reset long-lived WebSocket connections during edge server rotation or tunnel reconnection. Gryt handles this automatically: the signaling server preserves voice state for up to 15 seconds during transient disconnects, and the client will recover without tearing down the SFU media connection if it is still alive. Users may briefly see a "Reconnecting" toast but voice/screenshare should continue uninterrupted.
+Cloudflare Tunnel may occasionally reset long-lived WebSocket connections during edge server rotation or tunnel reconnection. Gryt handles this automatically: the signaling server preserves voice state for up to 15 seconds during transient disconnects, and the client will recover without tearing down the SFU media connection if it's still alive. Users may briefly see a "Reconnecting" toast but voice/screenshare should continue uninterrupted.
 
 The `originRequest` settings above help reduce spurious disconnects:
 
@@ -132,7 +132,7 @@ DNS-only (grey cloud), browsers won't be able to reach the SFU WebSocket and voi
 
 ## Upload size limit (100 MB)
 
-Cloudflare enforces a **100 MB maximum request body size** on Free and Pro plans (200 MB on Business, 500 MB on Enterprise). File uploads that exceed this limit are rejected by Cloudflare's edge before they reach your server. Because Cloudflare's error response does not include your server's CORS headers, the browser reports a misleading **CORS error** instead of the real cause.
+Cloudflare enforces a **100 MB maximum request body size** on Free and Pro plans (200 MB on Business, 500 MB on Enterprise). File uploads that exceed this limit are rejected by Cloudflare's edge before they reach your server. Because Cloudflare's error response doesn't include your server's CORS headers, the browser reports a misleading **CORS error** instead of the real cause.
 
 This affects all HTTP uploads routed through the tunnel — chat file attachments, avatars, and emoji uploads.
 
@@ -160,7 +160,7 @@ Recommended (best success rate on restrictive networks):
 
 Alternative:
 
-- `ICE_UDP_MUX_PORT/udp` (default `3478/udp`). One port, and the tunnel does not carry it
+- `ICE_UDP_MUX_PORT/udp` (default `3478/udp`). One port, and the tunnel doesn't carry it
 
 If the SFU host is behind NAT or has multiple interfaces, set `ICE_ADVERTISE_IP` so it advertises the correct public IP in ICE candidates. For multi-network setups (e.g. LAN + public), both `ICE_ADVERTISE_IP` and `SFU_PUBLIC_HOST` accept comma-separated values — the client automatically pings each endpoint and picks the fastest one.
 

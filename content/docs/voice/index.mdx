@@ -13,20 +13,20 @@ npm install @gryt/voice
 The package is `0.1.1`, AGPL-3.0-only, ESM only. React 18 or newer is the only peer dependency, and there are no runtime dependencies.
 
 <Callout type="warn" title="Two things that will cost you an afternoon">
-`<VoiceSingletonHooks />` has to be mounted above anything that calls a voice hook, or every hook returns its initial value forever and nothing tells you why. The package also cannot be pre-bundled: Vite needs `optimizeDeps: { exclude: ["@gryt/voice"] }`. Both are covered in [Getting started](/docs/voice/getting-started).
+`<VoiceSingletonHooks />` has to be mounted above anything that calls a voice hook, or every hook returns its initial value forever and nothing tells you why. The package also can't be pre-bundled: Vite needs `optimizeDeps: { exclude: ["@gryt/voice"] }`. Both are covered in [Getting started](/docs/voice/getting-started).
 </Callout>
 
-## What it does not do
+## What it doesn't do
 
-The engine reports and the app decides. That split is what makes the rest of the API legible, so it is worth stating plainly.
+The engine reports and the app decides. That split is what makes the rest of the API legible, so it's worth stating plainly.
 
-It plays no sounds. It raises no toasts and sends no notifications. It does not know that servers exist, which ones you have, or which one is on screen. When a call drops after retrying, the engine sets `connectionError` to `"reconnect-failed"` and stops there. Whether that is worth interrupting somebody is a question the engine cannot answer.
+It plays no sounds. It raises no toasts and sends no notifications. It doesn't know that servers exist, which ones you have, or which one is on screen. When a call drops after retrying, the engine sets `connectionError` to `"reconnect-failed"` and stops there. Whether that's worth interrupting somebody is a question the engine can't answer.
 
-The Gryt client does all of those things itself, in two small hooks sitting on top of the package. They are worth reading before writing your own: see the [reference implementation](/docs/voice/getting-started#the-reference-implementation).
+The Gryt client does all of those things itself, in two small hooks sitting on top of the package. They're worth reading before writing your own: see the [reference implementation](/docs/voice/getting-started#the-reference-implementation).
 
 ## The seams
 
-Five interfaces cover everything the engine cannot work out for itself. None of them are guessable from the export list, so they get [a page of their own](/docs/voice/seams).
+Five interfaces cover everything the engine can't work out for itself. None of them are guessable from the export list, so they get [a page of their own](/docs/voice/seams).
 
 `VoiceConfig` is what the person has chosen: device ids, mute state, gain, noise gate, camera quality, STUN hosts. It arrives through `VoiceConfigProvider` and the engine never reaches up for it.
 
@@ -34,7 +34,7 @@ Five interfaces cover everything the engine cannot work out for itself. None of 
 
 `RoomCoordinator` is Gryt's half of joining a channel: asking permission, saying what is being published, reporting peers. You supply it alongside a connection target.
 
-`SfuTransport` and `VoicePlatform` describe signalling and per-platform capture. As of `0.1.1` these are still exported types that nothing consumes. The engine opens its own WebSocket to the SFU and calls `navigator.mediaDevices` directly, so a browser or Electron embedder does not supply either one. They are the shape the React Native adapter will plug into.
+`SfuTransport` and `VoicePlatform` describe signalling and per-platform capture. As of `0.1.1` these are still exported types that nothing consumes. The engine opens its own WebSocket to the SFU and calls `navigator.mediaDevices` directly, so a browser or Electron embedder doesn't supply either one. They're the shape the React Native adapter will plug into.
 
 ## Where the code is
 

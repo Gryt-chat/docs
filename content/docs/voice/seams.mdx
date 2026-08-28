@@ -1,14 +1,14 @@
 ---
 title: The seams
-description: The five interfaces the engine cannot work out for itself
+description: The five interfaces the engine can't work out for itself
 icon: Cable
 ---
 
-Signalling, ICE, track management and the connection state machine are the same wherever the engine runs. Five interfaces cover the parts that are not, and they are the whole API surface an embedder has to think about.
+Signalling, ICE, track management and the connection state machine are the same wherever the engine runs. Five interfaces cover the parts that aren't, and they're the whole API surface an embedder has to think about.
 
 ## VoiceConfig
 
-What the person has chosen. It is passed in and never read from a store, which is also what makes the values testable without a React tree.
+What the person has chosen. It's passed in and never read from a store, which is also what makes the values testable without a React tree.
 
 ```typescript
 interface VoiceConfig {
@@ -56,7 +56,7 @@ level, converts it to dBFS, and maps that onto 0 to 100 before comparing. The
 doc comment on the field in `types.ts` says dB and is wrong; the `AudioParam` it
 feeds is declared `minValue: 0, maxValue: 100`. `noiseSuppression` is off on native platforms, where the OS does its own.
 
-`stunHosts` deserves a note. The client derives these from whichever server is on screen. The engine is not told which server that is, because knowing about a server list is the one thing it is deliberately kept out of, so it gets the answer instead of the lookup.
+`stunHosts` deserves a note. The client derives these from whichever server is on screen. The engine isn't told which server that is, because knowing about a server list is the one thing it's deliberately kept out of, so it gets the answer instead of the lookup.
 
 <Callout type="warn" title="inputMode uses underscores">
 `"voice_activity"` and `"push_to_talk"`. This field said `"voice-activity"` and `"push-to-talk"` until GRYT-340 and nothing caught it, because the only code reading it was inside the package and the only code writing it was in the client. Both halves compiled, and they would have met for the first time at runtime with push-to-talk never engaging.
@@ -72,7 +72,7 @@ feeds is declared `minValue: 0, maxValue: 100`. `noiseSuppression` is off on nat
 </VoiceConfigProvider>
 ```
 
-`callbacks` is the other direction: things the engine finds out and the app might want to store. There is one so far, `onCameraDeviceChanged`, which fires when the camera that opened is not the one that was configured, usually because it has been unplugged. These are deliberately not setters. The engine says what it observed and the app writes it down, or does not.
+`callbacks` is the other direction: things the engine finds out and the app might want to store. There's one so far, `onCameraDeviceChanged`, which fires when the camera that opened isn't the one that was configured, usually because it has been unplugged. These are deliberately not setters. The engine says what it observed and the app writes it down, or doesn't.
 
 ## VoiceTarget and RoomCoordinator
 
@@ -87,7 +87,7 @@ interface VoiceTarget {
 
 The engine never learns what `id` means. It compares it, reports it on the connection state, and uses it as a cache key.
 
-`RoomCoordinator` is the part of joining a channel that is not generic WebRTC. Who may enter a channel and how many fit are the server's rules, so the engine asks and something else answers.
+`RoomCoordinator` is the part of joining a channel that isn't generic WebRTC. Who may enter a channel and how many fit are the server's rules, so the engine asks and something else answers.
 
 ```typescript
 interface RoomCoordinator {
@@ -101,9 +101,9 @@ interface RoomCoordinator {
 }
 ```
 
-`setLocalStream` takes a stream id rather than a description of what is being published, because the server matches the id against what arrives at the SFU and does not care whether it is a camera or a screen.
+`setLocalStream` takes a stream id rather than a description of what is being published, because the server matches the id against what arrives at the SFU and doesn't care whether it's a camera or a screen.
 
-`connected` and `onReconnected` exist for the reconnect policy. Retrying the SFU while signalling is down burns attempts against something that cannot answer.
+`connected` and `onReconnected` exist for the reconnect policy. Retrying the SFU while signalling is down burns attempts against something that can't answer.
 
 `requestAccess` resolves with a `RoomAccess`:
 
@@ -119,7 +119,7 @@ interface RoomAccess {
 }
 ```
 
-`sfuUrls` is a list of candidates rather than a single answer. The engine probes them and picks, which is what `selectBestSfuUrl` is for. Handing over one chosen URL would either throw that away or push it into every embedder. `cacheKey` is what the chosen URL is cached against so a reconnect can skip the probing, and it is opaque to the engine. The Gryt client passes the server's host, which is exactly the sort of thing the engine is not supposed to know it has.
+`sfuUrls` is a list of candidates rather than a single answer. The engine probes them and picks, which is what `selectBestSfuUrl` is for. Handing over one chosen URL would either throw that away or push it into every embedder. `cacheKey` is what the chosen URL is cached against so a reconnect can skip the probing, and it's opaque to the engine. The Gryt client passes the server's host, which is exactly the sort of thing the engine isn't supposed to know it has.
 
 `reason` and `retryAfterMs` are populated when access is refused, so the caller can say why instead of "failed".
 
@@ -172,17 +172,17 @@ interface VoicePlatform {
 }
 ```
 
-`getScreen` is optional because some platforms have no such concept, which is phones. `createAudioPipeline` is the audio graph: on the web it is built from `AudioContext` and `AudioWorklet`, and a native implementation would use its own audio API and skip noise suppression, since the phone already does it.
+`getScreen` is optional because some platforms have no such concept, which is phones. `createAudioPipeline` is the audio graph: on the web it's built from `AudioContext` and `AudioWorklet`, and a native implementation would use its own audio API and skip noise suppression, since the phone already does it.
 
-The interface is deliberately narrow. Everything that is not capture or playback is shared, so anything you want to add here is worth re-examining first.
+The interface is deliberately narrow. Everything that isn't capture or playback is shared, so anything you want to add here is worth re-examining first.
 
 <Callout type="warn" title="Not wired up in 0.1.0">
-`SfuTransport` and `VoicePlatform` are exported as types, and nothing in `0.1.0` consumes them. The engine opens its own WebSocket to the SFU and calls `navigator.mediaDevices` and `new RTCPeerConnection` directly, so there is currently no way to pass either one in. They describe the shape the React Native adapter will plug into. Read them as the intended boundary rather than as configuration you can supply today.
+`SfuTransport` and `VoicePlatform` are exported as types, and nothing in `0.1.0` consumes them. The engine opens its own WebSocket to the SFU and calls `navigator.mediaDevices` and `new RTCPeerConnection` directly, so there's currently no way to pass either one in. They describe the shape the React Native adapter will plug into. Read them as the intended boundary rather than as configuration you can supply today.
 </Callout>
 
 ## Logging
 
-The package logs its own connect and disconnect flow through `voiceLog`, which is exported and prints numbered, colour-coded steps to the console under phases like `CONNECT`, `MIC`, `SFU-WS` and `WEBRTC`. It is how every hard bug in this code has been found, and it is worth reading the console the first time a call does not come up.
+The package logs its own connect and disconnect flow through `voiceLog`, which is exported and prints numbered, colour-coded steps to the console under phases like `CONNECT`, `MIC`, `SFU-WS` and `WEBRTC`. It's how every hard bug in this code has been found, and it's worth reading the console the first time a call doesn't come up.
 
 ```typescript
 import { voiceLog } from "@gryt/voice";

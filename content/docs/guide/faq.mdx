@@ -26,7 +26,7 @@ Then open [http://localhost:3666](http://localhost:3666).
 
 **Client:** A modern browser with WebRTC support (Chrome, Firefox, Safari, Edge), plus a microphone.
 
-**Server:** Node.js 22.13+ (npm or yarn) — the SQLite support built into Node arrived in that release, and 22.12 is not enough. Go 1.21+ for the SFU. Docker 20.10+ for containerized deployment.
+**Server:** Node.js 22.13+ (npm or yarn) — the SQLite support built into Node arrived in that release, and 22.12 isn't enough. Go 1.21+ for the SFU. Docker 20.10+ for containerized deployment.
 
 ### How do I add multiple servers?
 
@@ -65,7 +65,7 @@ Yes, for personal and non-commercial use. Gryt is source-available under the [AG
 
 ### Can a malicious server owner steal my identity?
 
-No. Gryt uses [challenge-response authentication](/docs/guide/security) — your Keycloak token is never sent to community servers. Instead, you prove your identity by signing a challenge with a private key that never leaves your device. Even if a server operator captures everything from the join handshake, they cannot impersonate you on other servers.
+No. Gryt uses [challenge-response authentication](/docs/guide/security) — your Keycloak token is never sent to community servers. Instead, you prove your identity by signing a challenge with a private key that never leaves your device. Even if a server operator captures everything from the join handshake, they can't impersonate you on other servers.
 
 ### What data does a server see when I join?
 
@@ -107,11 +107,11 @@ To take the server out of service without stopping it, set
 
 It used to be `GRYT_AUTH_MODE=disabled`, which still works. The old name
 suggested it controlled whether members needed an account, which it never did:
-that is `GRYT_IDENTITY_TIERS`, and the two do not interact.
+that is `GRYT_IDENTITY_TIERS`, and the two don't interact.
 
 ### Do servers need to be registered anywhere?
 
-No. Any server can verify identity certificates by fetching the Identity Service's public key from its JWKS endpoint. There is no central registry of servers. Run the binary, point it at the JWKS URL, and it works — like TeamSpeak, but with cryptographic identity.
+No. Any server can verify identity certificates by fetching the Identity Service's public key from its JWKS endpoint. There's no central registry of servers. Run the binary, point it at the JWKS URL, and it works — like TeamSpeak, but with cryptographic identity.
 
 ## Client
 
@@ -123,7 +123,7 @@ No. Any server can verify identity certificates by fetching the Identity Service
 
 ### Can I use push-to-talk?
 
-Yes. You can enable push-to-talk in **Settings → Hotkeys** and bind it to any key. In Electron, the hotkey works globally (even when Gryt is not focused). Channels can also require push-to-talk via channel settings.
+Yes. You can enable push-to-talk in **Settings → Hotkeys** and bind it to any key. In Electron, the hotkey works globally (even when Gryt isn't focused). Channels can also require push-to-talk via channel settings.
 
 ### What happens when the server restarts?
 

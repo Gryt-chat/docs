@@ -10,7 +10,7 @@ import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
 <Callout type="info">
 To try Gryt without hosting anything, [app.gryt.chat](https://app.gryt.chat) is
 the web client. Push-to-talk that works while the window is in the background
-needs the desktop app; a browser cannot do it.
+needs the desktop app; a browser can't do it.
 </Callout>
 
 There are four ways to run a server, and they suit different things.
@@ -77,7 +77,7 @@ ICE_ADVERTISE_IP=203.0.113.10
 
 <Callout type="warn" title="Leave STUN on">
 `DISABLE_STUN=true` looks like a reasonable thing to set once you have given the
-SFU an explicit address, and it is the single most reliable way to break voice
+SFU an explicit address, and it's the single most reliable way to break voice
 for everybody outside your network.
 
 Docker and most cloud networking rewrite the UDP source port. When they do, the
@@ -92,7 +92,7 @@ docker compose up -d
 ```
 
 That brings up the server, the SFU and MinIO. The database is SQLite inside the
-server's data directory, so there is no database container.
+server's data directory, so there's no database container.
 
 To serve the web client too:
 
@@ -109,11 +109,11 @@ docker compose --profile web up -d
 | `3478` | UDP | All WebRTC media, one port |
 
 `SERVER_PORT`, `SFU_PORT` and `ICE_UDP_MUX_PORT` change them. 3478 is the
-default everywhere: the SFU itself, the CLI and these compose files. It is the
+default everywhere: the SFU itself, the CLI and these compose files. It's the
 STUN port, which is the one a corporate or school firewall has most likely
 already opened.
 
-Media is UDP. It does not go through a reverse proxy or a tunnel, and it has to
+Media is UDP. It doesn't go through a reverse proxy or a tunnel, and it has to
 reach the SFU host directly.
 
 ## Windows, without Docker
@@ -132,11 +132,11 @@ firewall rules and reaching it from other machines.
 The desktop app takes a bare address: `203.0.113.10:5000`, or a hostname.
 
 [app.gryt.chat](https://app.gryt.chat) needs a hostname with a certificate. A
-browser will not open an insecure connection from an HTTPS page, so a plain IP
-does not work there. [No domain, just an IP](/docs/deployment/no-domain) covers
+browser won't open an insecure connection from an HTTPS page, so a plain IP
+doesn't work there. [No domain, just an IP](/docs/deployment/no-domain) covers
 the ways around that.
 
-The first person to join a new server becomes its owner. After that it is
+The first person to join a new server becomes its owner. After that it's
 invite-only, and invites come from **Server settings → Invites**.
 
 For a LAN party, **Allow anyone on LAN to join** in **Server settings → Overview**
@@ -179,10 +179,10 @@ helm install gryt ./ops/helm/gryt \
   --set server.secrets.serverPassword=your-internal-sfu-shared-secret
 ```
 
-## When it does not work
+## When it doesn't work
 
 Voice is the part that fails, and it nearly always fails the same way: everybody
-on the local network is fine, everybody else sits on "connecting". That is the
+on the local network is fine, everybody else sits on "connecting". That's the
 media port not being reachable, or STUN being off. The
 [voice debugging page](/docs/sfu/voice-debugging) walks through it.
 

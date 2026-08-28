@@ -152,20 +152,20 @@ from the others.
 
 <Callout type="warn" title="Back up before trying a beta">
 Beta builds may change the SQLite schema when the server starts. Gryt has no
-down-migration system, so an older server cannot undo those changes. Back up the
+down-migration system, so an older server can't undo those changes. Back up the
 server data directory before upgrading. To return to stable, restore that
 backup, change the version variables to `latest` or exact stable tags, then run
 `docker compose pull` and `docker compose up -d` again.
 </Callout>
 
-A beta server does not change any other server a user belongs to. The risk is
+A beta server doesn't change any other server a user belongs to. The risk is
 at the client-server boundary: a stable client may not understand a beta-only
 event or endpoint, and a beta client may expect something a stable server does
 not provide. Run the matching beta desktop client when testing a beta server.
 
-People joining cannot rely on the client to identify a self-hosted server's
+People joining can't rely on the client to identify a self-hosted server's
 release channel. Add `Beta` to `SERVER_NAME` and mention the version in
-`SERVER_DESCRIPTION` so they know what they are joining:
+`SERVER_DESCRIPTION` so they know what they're joining:
 
 ```bash
 SERVER_NAME=My Gryt Server (Beta)
@@ -223,7 +223,7 @@ docker compose exec server node admin-setOwner.js --grytUserId <keycloak_sub>
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `GRYT_IDENTITY_TIERS` | `account` | Comma-separated identity types the server accepts. Add `local` to admit people without a Gryt account. |
-| `GRYT_SERVER_ENABLED` | `true` | Whether the server accepts joins. `false` rejects every join while it is out of service. Any other value also rejects joins and reports itself as misconfigured. The old name `GRYT_AUTH_MODE`, with `required` and `disabled`, still works; the new name wins when both are set. |
+| `GRYT_SERVER_ENABLED` | `true` | Whether the server accepts joins. `false` rejects every join while it's out of service. Any other value also rejects joins and reports itself as misconfigured. The old name `GRYT_AUTH_MODE`, with `required` and `disabled`, still works; the new name wins when both are set. |
 | `GRYT_OIDC_ISSUER` | `https://auth.gryt.chat/realms/gryt` | OIDC issuer URL |
 | `GRYT_OIDC_AUDIENCE` | `gryt-web` | OIDC audience |
 
@@ -359,7 +359,7 @@ curl http://localhost:5000/health   # server
 curl http://localhost:5005/health   # sfu
 ```
 
-The image worker's health endpoint (`GET /` on port 8080) is internal-only — it's used by Docker's built-in healthcheck and is not exposed to the host.
+The image worker's health endpoint (`GET /` on port 8080) is internal-only — it's used by Docker's built-in healthcheck and isn't exposed to the host.
 
 Or use `docker compose ps` to see the health status of all containers.
 
@@ -400,7 +400,7 @@ Then run `docker compose up -d`.
 
 ## Running more than one server
 
-One compose file can run as many Gryt servers as you like. They are fully separate — their own channels,
+One compose file can run as many Gryt servers as you like. They're fully separate — their own channels,
 members, invites and roles — and they share the expensive parts of the stack.
 
 What each extra server needs:
@@ -408,7 +408,7 @@ What each extra server needs:
 | Needs its own | Why |
 |---|---|
 | `DATA_DIR` volume | The SQLite database. This is the one that matters — two servers pointed at one `gryt.db` will corrupt each other's state. |
-| `SERVER_NAME` | It is part of the server's identity on the SFU. See the warning below. |
+| `SERVER_NAME` | It's part of the server's identity on the SFU. See the warning below. |
 | Published port | One port per server on the host. |
 | Image worker | A worker reads exactly one `DATA_DIR`, so it serves exactly one server. |
 
@@ -417,7 +417,7 @@ What they share, safely:
 - **One SFU.** Voice rooms are namespaced per server, so a single SFU serves all of them. This is how
   gryt.chat itself runs — three servers, one SFU.
 - **One MinIO, one bucket.** Every stored object is keyed by a UUID, so two servers writing to the same
-  bucket cannot collide. Give them separate buckets if you would rather keep the storage separable.
+  bucket can't collide. Give them separate buckets if you would rather keep the storage separable.
 
 <Callout type="warn">
 **Give every server a different `SERVER_NAME`.** A server identifies itself to the SFU as
@@ -470,12 +470,12 @@ volumes:
   gryt-prod-server-2-data:
 ```
 
-`ops/deploy/compose/prod.yml` ships this as a commented-out block, so uncommenting it is usually faster than
+`ops/deploy/compose/prod.yml` ships this as a commented-out block, so uncommenting it's usually faster than
 writing it out.
 
 <Callout type="info">
-The image worker is not on the critical path. Uploads succeed whether or not a worker is running — what you
-lose without one is thumbnails, recompression and the dominant colour used to tint voice tiles. If you do not
+The image worker isn't on the critical path. Uploads succeed whether or not a worker is running — what you
+lose without one is thumbnails, recompression and the dominant colour used to tint voice tiles. If you don't
 care about those on a second server, you can leave its worker out entirely.
 </Callout>
 
