@@ -42,20 +42,20 @@ Default port 5000. Endpoints marked **Bearer** want `Authorization: Bearer <acce
 ```
 
 `identityTiers` and `joinPolicy` are deliberately unauthenticated. The point is
-that a client can say "you do not need an account for this one" before anybody
+that a client can say "you don't need an account for this one" before anybody
 tries, and neither field tells a caller anything they could not learn by
 attempting the join and reading the refusal.
 
 Two things depend on who is asking. A server whose `discoverable` setting is off
-answers **404** to anybody who is not already a member, so it disappears rather
+answers **404** to anybody who isn't already a member, so it disappears rather
 than advertising itself. And `version` is only included for members, because a
 precise build number lets anyone on the network scan for hosts running a version
 with a known vulnerability, and this endpoint has to stay open for the add-server
 flow.
 
 <Callout title="No JWKS endpoint">
-The server does not publish `/.well-known/jwks.json`. It fetches one, from the
-identity issuer it is configured to trust, and caches it. Nothing here serves
+The server doesn't publish `/.well-known/jwks.json`. It fetches one, from the
+identity issuer it's configured to trust, and caches it. Nothing here serves
 keys.
 </Callout>
 
@@ -65,7 +65,7 @@ keys.
 |--------|------|------|-------|
 | GET | `/api/messages/:conversationId` | Bearer | `?limit=` up to 200, `?before=` an ISO date |
 
-Sending is `chat:send` over the socket. There is no POST here.
+Sending is `chat:send` over the socket. There's no POST here.
 
 ### Uploads
 
@@ -84,7 +84,7 @@ Sending is `chat:send` over the socket. There is no POST here.
 | DELETE | `/api/server/icon` | Bearer | Owner only |
 
 `GRYT_SERVER_ICON_MAX_MB` caps the upload, 25 MB by default. PNG, JPEG, WebP,
-GIF, AVIF and SVG are accepted; SVG is sanitised before it is stored.
+GIF, AVIF and SVG are accepted; SVG is sanitised before it's stored.
 
 ### Members
 
@@ -126,7 +126,7 @@ From emoji.gg:
 | GET | `/api/emojis/emojigg/file` | — |
 
 The `file` routes fetch the image server-side and return the bytes, so the
-browser is not the thing talking to BetterTTV or emoji.gg.
+browser isn't the thing talking to BetterTTV or emoji.gg.
 
 ### Link previews and media
 
@@ -157,7 +157,7 @@ server's owner.
 | Method | Path | Returns |
 |--------|------|---------|
 | GET | `/management/settings` | `joinPolicy`, `discoverable`, `lanOpen`, `profanityMode` |
-| PATCH | `/management/settings` | The same, updated. Send only the keys you are changing |
+| PATCH | `/management/settings` | The same, updated. Send only the keys you're changing |
 | GET | `/management/health` | `{ ok: true }` |
 
 `Authorization: Bearer <GRYT_ADMIN_TOKEN>` on all three. Requires server 1.5.0.
@@ -169,7 +169,7 @@ only updating a row.
 
 ### Joining
 
-The handshake is three messages, and it is a signature exchange rather than a
+The handshake is three messages, and it's a signature exchange rather than a
 password.
 
 | Event | Direction | Payload |

@@ -18,7 +18,7 @@ curl -fsSL https://get.gryt.chat | sh
 ```
 
 The script picks the build for your platform, checks it against the release
-checksums, and installs to `/usr/local/bin` if that is writable or
+checksums, and installs to `/usr/local/bin` if that's writable or
 `~/.local/bin` if not. Two variables change what it does:
 
 | Variable | Effect |
@@ -26,7 +26,7 @@ checksums, and installs to `/usr/local/bin` if that is writable or
 | `GRYT_VERSION` | Install a specific tag, such as `v0.1.0`, instead of the newest release |
 | `GRYT_INSTALL_DIR` | Install somewhere other than the default |
 
-The script does not cover Windows. Download the `.zip` from the
+The script doesn't cover Windows. Download the `.zip` from the
 [releases page](https://github.com/Gryt-chat/cli/releases) instead.
 
 From source, with Go 1.25 or newer:
@@ -48,7 +48,7 @@ That replaces the binary in place, checking the download against the release
 checksums first. `gryt update --check` reports whether a newer release exists
 and changes nothing.
 
-The manager also checks once when it starts. If there is a newer release it
+The manager also checks once when it starts. If there's a newer release it
 says so above the server list, and `u` applies it. The check asks GitHub which
 release is newest and sends nothing else, no identifier and nothing recorded.
 It fails silently, so a machine with no route out shows its servers rather than
@@ -57,7 +57,7 @@ an error.
 `gryt version` prints what you have.
 
 Re-running the installer does the same job, and is the way back if the binary
-lives somewhere you cannot write. `gryt update` says so rather than asking for
+lives somewhere you can't write. `gryt update` says so rather than asking for
 a password:
 
 ```bash
@@ -65,7 +65,7 @@ curl -fsSL https://get.gryt.chat | sh
 ```
 
 To pin a version or roll one back, install it explicitly. `gryt update` always
-moves to the newest release, so it is the installer that goes backwards:
+moves to the newest release, so it's the installer that goes backwards:
 
 ```bash
 GRYT_VERSION=v0.1.2 sh -c "$(curl -fsSL https://get.gryt.chat)"
@@ -73,7 +73,7 @@ GRYT_VERSION=v0.1.2 sh -c "$(curl -fsSL https://get.gryt.chat)"
 
 Note the shape. `GRYT_VERSION=v0.1.2 curl -fsSL https://get.gryt.chat | sh`
 sets the variable for `curl` rather than for the shell running the script, so
-it is ignored and you get the newest release anyway, without being told.
+it's ignored and you get the newest release anyway, without being told.
 
 ## Release channels
 
@@ -90,7 +90,7 @@ itself moves to beta builds. Servers you start also run the `latest-beta`
 images rather than `latest`, for the server, the SFU and the image worker.
 
 Existing servers keep the image they already pulled until you restart them, so
-switching the channel changes nothing that is already up. Restart a server to
+switching the channel changes nothing that's already up. Restart a server to
 move it.
 
 ## Features
@@ -98,7 +98,7 @@ move it.
 - **Live dashboard**: every server on one screen, refreshing itself, with the address you hand people rather than the address it binds to
 - **A wizard that asks answerable questions**: which of this machine's addresses people will reach it on, not what a WebSocket URL should be
 - **Voice and uploads without configuration**: one SFU and one object store per machine, shared by every server on it
-- **Ports that do not collide**: it offers the first port nothing else holds
+- **Ports that don't collide**: it offers the first port nothing else holds
 - **`gryt doctor`**: says what is wrong with Docker, the config directory, or a port something else has taken
 - **Updates itself**: `gryt update`, or `u` when the dashboard says one is available
 - **Private by default**: profiles and generated `.env` files are readable only by you
@@ -138,7 +138,7 @@ you asking. `l` follows a server's log rather than showing a snapshot.
 | Key | Action |
 |-----|--------|
 | `↑` `↓` or `k` `j` | Select a server |
-| `enter` | One server, with its addresses grouped by who they are for |
+| `enter` | One server, with its addresses grouped by who they're for |
 | `n` | New server |
 | `e` | Edit the selected server |
 | `c` | Change the settings the server keeps in its own database |
@@ -168,7 +168,7 @@ The `ADDRESS` column is the address other machines on your network can use.
   127.0.0.1:5001
 ```
 
-The public address cannot be read off this machine's interfaces. Behind NAT the
+The public address can't be read off this machine's interfaces. Behind NAT the
 machine holds a private address and has no way of knowing what the world sees,
 so something outside has to answer. The CLI asks a STUN server, which is what
 STUN is for and what the SFU already uses for voice: one UDP packet to
@@ -181,7 +181,7 @@ answered from the interface without any packet leaving. Set
 `GRYT_NO_PUBLIC_LOOKUP=1` to skip it entirely; the line then reads
 "lookup turned off".
 
-The caveat under the address is the important part. A public address does not
+The caveat under the address is the important part. A public address doesn't
 make a server reachable on its own: the port has to be forwarded to this
 machine first.
 
@@ -254,7 +254,7 @@ identities means somebody can join without an account anywhere.
 
 **LAN discovery** is mDNS advertising, so a Gryt client on the same network
 lists the server without being given its address. Turning it off stops the
-advertisement; it is not an access control, since an invite still works either
+advertisement; it isn't an access control, since an invite still works either
 way.
 
 ### Voice seats
@@ -262,7 +262,7 @@ way.
 `0`, the default, means no cap, which is what the server does on its own.
 
 A cap is about the machine running the SFU rather than about ports. Every
-participant's media shares one UDP port, so there is no per-person port to run
+participant's media shares one UDP port, so there's no per-person port to run
 out of. What runs out first is CPU and upload bandwidth.
 
 ## Settings a server keeps itself
@@ -286,8 +286,8 @@ gryt  settings                                       Pivert CLI Server
 ```
 
 `space` cycles the selected setting to its next value and sends it straight
-away. There is no save step. The line under the cursor says what the setting
-does, which is the part that is hard to guess from the name.
+away. There's no save step. The line under the cursor says what the setting
+does, which is the part that's hard to guess from the name.
 
 | Setting | Values | What it does |
 |---------|--------|--------------|
@@ -308,7 +308,7 @@ management API and to update its image and restart it.
 
 ## Which version a server runs
 
-`enter` on a server shows the version it is running, under **Version**. When a
+`enter` on a server shows the version it's running, under **Version**. When a
 newer one exists it shows both:
 
 ```
@@ -336,7 +336,7 @@ server had any way to report it.
 `gryt doctor` checks that Docker is installed, that the Compose plugin is there,
 that the daemon is actually running, that the config directory is writable, and
 that nothing else has taken a server's port. That last one matters on macOS:
-AirPlay Receiver listens on port 5000, so a server there is reachable by
+AirPlay Receiver listens on port 5000, so a server there's reachable by
 AirTunes rather than by anybody you gave the address to.
 
 ```
@@ -366,14 +366,14 @@ is `shared/`, holding the compose project every server uses and the credentials
 for the object store. Both are created readable only by your user, because they
 hold secrets.
 
-Generated files carry a header saying they are managed by `gryt`. Editing them
+Generated files carry a header saying they're managed by `gryt`. Editing them
 by hand works, but the next save overwrites them.
 
 ## What gets generated
 
 Two compose projects, on a shared Docker network named `gryt`.
 
-**`shared/`** holds the pieces there is one of per machine: the SFU that carries
+**`shared/`** holds the pieces there's one of per machine: the SFU that carries
 voice for every server here, and, when any server uses shared storage, the
 object store and its bucket. Starting any server brings it up first.
 

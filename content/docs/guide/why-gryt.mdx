@@ -29,7 +29,7 @@ When you join a server, you prove your identity through a [challenge-response pr
 
 Here's the honest version of the trust model:
 
-- **If you join someone else's server**, you are trusting that server operator with the data their server stores. You are **not** trusting them with your identity — they can't impersonate you.
+- **If you join someone else's server**, you're trusting that server operator with the data their server stores. You are **not** trusting them with your identity — they can't impersonate you.
 - **If you self-host**, that operator is you.
 - **Voice uses WebRTC encryption in transit (DTLS-SRTP)**, but media is routed through infrastructure operated by the server owner (the SFU).
 - **By default, login uses the hosted auth provider** at `auth.gryt.chat` (Keycloak). A separate Identity Service at `id.gryt.chat` issues certificates that servers can verify cryptographically (JWKS). Your Keycloak token is only sent to the Identity Service, never to a community server.
@@ -79,7 +79,7 @@ If you run your own Gryt server, your community's server data (messages, uploads
 
 ### Do I need to register my server anywhere?
 
-No. Servers verify identity certificates by fetching a public key from the Identity Service's JWKS endpoint. There is no central directory, no approval process, no "nobody knows my server exists" problem.
+No. Servers verify identity certificates by fetching a public key from the Identity Service's JWKS endpoint. There's no central directory, no approval process, no "nobody knows my server exists" problem.
 
 ### Is Gryt written by AI?
 

@@ -28,16 +28,16 @@ The desktop app automatically discovers Gryt servers on your local network using
 When a server is found on the LAN, it appears in the **Local Servers** section of the Add Server dialog. Click **Connect** to fetch its info and join — no need to type an IP address.
 
 <Callout type="info">
-LAN discovery only works in the desktop (Electron) app. Browsers cannot perform mDNS queries, so the web app always requires manual entry.
+LAN discovery only works in the desktop (Electron) app. Browsers can't perform mDNS queries, so the web app always requires manual entry.
 </Callout>
 
 #### How mDNS works
 
 - The server publishes a `_gryt._tcp` mDNS service on startup
 - On Linux with avahi-daemon (the default on Debian and Ubuntu), it writes a service file into `/etc/avahi/services/` — the most reliable method
-- If avahi is not available, it falls back to the `bonjour-service` npm package
+- If avahi isn't available, it falls back to the `bonjour-service` npm package
 - The Electron client browses for `_gryt._tcp` services and shows what it finds
-- On shutdown the server withdraws the advertisement, waiting for the goodbye packets before the process exits so the record does not outlive it
+- On shutdown the server withdraws the advertisement, waiting for the goodbye packets before the process exits so the record doesn't outlive it
 
 Each server writes its own file, named `gryt-<instanceId>-<port>.service`. Two
 servers on one host share that directory, which is exactly what `network_mode: host`
@@ -46,7 +46,7 @@ second to start silently overwrote the first, so only one was discoverable, noth
 errored, and both worked fine by address. It looked like flaky mDNS rather than one
 server replacing another's advertisement. The port is part of the name as well as
 the instance ID, because `SERVER_INSTANCE_ID` defaults to `default` when unset and
-two servers on one host cannot share a port.
+two servers on one host can't share a port.
 
 #### Server configuration
 

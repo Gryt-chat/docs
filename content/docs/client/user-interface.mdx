@@ -6,7 +6,7 @@ icon: Palette
 
 The Gryt client is built on `@gryt/ui`, Gryt's own component library, with Tailwind for styling and [Motion](https://motion.dev/) for animation. It follows the system light and dark preference unless told otherwise, and accepts imported themes.
 
-## What it is built on
+## What it's built on
 
 | Piece | What it does |
 |-------|--------------|
@@ -24,13 +24,13 @@ The Gryt client is built on `@gryt/ui`, Gryt's own component library, with Tailw
 - `uiScale` — global interface scaling
 - `chatFontSize` — message text size
 
-There is no theme provider component wrapping the tree. The appearance class goes
+There's no theme provider component wrapping the tree. The appearance class goes
 straight onto `document.documentElement`, along with `color-scheme`, because
 overlays portal to `document.body` and would otherwise sit outside anything the
 variables were painted on.
 
 Custom themes work the same way: their variables are set on the root element, and
-every property is removed before the next theme's are applied. A theme is not
+every property is removed before the next theme's are applied. A theme isn't
 obliged to declare everything the previous one did, so switching from a theme
 with a split light accent to one without would otherwise leave the old accent
 behind on an element nothing else cleans.

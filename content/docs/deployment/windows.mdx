@@ -20,7 +20,7 @@ For production deployments on a VPS or cloud server, see the [Docker Compose gui
 - **Windows 10 or later** (x64)
 - **[Node.js](https://nodejs.org/) 22.13 or later** — download the LTS installer from [nodejs.org](https://nodejs.org/)
 
-Verify Node.js is installed, and that it is new enough:
+Verify Node.js is installed, and that it's new enough:
 
 ```bash
 node --version
@@ -28,8 +28,8 @@ node --version
 
 <Callout type="warn">
   Gryt used to run on Node.js 20. It now uses the SQLite support built into
-  Node rather than a compiled module, and that is only available from **22.13**
-  onwards — 22.12 is not enough. If you are upgrading an existing server, update
+  Node rather than a compiled module, and that's only available from **22.13**
+  onwards — 22.12 isn't enough. If you're upgrading an existing server, update
   Node.js before you start it, or it will refuse to start and tell you why.
 </Callout>
 
@@ -90,7 +90,7 @@ Starting Gryt Server...
 ```
 
 Older versions did a one-time native module build on first launch. That step is
-gone — there is nothing left to compile, so the server starts straight away.
+gone — there's nothing left to compile, so the server starts straight away.
 
 </Step>
 <Step>
@@ -163,14 +163,14 @@ To back up your server, copy the entire `data/` directory.
 
 ## Troubleshooting
 
-**"node" is not recognized**
-Node.js is not installed or not on your PATH. Download it from [nodejs.org](https://nodejs.org/) and restart your terminal.
+**"node" isn't recognized**
+Node.js isn't installed or not on your PATH. Download it from [nodejs.org](https://nodejs.org/) and restart your terminal.
 
 **"Your Node.js is too old" / `No such built-in module: node:sqlite`**
 Gryt needs Node.js 22.13 or later. Install the current LTS from
 [nodejs.org](https://nodejs.org/), close the terminal so the new version is
 picked up, and run `start.bat` again. If you see the raw `node:sqlite` message
-rather than Gryt's own, you are on an older release of the server as well —
+rather than Gryt's own, you're on an older release of the server as well —
 upgrading Node.js still fixes it.
 
 **Antivirus blocks `gryt_sfu.exe`**

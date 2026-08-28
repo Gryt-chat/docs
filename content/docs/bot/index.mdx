@@ -6,7 +6,7 @@ icon: Bot
 
 `@gryt/bot` is an SDK for writing Gryt bots in TypeScript. A bot joins a server
 the way any other client does — a key it holds, a self-signed certificate, and a
-challenge-response over P-256 — so from the server's side it is a member like
+challenge-response over P-256 — so from the server's side it's a member like
 any other.
 
 ```ts
@@ -27,7 +27,7 @@ bot.command("ping", async (ctx) => ctx.reply("pong"), {
 void bot.start();
 ```
 
-There is no bot account type, no bot token and no bot bypass. What a bot may do
+There's no bot account type, no bot token and no bot bypass. What a bot may do
 is what an admin agreed to let it do, enforced by the same checks that apply to
 a person.
 
@@ -37,19 +37,19 @@ It knocks.
 
 1. The bot starts, knowing only the server's address. It says what it is called
    and what it wants to be allowed to do.
-2. It is turned away, and a request is left behind.
+2. It's turned away, and a request is left behind.
 3. An admin opens **Server settings → Bots**, sees the ask, unticks anything
-   they would rather it did not have, and lets it in.
+   they would rather it didn't have, and lets it in.
 4. The approval reaches the bot without a restart. Leave it running.
 
 Nothing to configure on the server, no invite, and no restart.
 
 <Callout type="warn" title="What a bot asks for is fixed">
 The first declaration is the only one. A later run asking for more gets the
-answer to the question the first one asked, and the server will not record the
-new list at all — a bot cannot even change its own name after approval.
+answer to the question the first one asked, and the server won't record the
+new list at all — a bot can't even change its own name after approval.
 
-That is not about you. It is about the run that is not yours, after a published
+That isn't about you. It's about the run that isn't yours, after a published
 image has been taken over. If a bot genuinely needs more, an admin makes a new
 registration.
 </Callout>
@@ -64,17 +64,17 @@ single-use token.
 const bot = new GrytBot({ host, botToken: process.env.GRYT_BOT_TOKEN });
 ```
 
-The token is shown once, when it is created. The first bot to present it becomes
+The token is shown once, when it's created. The first bot to present it becomes
 that registration; after that it stops working.
 
-## A bot is not a person, and cannot pretend to be
+## A bot isn't a person, and can't pretend to be
 
 Bots have their own identity namespace with a `BOT_` prefix, so a bot can never
 hold an id a person could hold. Every surface that shows a member shows a **BOT**
 tag beside the name — in the member list and on every message — derived from the
 identity rather than from anything the bot sends.
 
-People cannot take bot-shaped names either: `BOT_helper` and `Bot Helper` are
+People can't take bot-shaped names either: `BOT_helper` and `Bot Helper` are
 refused. Robot and Botany are fine.
 
 ## Running one
@@ -97,7 +97,7 @@ volumes:
   support-bot-identity:
 ```
 
-<Callout type="warn" title="The volume is not optional">
+<Callout type="warn" title="The volume isn't optional">
 `gryt-bot-identity.json` **is** the bot — the id the server knows it by is
 derived from the key inside it. Keep it and the bot keeps its permissions across
 restarts and upgrades. Lose it and the server sees a stranger knocking, holding
@@ -107,7 +107,7 @@ nothing.
 ## Asking for the least that works
 
 The permissions a bot declares are the list an admin has to decide about. A long
-one is a list they cannot check, and the ones they untick are the ones you find
+one is a list they can't check, and the ones they untick are the ones you find
 out about at runtime — so check before you act:
 
 ```ts
@@ -120,7 +120,7 @@ if (bot.can("add_reactions")) {
 widens or narrows a bot mid-run is obeyed without a restart.
 
 Commands declare what they need and are **skipped rather than attempted** when
-the bot does not hold it, so nobody types a command and watches nothing happen:
+the bot doesn't hold it, so nobody types a command and watches nothing happen:
 
 ```ts
 bot.command("purge", handler, { requires: ["manage_messages"] });

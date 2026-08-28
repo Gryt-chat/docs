@@ -10,7 +10,7 @@ Every service takes its settings from the environment. The full variable lists
 live with the service they belong to:
 
 - [Server](/docs/server) — the largest set, plus the four settings that live in its database
-- [SFU](/docs/sfu) — nine variables, most of which you will never touch
+- [SFU](/docs/sfu) — nine variables, most of which you'll never touch
 - [CLI](/docs/cli) — writes all of this for you, if you would rather not
 
 This page covers the client, and the settings that only make sense across
@@ -69,8 +69,8 @@ Set `GRYT_OIDC_ISSUER` to something like
 base are pulled out of it. You only set those two by hand for a layout that does
 not follow the `/realms/<name>` convention.
 
-`GRYT_IDENTITY_URL` is never derived, because there is nothing in an issuer URL
-to derive it from. It is a different service on a different host: `id.gryt.chat`
+`GRYT_IDENTITY_URL` is never derived, because there's nothing in an issuer URL
+to derive it from. It's a different service on a different host: `id.gryt.chat`
 sits next to `auth.gryt.chat`, and your own certificate authority sits next to
 your own Keycloak.
 
@@ -84,7 +84,7 @@ misleading message.
 ### Self-hosting the web client
 
 The web client is built for local development and for contributing. Self-hosting
-it against `auth.gryt.chat` does not work, because your domain is not a
+it against `auth.gryt.chat` doesn't work, because your domain isn't a
 registered redirect URI there. Use the desktop app or
 [app.gryt.chat](https://app.gryt.chat) to reach your server.
 
@@ -93,7 +93,7 @@ rather than ones that carry across other Gryt servers.
 
 ## Reaching the SFU
 
-Two variables, and they are usually different values for the same thing.
+Two variables, and they're usually different values for the same thing.
 
 ```bash
 SFU_WS_HOST="ws://sfu:5005"
@@ -101,7 +101,7 @@ SFU_PUBLIC_HOST="wss://sfu.example.com"
 ```
 
 `SFU_WS_HOST` is how the server reaches the SFU, on the internal Docker network.
-`SFU_PUBLIC_HOST` is what the server hands to clients. A browser cannot resolve
+`SFU_PUBLIC_HOST` is what the server hands to clients. A browser can't resolve
 `sfu`, so getting these the same way round is the difference between voice
 working and voice sitting on "connecting".
 
@@ -123,14 +123,14 @@ ports:
   - "3478:3478/udp"
 ```
 
-<Callout type="warn" title="Tunnels do not carry UDP">
+<Callout type="warn" title="Tunnels don't carry UDP">
 Cloudflare Tunnel proxies HTTP and WebSockets, so signalling works through it and
-voice does not. `ICE_UDP_MUX_PORT` has to be exposed some other way. This is the
+voice doesn't. `ICE_UDP_MUX_PORT` has to be exposed some other way. This is the
 single most common reason voice connects for people on the LAN and for nobody
 else.
 </Callout>
 
-There used to be a UDP port *range*. There is not any more. See the
+There used to be a UDP port *range*. There isn't any more. See the
 [SFU page](/docs/sfu) for what replaced it and why.
 
 ## CORS
@@ -148,7 +148,7 @@ the Vite dev port in both spellings. A server started by hand without those
 rejects the dev client with a bare 400 on the Socket.IO handshake and no
 explanation.
 
-Origins are matched exactly, port included, so a server on `:5001` does not
+Origins are matched exactly, port included, so a server on `:5001` doesn't
 accept an origin at `:5002` on the same machine.
 
 Two things get in without being listed. `Origin: null` is allowed, which is what
@@ -157,10 +157,10 @@ was sent to is allowed, which is what lets the mobile app in: React Native sets
 `Origin` from the URL it dials, so a phone connecting to `chat.example.com`
 arrives claiming `http://chat.example.com`.
 
-That second rule matches the exact host, so `chat.example.com` does not get to
+That second rule matches the exact host, so `chat.example.com` doesn't get to
 speak for `evil.example`, and a different port on the same machine is still a
 different origin. The reasoning is that CORS exists to stop one site reading
-another through a browser. An origin naming the host it is talking to is
+another through a browser. An origin naming the host it's talking to is
 same-origin, and a page served from that server could do all of it already.
 
 ## Behind a proxy
@@ -203,7 +203,7 @@ Object keys are flat, `uploads/<uuid>.<ext>`, with nothing naming the server in
 them. Several servers can share one bucket: nothing ever lists it, and every
 delete uses a key stored in that server's own database.
 
-## Settings that are not environment variables
+## Settings that aren't environment variables
 
 Four of the server's settings live in its database rather than its environment,
 because changing them has to do something rather than just record something.
@@ -216,11 +216,11 @@ Turning discovery off has to withdraw the mDNS advertisement.
 | `lanOpen` | on, off |
 | `profanityMode` | `off`, `flag`, `censor`, `block` |
 
-`lanOpen` lets anybody already on the same network join without an invite. It is
+`lanOpen` lets anybody already on the same network join without an invite. It's
 worth being deliberate about: it treats "can reach this machine" as good enough,
 which is reasonable on a home network and not on a coffee shop's.
 
-Owners change these from a client. An operator who is not the owner changes them
+Owners change these from a client. An operator who isn't the owner changes them
 through the [management API](/docs/server#the-management-api), which is what the
 `gryt` CLI's settings screen uses.
 
@@ -244,6 +244,6 @@ server whose owner is gone. The second replaces the server's identity keypair.
 | SFU | `GET /health` | Answers 503 with `"status":"starting"` until its UDP probe passes |
 | Image worker | `GET /` on `HEALTH_PORT`, 8080 | Any path other than `/version` answers health. `/version` gives just the version |
 
-The SFU's starting state is worth knowing about in Compose: it is what stops
+The SFU's starting state is worth knowing about in Compose: it's what stops
 dependent services coming up before the container's UDP forwarding is actually
 in place.

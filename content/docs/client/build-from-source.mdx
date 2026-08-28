@@ -59,10 +59,10 @@ yarn electron:build
 
 That runs `build:native`, then a Vite build with `ELECTRON=1`, then `electron-builder --publish never`.
 
-The `package.json` scripts call each other with `npm run` internally. That is fine, and it is not an invitation to install with npm: `packages/client` ships a `yarn.lock` and no `package-lock.json`, and `npm install` resolves a different tree and writes a competing lockfile.
+The `package.json` scripts call each other with `npm run` internally. That's fine, and it isn't an invitation to install with npm: `packages/client` ships a `yarn.lock` and no `package-lock.json`, and `npm install` resolves a different tree and writes a competing lockfile.
 
 <Callout type="info">
-The native audio capture binary enables Gryt to exclude its own voice audio from screen share streams. It is compiled automatically on Windows (requires MSVC `cl.exe`) and macOS (requires `swiftc`). On Linux the binary is not available — the build step is skipped and screen share audio is passed through unfiltered.
+The native audio capture binary enables Gryt to exclude its own voice audio from screen share streams. It's compiled automatically on Windows (requires MSVC `cl.exe`) and macOS (requires `swiftc`). On Linux the binary isn't available — the build step is skipped and screen share audio is passed through unfiltered.
 </Callout>
 
 ### Building for a specific platform only
@@ -113,11 +113,11 @@ Exact byte-for-byte reproducibility between your local build and the CI release 
 ## Code signing and OS trust
 
 macOS releases are code-signed and notarized, so they open without a warning.
-Windows releases are not signed yet, so SmartScreen still has something to say
+Windows releases aren't signed yet, so SmartScreen still has something to say
 about them.
 
 A build you make yourself is signed by nobody on either platform, and both
-operating systems will tell you so. That is expected and does **not** mean the
+operating systems will tell you so. That's expected and does **not** mean the
 software is malicious.
 
 ### Windows SmartScreen
@@ -129,7 +129,7 @@ SmartScreen builds reputation over time — the more users download and run the 
 ### macOS Gatekeeper
 
 A build you compiled yourself is unsigned, so macOS shows **"Gryt Chat can't be
-opened because Apple cannot check it for malicious software."** To open it:
+opened because Apple can't check it for malicious software."** To open it:
 
 1. Right-click (or Control-click) the app
 2. Select **Open**
@@ -137,11 +137,11 @@ opened because Apple cannot check it for malicious software."** To open it:
 
 This only needs to be done once. Subsequent launches work normally.
 
-Releases from GitHub are notarized and do not need any of this.
+Releases from GitHub are notarized and don't need any of this.
 
 ### Linux
 
-AppImage and `.deb` packages do not have an equivalent gatekeeper system. You may need to mark the AppImage as executable:
+AppImage and `.deb` packages don't have an equivalent gatekeeper system. You may need to mark the AppImage as executable:
 
 ```bash
 chmod +x Gryt-Chat-*.AppImage
@@ -152,7 +152,7 @@ chmod +x Gryt-Chat-*.AppImage
 The Electron Builder config includes metadata that helps establish trust with operating systems:
 
 - **Copyright and publisher** — embedded in the executable's file properties
-- **`requestedExecutionLevel: asInvoker`** — declares the app does not require admin privileges
+- **`requestedExecutionLevel: asInvoker`** — declares the app doesn't require admin privileges
 - **macOS entitlements** — declares only the permissions the app actually needs (microphone, network)
 - **NSIS display names** — proper app name in Add/Remove Programs and Start Menu
 
