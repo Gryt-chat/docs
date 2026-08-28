@@ -21,12 +21,12 @@ export default defineConfig({
 ```
 
 <Callout type="warn">
-Getting this wrong fails quietly. You get `Failed to initialize RNNoise processor` in the console, and voice keeps working without noise suppression. Nothing else breaks, so it is easy to ship.
+Getting this wrong fails quietly. You get `Failed to initialize RNNoise processor` in the console, and voice keeps working without noise suppression. Nothing else breaks, so it's easy to ship.
 </Callout>
 
 ## Set the host
 
-`VoiceHost` answers two questions about the runtime it is embedded in. In a browser you can skip this entirely: the default is `webHost`, which reports no native capture and no insecure transport, so forgetting to set one degrades to the plain `getUserMedia` path rather than throwing.
+`VoiceHost` answers two questions about the runtime it's embedded in. In a browser you can skip this entirely: the default is `webHost`, which reports no native capture and no insecure transport, so forgetting to set one degrades to the plain `getUserMedia` path rather than throwing.
 
 ```typescript
 import { setVoiceHost } from "@gryt/voice";
@@ -34,7 +34,7 @@ import { setVoiceHost } from "@gryt/voice";
 setVoiceHost(myHost);
 ```
 
-Set it at module scope rather than inside an effect. Host capabilities cannot change while the process is running, and setting it during a render leaves the first connection asking a host that is not there yet.
+Set it at module scope rather than inside an effect. Host capabilities can't change while the process is running, and setting it during a render leaves the first connection asking a host that isn't there yet.
 
 ## Mount the singleton hooks
 
@@ -44,7 +44,7 @@ Set it at module scope rather than inside an effect. Host capabilities cannot ch
 The failure is silent. `useSFU().connect` is the no-op from the init object, `useMicrophone()` never opens a microphone, and the app typechecks, builds and launches. You find out when a call does nothing.
 </Callout>
 
-Mount it once, above anything that consumes a voice hook. If your app has its own singleton-hook host, this goes next to it rather than instead of it: they are two separate registries.
+Mount it once, above anything that consumes a voice hook. If your app has its own singleton-hook host, this goes next to it rather than instead of it: they're two separate registries.
 
 ## Supply config and a target
 
@@ -74,7 +74,7 @@ A null `target` is a normal state and not an error. It means nothing is selected
 
 Keep the target's identity stable while its `id` is. Building a new object on every render hands the engine a new coordinator each time the app shell re-renders.
 
-Config is a context rather than a module singleton on purpose. It changes while a call is running, every time somebody drags a slider, and a singleton would not re-render anything. Host capabilities are fixed for the life of the process, which is why that one is a singleton.
+Config is a context rather than a module singleton on purpose. It changes while a call is running, every time somebody drags a slider, and a singleton wouldn't re-render anything. Host capabilities are fixed for the life of the process, which is why that one is a singleton.
 
 ## Make a call
 
@@ -100,7 +100,7 @@ The Gryt client wires all of this up in `packages/client/src/packages/webRTC/src
 
 `VoiceProvider.tsx` sets the host at module scope, builds the target from the socket for whichever server is on screen, and mounts `VoiceSingletonHooks`.
 
-`voiceConfig.ts` maps the client's settings store into a `VoiceConfig`. It is the one place that knows both shapes, so renaming a setting is a change here rather than a change inside the package.
+`voiceConfig.ts` maps the client's settings store into a `VoiceConfig`. It's the one place that knows both shapes, so renaming a setting is a change here rather than a change inside the package.
 
 `roomCoordinator.ts` puts Gryt's `voice:*` socket events behind the `RoomCoordinator` interface, including a 15 second timeout on the access request and the rate-limit path.
 

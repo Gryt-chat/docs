@@ -54,7 +54,7 @@ graph LR
 ```
 
 Each stage can be turned off independently, and the mute node is last so that
-muting cannot be defeated by anything upstream of it.
+muting can't be defeated by anything upstream of it.
 
 ### Screen share audio on the desktop
 
@@ -63,7 +63,7 @@ browser offers, so the desktop app shells out to a native binary that excludes
 Gryt's process tree. It writes raw PCM to stdout, the Electron main process
 forwards chunks over IPC, and an `AudioWorkletNode` turns the stream back into a
 `MediaStreamTrack` WebRTC can send. Details on the
-[audio processing page](/docs/client/audio-processing#screen-share-audio--native-capture).
+[audio processing page](/docs/client/audio-processing#screen-share-audio-on-the-desktop).
 
 ## The server
 
@@ -77,7 +77,7 @@ the [API reference](/docs/server/api-reference).
 
 ### Two room identifiers
 
-A voice channel has two names and they are not interchangeable:
+A voice channel has two names and they aren't interchangeable:
 
 | Name | Shape | Used for |
 |------|-------|----------|
@@ -88,7 +88,7 @@ Both live in `src/socket/utils/voiceRooms.ts` rather than being spelled out at
 each call site, because the hand-written copies had already drifted: server mute
 addressed the SFU as `serverUserId:streamID` and a forced disconnect used
 `serverId_streamID`, neither of which named a room the SFU had heard of. Both
-went out, matched nothing, and failed silently. A wrong room ID does not throw,
+went out, matched nothing, and failed silently. A wrong room ID doesn't throw,
 it just quietly does nothing, which is the worst way for a moderation action to
 fail.
 
@@ -115,7 +115,7 @@ one copy up and receives four down, which is why an SFU costs so little CPU
 compared to something that mixes, and why upload bandwidth runs out first.
 
 Feedback goes back selectively. A receiver's PLI or FIR becomes a keyframe
-request to the original sender. REMB does not travel any further than the SFU and
+request to the original sender. REMB doesn't travel any further than the SFU and
 plays no part in choosing layers, because the sender already has better
 information from transport-cc, which measures the sender's own link. Every
 receiver gets every temporal layer unless it asks for fewer, so the frame rate
@@ -123,7 +123,7 @@ stays where it was configured. More on the [SFU page](/docs/sfu).
 
 ## The image worker
 
-A separate process so that `sharp` and the untrusted images it decodes cannot
+A separate process so that `sharp` and the untrusted images it decodes can't
 take the server down with them. Image parsers have a long history of
 memory-safety bugs, and this is the one place strangers' files get opened.
 
@@ -138,7 +138,7 @@ image-worker/
 ```
 
 It polls `image_jobs` for queued rows. Each job pulls the raw upload out of
-object storage, compresses it to AVIF when it is over the size limit, makes a
+object storage, compresses it to AVIF when it's over the size limit, makes a
 320 px thumbnail, writes both back, and updates the file record.
 
 One worker runs per server rather than one per machine, because it reads that
@@ -213,9 +213,9 @@ the object store, and one per server holding the server and its image worker.
 ## Scaling
 
 The database is SQLite, one file per server, so a community scales up rather than
-out. That is a deliberate ceiling: the target is a community on one box, not a
+out. That's a deliberate ceiling: the target is a community on one box, not a
 platform.
 
 The SFU is the part that runs out first, and it runs out of CPU and upload
 bandwidth rather than ports. One muxed UDP port carries far more peers than a
-machine can encode for. When one SFU is not enough, the answer is a second SFU.
+machine can encode for. When one SFU isn't enough, the answer is a second SFU.

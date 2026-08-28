@@ -11,8 +11,8 @@ screen share to it once, and it forwards each of those streams on to everybody
 else in the room. Nothing is transcoded on the way through — the packets that
 arrive are the packets that leave.
 
-It is a Go service built on [Pion WebRTC v4](https://github.com/pion/webrtc),
-and it is deliberately small: one of it runs per machine, shared by every Gryt
+It's a Go service built on [Pion WebRTC v4](https://github.com/pion/webrtc),
+and it's deliberately small: one of it runs per machine, shared by every Gryt
 server on that machine.
 
 ## How it handles media
@@ -24,7 +24,7 @@ first.
 
 Streams that carry the Dependency Descriptor RTP header extension get parsed for
 their temporal layer, which means the forwarder is able to drop the higher
-layers for a receiver that cannot keep up. It does not do that on its own.
+layers for a receiver that can't keep up. It doesn't do that on its own.
 Every receiver gets every layer unless a client asks for fewer with `set_layer`,
 so the frame rate you configured is the frame rate you get, instead of sagging
 whenever a bandwidth estimate dips.
@@ -75,14 +75,14 @@ All media shares `ICE_UDP_MUX_PORT`. One port is far easier to get through a
 firewall than a range, and restrictive networks that drop UDP on high ports
 often let a port they recognise through.
 
-The default is 3478, the IANA STUN port. It needs no privileged bind, and it is
+The default is 3478, the IANA STUN port. It needs no privileged bind, and it's
 the UDP port a locked-down network has most likely already opened, since
 Microsoft Teams requires outbound 3478–3481.
 
-UDP 443 looks like the better choice and generally is not. Enterprise firewall
-vendors recommend blocking it, because QUIC on UDP 443 cannot be TLS-inspected
+UDP 443 looks like the better choice and generally isn't. Enterprise firewall
+vendors recommend blocking it, because QUIC on UDP 443 can't be TLS-inspected
 and blocking it forces browsers back to TCP where it can be. On the networks you
-would pick 443 to get through, it is the one most likely to be shut on purpose.
+would pick 443 to get through, it's the one most likely to be shut on purpose.
 
 Ports are per-protocol either way. UDP 443 and TCP 443 are different sockets, so
 an HTTPS server never collides with media on UDP 443. HTTP/3 does, because that
@@ -90,12 +90,12 @@ is UDP 443 as well, and Caddy serves
 it by default.
 
 The SFU binds this port at startup and refuses to start if something else holds
-it. That is deliberate: the alternative is coming up healthy and handing out
+it. That's deliberate: the alternative is coming up healthy and handing out
 candidates on ports nobody opened.
 
 <Callout type="warn" title="The port range is gone">
-`ICE_UDP_PORT_MIN` and `ICE_UDP_PORT_MAX` were removed. If they are still set
-anywhere, they are ignored. A range never bought capacity — one muxed port
+`ICE_UDP_PORT_MIN` and `ICE_UDP_PORT_MAX` were removed. If they're still set
+anywhere, they're ignored. A range never bought capacity — one muxed port
 carries far more peers than a machine has CPU and upload bandwidth for. If you
 genuinely outgrow one SFU, run a second one.
 </Callout>
@@ -146,7 +146,7 @@ Raw WebSocket, not Socket.IO. Every message is
 `{ "event": "<name>", "data": "<json string>" }` — note that `data` is a string
 containing JSON, not a nested object.
 
-There are two kinds of connection, and they are told apart by path. `/server` is
+There are two kinds of connection, and they're told apart by path. `/server` is
 the Gryt server's control channel. `/client` (and anything else) is a
 participant.
 
@@ -154,7 +154,7 @@ participant.
 
 The Gryt server connects once and registers each voice room. Every message
 after registration carries `server_id` and `server_password`, and is dropped
-without a reply if they do not match.
+without a reply if they don't match.
 
 | Event | Direction | Payload |
 |-------|-----------|---------|

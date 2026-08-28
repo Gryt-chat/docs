@@ -69,7 +69,7 @@ each retry.
 Anything without its own rule falls back to 100 per 60 seconds with no score.
 
 Two of these are worth reading twice. Moderation and reports cost two points
-each, so an account cannot sit and mass-report. And `join:requests` is measured
+each, so an account can't sit and mass-report. And `join:requests` is measured
 over an hour rather than a minute, with a ten minute ban, because a join request
 is a thing a human does once.
 
@@ -112,7 +112,7 @@ or go five minutes untouched.
 
 ## Debugging
 
-Bans are logged as they are applied, with the key, the score and the ban length:
+Bans are logged as they're applied, with the key, the score and the ban length:
 
 ```
 🚫 Rate limit ban applied (score-based) { key: 'chat:send:user123:203.0.113.10', score: 11, maxScore: 10, banMs: 30000 }
