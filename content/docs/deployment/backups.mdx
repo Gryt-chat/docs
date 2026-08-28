@@ -7,21 +7,20 @@ icon: DatabaseBackup
 import { Callout } from 'fumadocs-ui/components/callout';
 
 Everything a Gryt server is lives in one directory. Backing it up is copying
-that directory — with one trap in the way that is worth understanding before
-you write a cron job.
+that directory. There's one trap in the way, and it's the reason this page exists.
 
 <Callout type="warn" title="Copying gryt.db while the server runs is not a backup">
   The database is in [WAL mode](https://www.sqlite.org/wal.html), so recent
   writes live in `gryt.db-wal` until SQLite folds them back in. Copy `gryt.db`
-  on its own and you get whatever had been folded in last — which on a young
-  server is **nothing at all**. Not an old backup. An empty one, and you find
-  out on the day you restore it.
+  on its own and you get whatever had been folded in last, which on a young
+  server is **nothing at all**. The file you end up with is an empty database,
+  and nothing says so until the day you restore it.
 </Callout>
 
 ## What to back up
 
 `DATA_DIR` — `/data` inside the container, the `gryt-prod-server-data` volume
-under Compose, and `./data` if you are running the server directly.
+under Compose, and `./data` if you're running the server directly.
 
 ```
 <DATA_DIR>/
@@ -29,22 +28,21 @@ under Compose, and `./data` if you are running the server directly.
 ├── gryt.db-wal                writes that have not been folded in yet
 ├── gryt.db-shm                shared-memory index for the WAL
 ├── server-identity-key.json   the key clients pinned you by
-└── <bucket>/                  uploads, if you are on filesystem storage
+└── <bucket>/                  uploads, if you're on filesystem storage
 ```
 
-Two of those matter more than their size suggests.
-
 **`server-identity-key.json` is who your server is.** Clients pin it the first
-time they connect and check it every time after, so a server that comes back
-with a new key is a different server to everybody who had joined — no roles, no
-history, and a warning on their screen. It is a few hundred bytes and it is the
-part you cannot regenerate.
+time they connect and check it every time after. A server that comes back with a
+new key is a different server to everybody who had joined: no roles, no history,
+and a warning on their screen. It's a few hundred bytes, and it's the one file here
+you can't regenerate.
 
-**The `-wal` file is part of the database**, not a temporary file you can skip.
+**The `-wal` file is part of the database.** It isn't a temporary file you can
+skip.
 
 If your uploads go to MinIO or another S3-compatible store rather than to the
-filesystem, that is a separate volume — `gryt-prod-minio-data` under Compose —
-and it needs its own copy.
+filesystem, that's a separate volume, `gryt-prod-minio-data` under Compose, and
+it needs its own copy.
 
 ## Stop, copy, start
 
@@ -64,8 +62,8 @@ database. Stopping only the server leaves the image worker holding it open.
 
 ## Backing up without stopping
 
-SQLite can copy a live database properly, and the server image already has the
-Node that can ask it to. No extra tooling.
+SQLite can copy a live database properly, and the server image already has
+Node, which is all you need to ask it to. Nothing extra to install.
 
 ```bash
 docker compose exec server node -e '
@@ -76,28 +74,28 @@ docker compose exec server node -e '
 ```
 
 That produces one consistent file with the WAL already folded in, while people
-are still talking. Copy it out, then delete it so it is not sitting inside the
-thing it is a backup of:
+are still talking. Copy it out, then delete it so it isn't sitting inside the
+thing it's a backup of:
 
 ```bash
 docker compose cp server:/data/gryt-backup.db ./gryt-backup-$(date +%F).db
 docker compose exec server rm /data/gryt-backup.db
 ```
 
-The identity key and the uploads still have to be copied separately — this
+The identity key and the uploads still have to be copied separately. This
 covers the database and nothing else.
 
 ## Check it before you need it
 
-A backup nobody has restored is a guess. Both of these take seconds:
+Run these against the file you just made. Both take seconds:
 
 ```bash
 sqlite3 gryt-backup-2026-08-28.db "PRAGMA integrity_check;"
 sqlite3 gryt-backup-2026-08-28.db "SELECT count(*) FROM messages;"
 ```
 
-`integrity_check` answers `ok`. A row count that is zero on a server with
-history is the WAL trap above, and it is the reason to look.
+`integrity_check` answers `ok`. A row count of zero on a server that has
+history means you hit the WAL trap above.
 
 ## Restoring
 
@@ -112,10 +110,10 @@ docker run --rm \
 docker compose up -d
 ```
 
-If you are restoring only the database from a hot backup, put it back as
+If you're restoring only the database from a hot backup, put it back as
 `gryt.db` and delete any `gryt.db-wal` and `gryt.db-shm` sitting beside it. They
-belong to the database you are replacing, and leaving them there hands SQLite a
-WAL that does not match the file it is attached to.
+belong to the database you're replacing. Leave them there and SQLite gets a WAL
+that doesn't match the file it's attached to.
 
 ## Hosting from the app
 
@@ -124,9 +122,9 @@ only thing writing to it, so stopping the app is the whole procedure.
 [Hosting from the app](/docs/deployment/embedded#where-things-live) has the
 paths.
 
-## What is not in a backup
+## What isn't in it
 
-Nobody's identity but the server's. A person's keypair lives on their own
-device, and restoring your server does not restore anybody's account — there is
-nothing of theirs on your disk to lose. See
+Anyone's identity except the server's own. A person's keypair lives on their
+own device, so restoring your server doesn't restore anybody's account.
+There's nothing of theirs on your disk to lose. See
 [accounts](/docs/guide/accounts).
