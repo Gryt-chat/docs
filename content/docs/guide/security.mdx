@@ -85,26 +85,26 @@ If everything checks out, the server issues a **server-scoped access token** (a 
 
 ## Direct messages are not private from the server
 
-A direct message looks private. It sits away from the channels, it is between two
-people, and nothing about it suggests anybody else is reading. The person running the
-server can.
+A direct message looks private. It sits away from the channels, it's between two
+people, and nothing about it suggests anybody else is reading. Whoever runs the server
+can.
 
 Direct messages are stored the same way channel messages are: as text, in the server's
-database, on hardware somebody else owns. They are not end-to-end encrypted. Whoever
+database, on hardware somebody else owns. They aren't end-to-end encrypted. Whoever
 runs the server can read any conversation on it, and so can anyone who gets hold of a
 backup.
 
-The identity model above protects who you are. A server cannot impersonate you
-elsewhere, cannot replay your proof, and cannot work out that you are also a member
+The identity model above protects who you are. A server can't impersonate you
+elsewhere, can't replay your proof, and can't work out that you're also a member
 somewhere else. None of that stops it reading what you typed on it.
 
-So pick servers whose operators you would trust with the contents, the same way you
-would with any host that keeps your messages.
+So pick servers run by people you'd trust with what you write, the same way you would
+with anywhere else that keeps your messages.
 
-End-to-end encryption for direct messages is being designed. It will depend on being
-able to prove whose key is whose, which Gryt Auth can do for an account and nobody can
-do for a guest identity. So it will not cover every conversation, and one that cannot
-be encrypted will say so.
+End-to-end encryption for direct messages is being designed. It depends on proving
+whose key is whose. Gryt Auth can do that for an account and nobody can do it for a
+guest identity, so it won't cover every conversation. One that can't be encrypted will
+say so.
 
 ## What a malicious server can't do
 
