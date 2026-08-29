@@ -8,15 +8,19 @@ Custom emojis let members express themselves with images unique to your server. 
 
 ## Supported formats
 
-| Format | Extension | Animated | Notes |
-|--------|-----------|----------|-------|
-| PNG | `.png` | No | Resized to 128px height, converted to PNG |
-| JPEG | `.jpg` / `.jpeg` | No | Resized to 128px height, converted to PNG |
-| WebP | `.webp` | Yes | Animated WebP is preserved, resized to 128px height |
-| GIF | `.gif` | Yes | Resized to 128px height, animation preserved |
-| SVG | `.svg` | No | Stored as-is (no resize) |
+| Format | Extension | Animated | Stored as |
+|--------|-----------|----------|-----------|
+| PNG | `.png` | No | AVIF |
+| JPEG | `.jpg` / `.jpeg` | No | AVIF |
+| WebP | `.webp` | Yes | Animated WebP, animation kept |
+| GIF | `.gif` | Yes | Animated WebP, animation kept |
+| AVIF | `.avif` | Yes | Animated WebP if animated, AVIF if not |
 
-All raster images are resized to **128 pixels tall**, keeping the aspect ratio and never enlarging something smaller. The size limit per image is a per-server setting, `emojiMaxBytes`, which defaults to **100 MB** and can be set anywhere between 64 KB and 200 MB.
+Everything is resized to **128 pixels tall**, keeping the aspect ratio and never enlarging something smaller. A still image comes back out as AVIF and an animated one as animated WebP, whatever it arrived as.
+
+**SVG isn't accepted.** An SVG is a document rather than a picture. It can carry a `<script>`, and a browser asked to open one from your server's own origin will run it. Uploading one gets "SVG images are not accepted".
+
+The size limit per image is a per-server setting, `emojiMaxBytes`, which defaults to **100 MB**. The upload request itself is capped at **50 MB**, so a file above that is refused whatever the setting says.
 
 ## Naming rules
 
@@ -50,32 +54,30 @@ You can upload a `.zip` file containing multiple images:
 
 Files inside the ZIP follow the same format and size rules as individual uploads.
 
-## Importing from BetterTTV
+## Importing from BetterTTV or emoji.gg
 
-You can bulk-import emotes from any public [BetterTTV](https://betterttv.com) user page.
+One box takes a link and works out where it is from. In **Server Settings > Emojis**, under **Import from a link**, paste any of these:
+
+| Link | What you get |
+|------|--------------|
+| `betterttv.com/users/<id>` | That user's channel emotes and shared emotes |
+| `betterttv.com/emotes/<id>` | The one emote |
+| `emoji.gg/user/<name>` | That profile's emojis |
+| `emoji.gg/pack/<slug>` | The pack |
+| `emoji.gg/emoji/<slug>` | The one emoji |
 
 ### Step by step
 
 1. Open **Server Settings > Emojis**.
-2. In the **Import from BetterTTV** section, paste a BetterTTV user URL, e.g.:
-   ```
-   https://betterttv.com/users/555943515393e61c772ee968
-   ```
-3. Click **Fetch**. Gryt retrieves the user's channel emotes and shared emotes.
-4. A preview grid appears with all emotes. Each emote shows:
-   - A preview thumbnail
-   - An editable shortcode name (auto-derived from the BetterTTV emote code)
-   - A **GIF** badge if the emote is animated
-5. Use the checkboxes to select or deselect individual emotes. **Select all** / **Deselect all** buttons are available for convenience.
-6. If there are many emotes, use the **filter** field to narrow the list.
-7. Edit any shortcode names as needed (names that conflict with existing server emojis are flagged).
-8. Click **Import N emojis** to import the selected emotes.
+2. Paste the link and click **Fetch**.
+3. A preview grid appears. Each emote shows a thumbnail, an editable shortcode derived from its name, and a **GIF** badge if it's animated.
+4. Tick the ones you want, or use **Select all** and **Deselect all**. The filter field narrows a long list.
+5. Rename anything you like. Names that clash with an emoji already on the server are flagged.
+6. Click **Import N emojis**.
 
-The server downloads each emote at full resolution from the BetterTTV CDN, processes it through the same pipeline as a regular upload (resized to 128 pixels tall, GIF animation preserved), and stores it as a server emoji.
+The server fetches each one at full resolution and puts it through the same pipeline as an upload, so the format rules above apply here too.
 
-### URL format
-
-The URL must match the pattern `https://betterttv.com/users/<user_id>`, where the user ID is the hexadecimal string in the URL. Both channel emotes and shared emotes are fetched.
+A large emoji.gg profile is read a fixed number of pages deep. When that happens the list says so, rather than handing you a short list that looks complete.
 
 ## Using emojis in chat
 

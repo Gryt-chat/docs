@@ -10,7 +10,7 @@ icon: Mic
 npm install @gryt/voice
 ```
 
-The package is `0.1.1`, AGPL-3.0-only, ESM only. React 18 or newer is the only peer dependency, and there are no runtime dependencies.
+The package is `0.4.2`, AGPL-3.0-only, ESM only, with no runtime dependencies. React 18 or newer is the one peer dependency a web app needs. `react-native-webrtc` 124 or newer is optional, and only the `@gryt/voice/native` entry point uses it.
 
 <Callout type="warn" title="Two things that will cost you an afternoon">
 `<VoiceSingletonHooks />` has to be mounted above anything that calls a voice hook, or every hook returns its initial value forever and nothing tells you why. The package also can't be pre-bundled: Vite needs `optimizeDeps: { exclude: ["@gryt/voice"] }`. Both are covered in [Getting started](/docs/voice/getting-started).
@@ -34,7 +34,9 @@ Five interfaces cover everything the engine can't work out for itself. None of t
 
 `RoomCoordinator` is Gryt's half of joining a channel: asking permission, saying what is being published, reporting peers. You supply it alongside a connection target.
 
-`SfuTransport` and `VoicePlatform` describe signalling and per-platform capture. As of `0.1.1` these are still exported types that nothing consumes. The engine opens its own WebSocket to the SFU and calls `navigator.mediaDevices` directly, so a browser or Electron embedder doesn't supply either one. They're the shape the React Native adapter will plug into.
+`VoicePlatform` is per-platform capture and peer construction, and the engine uses it. Each entry point registers its own on the way in. The barrel registers the web one, `@gryt/voice/native` registers the React Native one, and `setVoicePlatform` overrides either. A web or Electron embedder supplies nothing and gets the web platform.
+
+`SfuTransport` describes signalling and is still a type nothing consumes. The engine opens its own WebSocket to the SFU, so there's nothing to hand it.
 
 ## Where the code is
 

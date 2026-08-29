@@ -176,8 +176,10 @@ interface VoicePlatform {
 
 The interface is deliberately narrow. Everything that isn't capture or playback is shared, so anything you want to add here is worth re-examining first.
 
-<Callout type="warn" title="Not wired up in 0.1.0">
-`SfuTransport` and `VoicePlatform` are exported as types, and nothing in `0.1.0` consumes them. The engine opens its own WebSocket to the SFU and calls `navigator.mediaDevices` and `new RTCPeerConnection` directly, so there's currently no way to pass either one in. They describe the shape the React Native adapter will plug into. Read them as the intended boundary rather than as configuration you can supply today.
+<Callout type="info" title="VoicePlatform is wired up, SfuTransport is not">
+`VoicePlatform` has been wired up since `0.4.0`. Each entry point registers one on the way in. The main barrel registers the web platform, `@gryt/voice/native` registers the React Native one, and `setVoicePlatform` overrides whichever was registered. `useMicrophone` and the SFU connect flow both call `getVoicePlatform()`, so an embedder that supplies nothing still gets a working web platform.
+
+`SfuTransport` is still a type nothing consumes. The engine opens its own WebSocket to the SFU, and there's no way to pass one in. Read it as the intended boundary rather than as configuration.
 </Callout>
 
 ## Logging
@@ -192,4 +194,4 @@ voiceLog.ok("CONNECT", 1, "Microphone acquired", { deviceId });
 voiceLog.fail("CONNECT", 1, "Microphone denied", error);
 ```
 
-A `VoiceLogger` interface is exported alongside `VoiceEngineOptions`, for injecting a logger rather than using this one. Like the two seams above it, nothing in `0.1.0` reads it yet.
+A `VoiceLogger` interface is exported alongside `VoiceEngineOptions`, for injecting a logger rather than using this one. Like `SfuTransport`, nothing reads it yet.
