@@ -224,6 +224,38 @@ Owners change these from a client. An operator who isn't the owner changes them
 through the [management API](/docs/server#the-management-api), which is what the
 `gryt` CLI's settings screen uses.
 
+### Direct messages are encrypted, and what that costs you
+
+Direct messages between people whose clients have both published a key are
+encrypted before they reach the server. The server stores the envelope and has
+never had the text.
+
+That is worth knowing before you need it, because four things you have on
+channels you do not have on those messages:
+
+- **Profanity filtering does not run.** `profanityMode` applies to channels and
+  to any direct message still going in the clear. There is nothing to match
+  against in a sealed one.
+- **They are not searchable**, by you or by anything you run against the
+  database.
+- **A report gives you the message id and not the message.** Somebody can report
+  a direct message, and you can see who sent it and when, and you cannot read
+  it. Whoever reported it can, so the practical route is asking them for what
+  they saw.
+- **They are not in an export.** A database dump of an encrypted conversation is
+  a column of ciphertext.
+
+None of that is switchable. It is what "the server cannot read it" means, and a
+setting that turned it off would be a setting that turned off the encryption.
+
+`allowDms` still works the way it did: off means no new conversation can be
+opened and nothing can be sent to an existing one. That is the lever, and it is
+all of it or none of it.
+
+Messages in the clear are unaffected — a conversation where somebody has not
+updated their client yet still arrives as text, and the client says so on the
+composer rather than letting anybody assume otherwise.
+
 ## Administrative commands
 
 Run inside the server container, or beside a built server:
