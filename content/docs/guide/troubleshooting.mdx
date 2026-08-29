@@ -166,6 +166,56 @@ wscat -c ws://localhost:5005
 - Verify the SFU hostname DNS record is set to **Proxied** (orange cloud) in Cloudflare — a grey-cloud (DNS-only) record won't route through the tunnel
 - Review SFU logs: `docker compose logs sfu`
 
+### Joining voice does nothing for fifteen seconds, then blames your network
+
+You click a voice channel, nothing happens for about fifteen seconds, and then
+a message says the network may not allow voice traffic through. Trying again
+usually works.
+
+It is usually DNS filtering, not the network.
+
+Gryt has no TURN relay, so a call has to find a direct path. Each side asks a
+STUN server what its address looks like from outside. That answer is what the
+other side connects to. Without one there is nothing to offer, and the browser
+spends about fifteen seconds trying before it gives up.
+
+Ad-blocking resolvers — AdGuard Home, Pi-hole, NextDNS — sometimes carry
+`stun.l.google.com` on a tracker list. It is a STUN server, not a tracker, but
+it is a Google hostname and the lists are broad. When it is blocked it resolves
+to `0.0.0.0` and the request goes nowhere.
+
+Check it from a machine on the same network:
+
+```bash
+dig +short stun.l.google.com
+```
+
+If that comes back `0.0.0.0`, or with no answer, something is filtering it.
+Compare against one that is rarely on a list:
+
+```bash
+dig +short stun.cloudflare.com
+```
+
+Then allow the hostname on whichever resolver is doing it. In AdGuard Home that
+is **Filters → Custom filtering rules**:
+
+```
+@@||stun.l.google.com^
+```
+
+An allowlist rule beats a blocklist entry, even an `$important` one. AdGuard
+caches its answers, so give it a minute before testing again.
+
+A blocked STUN server costs more than the one candidate. It also holds ICE
+gathering open. A list with one blocked entry and one working entry still gets
+a candidate, but gathering never finishes, and that is where most of the
+fifteen seconds go.
+
+The server decides which STUN servers clients use, through `STUN_SERVERS`. The
+default spans two providers, so one of them being filtered is not fatal. If
+yours has been cut down to a single provider, add another.
+
 ## Audio issues
 
 ### Microphone not working
