@@ -81,30 +81,91 @@ If everything checks out, the server issues a **server-scoped access token** (a 
 | Your public key | Yes — it's in the certificate |
 | Your Keycloak token | **No** — never sent to community servers |
 | Your private key | **No** — never leaves your device |
-| Messages and uploads you send | Yes — that's how server-hosted chat works |
+| Messages you send in a channel | Yes — that's how server-hosted chat works |
+| Direct messages | **No**, once both clients have published a key |
+| Who you send them to, and when | Yes — it delivers them |
+| Uploads, including in a direct message | Yes — attachments aren't encrypted yet |
 
-## Direct messages are not private from the server
+## Direct messages are encrypted
 
-A direct message looks private. It sits away from the channels, it's between two
-people, and nothing about it suggests anybody else is reading. Whoever runs the server
-can.
+A direct message is encrypted on the device that sends it and decrypted on the
+devices that receive it. The server stores an envelope and has never had the text.
 
-Direct messages are stored the same way channel messages are: as text, in the server's
-database, on hardware somebody else owns. They aren't end-to-end encrypted. Whoever
-runs the server can read any conversation on it, and so can anyone who gets hold of a
-backup.
+This page said the opposite until recently, and the change is worth stating plainly
+rather than quietly editing: direct messages used to be stored as text, in the
+server's database, readable by whoever ran it. Anything sent before your server and
+both clients were updated still is.
 
-The identity model above protects who you are. A server can't impersonate you
-elsewhere, can't replay your proof, and can't work out that you're also a member
-somewhere else. None of that stops it reading what you typed on it.
+### Nothing is asked of anybody central
 
-So pick servers run by people you'd trust with what you write, the same way you would
-with anywhere else that keeps your messages.
+Each device works out a message key per server from the same seed its identity comes
+from, publishes the public half signed by the identity key it joined that server with,
+and every other client checks that signature itself.
 
-End-to-end encryption for direct messages is being designed. It depends on proving
-whose key is whose. Gryt Auth can do that for an account and nobody can do it for a
-guest identity, so it won't cover every conversation. One that can't be encrypted will
-say so.
+`id.gryt.chat` is not involved. A certificate saying which servers you are on would
+hand it exactly the map Gryt is built not to hand anybody, so the design does without
+one — which also means guests get encrypted messages, not only account holders.
+
+### What it protects
+
+The text, from the server and from anybody who ends up with its disk. A stolen backup,
+a resold drive, a compromised host, an order served on an operator: all of them get
+ciphertext.
+
+Every message gets its own key, wrapped once for each member. Somebody added to a group
+later has no key for anything sent before they arrived. Nothing enforces that. There is
+nothing there for them to open.
+
+### What it does not
+
+- **Who you talk to, and when.** The server delivers the messages, so it knows. Nothing
+  cheap changes that.
+- **Attachments.** Files are still stored and served in the clear, including in an
+  encrypted conversation.
+- **Channels.** A channel is a room with a member list rather than a pair of people, and
+  it is not encrypted. A sealed message sent to one is refused rather than half-done.
+- **The first exchange.** Below.
+
+### Trust on first use, again
+
+Your client records the key it first sees for somebody and refuses a change, exactly as
+it does for [a server's identity key](#trust-on-first-use). A server that swaps a key
+later is caught the moment it does, and the client says so instead of quietly
+encrypting to the new one.
+
+What that cannot catch is a server that swapped it from the very first message, because
+the server is what introduced the two of you. Every system where somebody else does the
+introduction has this problem, and they all answer it the same way: the two people check
+with each other, somewhere the introducer is not.
+
+So each member's card carries a sixty-digit code worked out from both of your keys.
+Read it to them on a phone call, or in a room. If they read back the same numbers,
+nobody is in the middle. If nobody ever does it, you still have everything above — you
+have just not closed the first handshake.
+
+The code says nothing about *who* they are. Compared with the wrong person it matches
+perfectly, so it is worth doing on a call where you recognise the voice.
+
+### A conversation that cannot be encrypted says so
+
+Both people need a client new enough to publish a key, and a server new enough to carry
+it. Until then the conversation is text, and the composer says which member is holding
+it up rather than letting anybody assume.
+
+### The web client is weaker than the desktop one here
+
+Whatever serves you the web client also serves the code that would check it, so a
+checksum computed inside the page proves nothing. The desktop app is signed and
+notarised and downloaded once, and a chat server cannot reach it at all.
+
+Both encrypt the same way. What differs is how much you have to take on trust that they
+do.
+
+### What an operator loses
+
+Worth knowing from this side too: on an encrypted message the server cannot run
+profanity filtering, cannot search, cannot show a moderator the text and cannot export
+it. See [what that costs you](/docs/guide/configuration#direct-messages-are-encrypted-and-what-that-costs-you).
 
 ## What a malicious server can't do
 
@@ -115,6 +176,8 @@ Even if a server operator captures everything sent during the join flow:
 - **Can't forge new assertions.** They don't have your private key.
 - **Can't use your certificate alone.** A certificate isn't a bearer token — it only links a public key to an identity. Without the corresponding private key, it's useless.
 - **Can't pose as a server you already trust.** Servers are pinned by their identity key, so answering at a known address with a different key gets refused before anything is sent. See [Authenticating the server](#authenticating-the-server).
+- **Can't read a direct message** between two people whose clients have both published a key. It stores an envelope it has no key for.
+- **Can't swap somebody's message key unnoticed.** Clients pin the key they first saw and refuse a change; two people comparing a code catch even the first one.
 
 ## Authenticating the server
 
@@ -241,6 +304,10 @@ and it works.
 | Key compromise recovery | Certificates expire; new keypairs generated per device |
 | Server identity | Long-lived server keypair, pinned by the client on first join |
 | Safe recovery when a server moves | Pins are filed under the key, not the address |
+| Direct messages the server can't read | A key per message, wrapped once per member; private keys never leave the device |
+| No central party learns where you are | Message keys are published per server and signed by the key that joined it |
+| A swapped message key is caught | Peers are pinned on first sight; a change is refused and shown |
+| The first exchange can be checked | A sixty-digit code, compared somewhere the server isn't |
 | Message contents | **Not protected from the server** — see [Direct messages](#direct-messages-are-not-private-from-the-server) |
 
 ## Further reading
