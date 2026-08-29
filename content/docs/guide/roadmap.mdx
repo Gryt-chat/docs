@@ -130,10 +130,18 @@ Have a feature you'd like to see? Check the [feature requests](/docs/guide/featu
 
 ## Direct messages and social
 
-- 📋 Direct messages (1:1)
+- ✅ Direct messages (1:1, per server)
 - 📋 Group direct messages
 - 📋 Friend list / friend requests
 - 📋 User blocking
+
+A direct message belongs to the server you opened it on. Messaging the same
+person on another server starts a separate conversation with its own history,
+and neither server can tell the two are the same people. That is deliberate:
+carrying a conversation between servers would mean either storing everyone's
+private messages centrally or letting servers tell each other which servers you
+are on. Your messages sit on that server, so whoever runs it can read them, the
+same as any channel. Server owners can turn direct messages off entirely.
 
 ## User profiles and presence
 
