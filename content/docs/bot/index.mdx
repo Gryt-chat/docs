@@ -103,13 +103,13 @@ derived from the key inside it. Keep it and the bot keeps its permissions across
 restarts and upgrades. Lose it and the server sees a stranger knocking, holding
 nothing.
 
-Mounting the volume isn't enough on its own. The default path is
-`./gryt-bot-identity.json`, next to the code, and the bot is the only thing that
-can move it: `identityPath` is an option on `GrytBot`, and the SDK reads no
-environment variables of its own. The support bot passes
-`process.env.GRYT_IDENTITY_PATH` and its Dockerfile sets that to
-`/data/gryt-bot-identity.json`. Without something equivalent, a bot works,
-survives restarts, and loses its identity the next time you rebuild the image.
+Mounting the volume isn't enough on its own. By default the bot writes the file
+to `./gryt-bot-identity.json`, next to the code, and only the bot can move it.
+`identityPath` is an option on `GrytBot`, and the SDK reads no environment
+variables of its own. The support bot passes `process.env.GRYT_IDENTITY_PATH`,
+and its Dockerfile sets that to `/data/gryt-bot-identity.json`. Without that, a
+bot works, survives restarts, and loses its identity the next time you rebuild
+the image.
 </Callout>
 
 ## Asking for the least that works
