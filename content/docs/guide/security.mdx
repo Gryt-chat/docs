@@ -83,6 +83,29 @@ If everything checks out, the server issues a **server-scoped access token** (a 
 | Your private key | **No** — never leaves your device |
 | Messages and uploads you send | Yes — that's how server-hosted chat works |
 
+## Direct messages are not private from the server
+
+A direct message looks private. It sits away from the channels, it is between two
+people, and nothing about it suggests anybody else is reading. The person running the
+server can.
+
+Direct messages are stored the same way channel messages are: as text, in the server's
+database, on hardware somebody else owns. They are not end-to-end encrypted. Whoever
+runs the server can read any conversation on it, and so can anyone who gets hold of a
+backup.
+
+The identity model above protects who you are. A server cannot impersonate you
+elsewhere, cannot replay your proof, and cannot work out that you are also a member
+somewhere else. None of that stops it reading what you typed on it.
+
+So pick servers whose operators you would trust with the contents, the same way you
+would with any host that keeps your messages.
+
+End-to-end encryption for direct messages is being designed. It will depend on being
+able to prove whose key is whose, which Gryt Auth can do for an account and nobody can
+do for a guest identity. So it will not cover every conversation, and one that cannot
+be encrypted will say so.
+
 ## What a malicious server can't do
 
 Even if a server operator captures everything sent during the join flow:
@@ -218,6 +241,7 @@ and it works.
 | Key compromise recovery | Certificates expire; new keypairs generated per device |
 | Server identity | Long-lived server keypair, pinned by the client on first join |
 | Safe recovery when a server moves | Pins are filed under the key, not the address |
+| Message contents | **Not protected from the server** — see [Direct messages](#direct-messages-are-not-private-from-the-server) |
 
 ## Further reading
 
