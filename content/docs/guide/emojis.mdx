@@ -20,7 +20,7 @@ Everything is resized to **128 pixels tall**, keeping the aspect ratio and never
 
 **SVG isn't accepted.** An SVG is a document rather than a picture. It can carry a `<script>`, and a browser asked to open one from your server's own origin will run it. Uploading one gets "SVG images are not accepted".
 
-The size limit per image is a per-server setting, `emojiMaxBytes`, which defaults to **100 MB**. The upload request itself is capped at **50 MB**, so a file above that is refused whatever the setting says.
+The size limit per image is a per-server setting, `emojiMaxBytes`. It defaults to **100 MB** and can be set anywhere from 64 KB to 200 MB. Anything bigger is refused.
 
 ## Naming rules
 
