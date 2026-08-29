@@ -28,6 +28,21 @@ lack, and a role without it's somebody who is in your server and can't see it.
 That's what makes a genuinely read-only tier possible — and it's why the Guest
 role isn't empty. A read-only role that can't read isn't read-only.
 
+## Who can start a call
+
+Ringing somebody in a direct message is *start calls*. Answering is *join
+voice*, the same permission as walking into a voice channel.
+
+Keeping them apart is what lets you limit who places a call without stopping
+anyone picking one up. A role with *join voice* and no *start calls* can be
+rung by anybody and can answer; it just has no call button of its own. That's
+the shape behind "only paying members start calls". One permission covering
+both would leave somebody unable to answer a call placed to them.
+
+Every role that could already call keeps it when you upgrade, so nothing stops
+working the day you take the update. Take it off the roles you want to
+restrict.
+
 ## Who gets what when they join
 
 **Server settings → Role editor → When somebody joins.**
