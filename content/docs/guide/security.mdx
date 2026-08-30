@@ -161,6 +161,38 @@ notarised and downloaded once, and a chat server cannot reach it at all.
 Both encrypt the same way. What differs is how much you have to take on trust that they
 do.
 
+### Checking the client you downloaded
+
+Encryption takes the server out of the trusted set and leaves your own client in it. No
+protocol removes it: the client sees your words before any of this runs, holds the keys,
+and draws the screen that tells you whether you are safe. What can change is whether
+"trust the client" is a promise or something you can check.
+
+Every release carries a `SHA256SUMS.txt` with a hash for each file on it:
+
+```bash
+sha256sum --check --ignore-missing SHA256SUMS.txt
+```
+
+That only says the file matches a number we published next to it, which is worth
+something against a broken download and nothing against us. So each artifact is also
+attested: a signed statement, in a public append-only log run by [Sigstore](https://www.sigstore.dev/),
+saying these exact bytes came out of a build in the Gryt repository.
+
+```bash
+gh attestation verify Gryt-Chat-1.6.52-win-x64.exe --repo Gryt-chat/gryt
+```
+
+A hash we sign ourselves proves the binary and the hash came from the same place. An entry
+in a log nobody can quietly remove means a build served to one person cannot be hidden
+from everybody else.
+
+It is still not a [reproducible build](https://reproducible-builds.org/), where you
+compile the source yourself and get the same bytes. Electron makes that genuinely hard:
+timestamps, embedded paths, native modules, notarisation. Until it is done, the
+attestation says a build happened here rather than that the source in front of you is
+what went into it.
+
 ### What an operator loses
 
 Worth knowing from this side too: on an encrypted message the server cannot run
