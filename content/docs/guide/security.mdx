@@ -108,20 +108,29 @@ one — which also means guests get encrypted messages, not only account holders
 
 ### What it protects
 
-The text, from the server and from anybody who ends up with its disk. A stolen backup,
-a resold drive, a compromised host, an order served on an operator: all of them get
-ciphertext.
+The words and the files, from the server and from anybody who ends up with its disk. A
+stolen backup, a resold drive, a compromised host, an order served on an operator: all
+of them get ciphertext.
 
 Every message gets its own key, wrapped once for each member. Somebody added to a group
 later has no key for anything sent before they arrived. Nothing enforces that. There is
 nothing there for them to open.
 
+An attachment gets its own key too, and it travels inside the message. So a picture is
+encrypted before it leaves your device, and the server stores it without knowing what it
+is called, what type it is, or how big the picture is — only how many bytes it was
+handed and when.
+
 ### What it does not
 
 - **Who you talk to, and when.** The server delivers the messages, so it knows. Nothing
   cheap changes that.
-- **Attachments.** Files are still stored and served in the clear, including in an
-  encrypted conversation.
+- **That a file exists.** An attachment is encrypted, but the server still sees that one
+  was sent, how large the ciphertext is, and when. Padding it to hide the size is a
+  separate piece of work and is not pretended at here.
+- **Previews of encrypted pictures.** A thumbnail is made by decoding the image, and the
+  server is handed noise — so an encrypted picture is fetched whole and opened on your
+  device.
 - **Channels.** A channel is a room with a member list rather than a pair of people, and
   it is not encrypted. A sealed message sent to one is refused rather than half-done.
 - **The first exchange.** Below.

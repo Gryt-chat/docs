@@ -228,9 +228,10 @@ through the [management API](/docs/server#the-management-api), which is what the
 
 Direct messages between people whose clients have both published a key are
 encrypted before they reach the server. The server stores the envelope and has
-never had the text.
+never had the text. Files sent in one are encrypted too, so what lands in your
+bucket is bytes with no name and no type.
 
-That is worth knowing before you need it, because four things you have on
+That is worth knowing before you need it, because five things you have on
 channels you do not have on those messages:
 
 - **Profanity filtering does not run.** `profanityMode` applies to channels and
@@ -244,6 +245,10 @@ channels you do not have on those messages:
   they saw.
 - **They are not in an export.** A database dump of an encrypted conversation is
   a column of ciphertext.
+- **An attached picture is not a picture.** It is not validated, thumbnailed or
+  measured on the way in, and it is served as a download rather than shown
+  inline. Your storage still fills up at the same rate — the `upload_max_bytes`
+  limit applies exactly as before — you simply cannot see what is in it.
 
 None of that is switchable. It is what "the server cannot read it" means, and a
 setting that turned it off would be a setting that turned off the encryption.
