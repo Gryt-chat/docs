@@ -193,6 +193,27 @@ timestamps, embedded paths, native modules, notarisation. Until it is done, the
 attestation says a build happened here rather than that the source in front of you is
 what went into it.
 
+### Checking a server, and the container images
+
+The same two things cover everything else Gryt ships. A [server release](https://github.com/Gryt-chat/server/releases)
+carries a `SHA256SUMS.txt` for its self-hosted bundles, and both container images are
+attested by digest:
+
+```bash
+gh attestation verify oci://ghcr.io/gryt-chat/server:1.6.4 --repo Gryt-chat/gryt
+gh attestation verify oci://ghcr.io/gryt-chat/client:1.6.52 --repo Gryt-chat/gryt
+```
+
+`--repo Gryt-chat/gryt` for all of them, including the server: the releases live in
+their own repositories, but the workflow that builds them runs in the monorepo, and an
+attestation names the repository that made it.
+
+The client image is the web build — what you get if you host Gryt yourself instead of
+installing the app. It is worth checking for the same reason the desktop app is, and it
+is [the weaker of the two](#the-web-client-is-weaker-than-the-desktop-one-here) once it
+is being served to somebody: this checks the image you are about to run, not what a
+visitor's browser is handed.
+
 ### What an operator loses
 
 Worth knowing from this side too: on an encrypted message the server cannot run
