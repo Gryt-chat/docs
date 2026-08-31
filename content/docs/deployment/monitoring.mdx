@@ -11,6 +11,17 @@ exposition format. You can scrape these with any Prometheus-compatible system, o
 use the built-in monitoring profile to spin up Prometheus + Grafana alongside the
 rest of the stack.
 
+<Callout type="warn">
+Metrics are served on port **9091**, not on the port clients connect to, and the
+Compose files do not publish it. That is on purpose: a reverse proxy or a tunnel
+in front of the server only ever sees the main port, so it cannot pass `/metrics`
+through to the internet.
+
+Prometheus reaches it as `server:9091` and `sfu:9091` over the Compose network,
+which needs no published port. **Do not publish 9091**, and be aware that host
+networking bypasses this and puts metrics back on the public internet.
+</Callout>
+
 ## Quick start
 
 The `docker-compose.yml` includes an optional **monitoring** profile.
@@ -59,7 +70,8 @@ production, set `GRAFANA_ADMIN_PASSWORD` to a strong value in your `.env` file.
 
 ### Server (Node.js)
 
-Exposed at `http://server:5000/metrics`.
+Exposed at `http://server:9091/metrics`, on the Compose network. Set `METRICS_PORT`
+to move it, or `METRICS_PORT=0` to stop serving it at all.
 
 | Metric | Type | Description |
 |--------|------|-------------|
@@ -70,7 +82,8 @@ Exposed at `http://server:5000/metrics`.
 
 ### SFU (Go)
 
-Exposed at `http://sfu:5005/metrics`.
+Exposed at `http://sfu:9091/metrics`, on the Compose network. Set `SFU_METRICS_PORT`
+to move it, or `SFU_METRICS_PORT=0` to stop serving it at all.
 
 | Metric | Type | Description |
 |--------|------|-------------|
@@ -145,7 +158,9 @@ scrape_configs:
       - targets: ["your-gryt-host:5005"]
 ```
 
-Both endpoints are unauthenticated and return standard Prometheus text format.
+Both endpoints are unauthenticated, which is why they are not on the port the
+world talks to. Anything that can reach port 9091 can read them, so keep it
+inside the Compose network.
 
 ## Disabling monitoring
 
@@ -153,6 +168,11 @@ The monitoring profile is entirely opt-in. If you don't pass `--profile monitori
 no monitoring containers are created and the `/metrics` endpoints simply go
 unscraped. The overhead of the endpoints themselves is negligible (a few KB of
 in-memory counters).
+
+Because most deployments never turn monitoring on, the metrics port is closed to
+the outside by default rather than by configuration — there is nothing to set and
+nothing to forget. To stop serving them altogether, set `METRICS_PORT=0` and
+`SFU_METRICS_PORT=0`.
 
 To stop the monitoring stack without affecting the rest of the services:
 
