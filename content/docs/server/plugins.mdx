@@ -174,13 +174,14 @@ somebody leaving doesn't strand their spam.
 
 ## Asking for permission
 
-`capabilities` in the manifest is the list. There are three:
+`capabilities` in the manifest is the list. There are four:
 
 | Capability | What it lets a plugin do |
 | --- | --- |
 | `messages:read` | Read every message sent in a channel |
 | `members:read` | See who joins and leaves, and the invite code they used |
 | `moderation` | Kick and ban members and delete their messages, but not a moderator&rsquo;s |
+| `messaging` | Exchange its own messages with the copy of itself in people&rsquo;s clients |
 
 Subscribing to an event, or reaching for `api.moderation`, without declaring
 what it needs throws at startup with the line named — rather than silently
@@ -325,6 +326,47 @@ If one throws ten times, Gryt stops calling it and says so once:
 It stays off until you restart. That's deliberate — the alternative is a broken
 plugin writing a log line for every message forever.
 
+## Everybody can see what you're running
+
+Every plugin you load is named to everybody who joins, along with who wrote it,
+what it's for, and **what it's allowed to do**. There's no way to turn that off
+and no flag to opt out.
+
+That's deliberate. A server plugin reads the messages people send through your
+server, and the people sending them get to know what's reading them. If you'd
+rather they didn't, that's the situation this exists for.
+
+What goes out is the manifest's `id`, `name`, `author`, `description`,
+`homepage` and `capabilities`. **Not the version** — a version number is which
+known problem applies, and handing it to everybody who joins answers a question
+an attacker would otherwise have to ask.
+
+`homepage` has to be `http` or `https`, and anything else is dropped. Members
+are shown it as a link, so a `javascript:` URL in a manifest would be a link
+injection into their clients.
+
+<Callout>
+Right now this arrives with the rest of the server details, which means somebody
+sees it just after joining rather than before. Showing it before is worth doing
+and isn't done yet.
+</Callout>
+
+## Talking to a client plugin
+
+A plugin can have a second half that runs in people's Gryt apps, and the two can
+send each other whatever they like. That's how a plugin adds something people
+can *see* rather than only something the server does quietly — a rich presence,
+a shared scoreboard, a poll.
+
+It needs `messaging`, and it's [its own page](/docs/guide/plugin-pairs).
+
+One thing worth knowing before enabling a plugin that asks for it: **what
+arrives on that pipe was written by a member's client.** They joined, which is
+worth less than it sounds. Gryt caps how big and how deeply nested a message is
+and refuses a handful of shapes built to break whatever handles them. Past that
+it's the plugin's job to check what it was sent, and a plugin that assumes its
+own client half is on the other end is a plugin that hasn't.
+
 ## Plugins and addons
 
 They're different things.
@@ -333,5 +375,5 @@ A [client addon](/docs/client/addons) is a theme or a plugin somebody installs
 in their own Gryt app. It affects them and nobody else.
 
 A server plugin is installed by whoever runs the server, and it affects
-everybody on it. Nobody joining your server can see what plugins you're running.
-That's worth remembering when you pick one.
+everybody on it. That's worth remembering when you pick one — and so is the
+next section, because they'll all know which ones you picked.
