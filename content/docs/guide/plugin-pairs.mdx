@@ -125,6 +125,23 @@ answers a question an attacker would otherwise have to ask.
 If your two halves need to agree on a version, put one in your own payloads —
 between the two halves rather than on the doorstep.
 
+### People are told when they're missing your half
+
+Anybody on a server running your server half, without your client half
+installed, is told so — in the server menu, under **What this server runs**:
+
+> **One of these has a part you do not have.** Everything here works without
+> them. You will just not see whatever they add.
+
+Gryt works this out on its own. A server plugin asking for `messaging` has a
+client half by definition, so there's no flag to set — but there's nothing to
+click unless you put a `homepage` in the server half's manifest, and then the
+row links to it.
+
+Nobody is turned away for missing it. That's the one place this isn't like a
+Minecraft mod: the messages and the voice are Gryt, and your plugin is what
+somebody added on top.
+
 ### Your link is checked
 
 `homepage` has to be `http` or `https`. A manifest is written by whoever wrote
@@ -288,7 +305,8 @@ That's between your two halves, which is where it belongs.
 
 **`bus.servers()` is empty.** No server you're on is running the other half, or
 you're on a server old enough not to say. Check the server log says your plugin
-started.
+started — and check the server menu, under **What this server runs**, which
+lists what that server admits to.
 
 **Messages send and nothing comes back.** The server drops a message for a
 plugin it isn't running, silently and on purpose. Check the server log says your
