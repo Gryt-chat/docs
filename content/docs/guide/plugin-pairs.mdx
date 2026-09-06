@@ -1,0 +1,311 @@
+---
+title: Plugin pairs
+description: A plugin on the client, the same plugin on the server, and a pipe between them
+icon: Cable
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Steps, Step } from 'fumadocs-ui/components/steps';
+
+A [client addon](/docs/client/addons) changes Gryt for the person running it. A
+[server plugin](/docs/server/plugins) changes it for everybody on that server.
+On their own, neither knows the other exists.
+
+A pair is both halves talking. The client half knows something — what you're
+playing, what you're reading, where you are in a game — and the server half is
+what makes everybody else's client show it.
+
+If you've written a Minecraft mod that needs to be on the server too, this is
+the same shape.
+
+## What Gryt carries
+
+One thing, in both directions:
+
+```
+{ topic, data }
+```
+
+`topic` is a short routing key. `data` is whatever you want, up to 8 KB of
+JSON. What the two halves say to each other is your protocol, and Gryt stays out
+of it.
+
+## The client half
+
+```js
+// manifest.json needs "capabilities": ["messaging"]
+const bus = window.gryt.messaging("presence");
+
+bus.send("playing", { game: "Factorio" });
+
+bus.on("playing", ({ host, data }) => {
+  // Somebody on `host` is playing something.
+});
+```
+
+`send` goes to every server you're on unless you name one. A server that isn't
+running the other half drops it, so sending into nothing is cheap rather than an
+error — most servers won't have your plugin.
+
+`bus.servers()` tells you which ones do:
+
+```js
+for (const host of bus.servers()) {
+  console.log(`${host} runs the other half`);
+}
+```
+
+Hosts, and nothing else. There's no version in there on purpose — see
+[versions](#versions) below.
+
+An empty list means no server you're on is running it, or you're on a server too
+old to say. Both look the same from here.
+
+## The server half
+
+```js
+// manifest.json needs "capabilities": ["messaging"]
+export function activate(api) {
+  api.messaging.on("playing", (message) => {
+    api.messaging.send("playing", {
+      who: message.nickname,
+      game: message.data.game,
+    });
+  });
+}
+```
+
+`message.userId` and `message.nickname` come from the connection, not from
+what was sent. Somebody can't claim to be somebody else.
+
+`send` goes to everybody by default, or to the members you name:
+
+```js
+api.messaging.send("playing", data, [message.userId]);
+```
+
+<Callout type="warn">
+**Check what arrives.** `message.data` was written by somebody's client. Gryt
+caps how big and how deeply nested it is, and nothing else — the shape is yours
+to establish. Assuming your own client half is on the other end is the mistake
+this warning exists for.
+</Callout>
+
+## Being findable
+
+You don't have to do anything. Every plugin a server runs is named to everybody
+who joins it, along with what it's allowed to do:
+
+```json
+{
+  "id": "automod",
+  "name": "Automod",
+  "author": "somebody",
+  "description": "Bans people posting the same thing everywhere",
+  "homepage": "https://example.com/automod",
+  "capabilities": ["messages:read", "moderation"]
+}
+```
+
+There's no way to turn that off. A server plugin reads the messages people send,
+and the people sending them get to know what's reading them. An operator who'd
+rather that weren't visible is the case this exists for.
+
+For your plugin it means `bus.servers()` just works. For everybody on the server
+it means the more important thing: the capabilities are there, because "this
+server runs automod" tells nobody anything, and "…which reads every message you
+send" is a sentence somebody can act on.
+
+### No version numbers
+
+The one thing a server won't say is which version it's running. A version
+number is which known problem applies, and handing that to everybody who joins
+answers a question an attacker would otherwise have to ask.
+
+If your two halves need to agree on a version, put one in your own payloads —
+between the two halves rather than on the doorstep.
+
+### Your link is checked
+
+`homepage` has to be `http` or `https`. A manifest is written by whoever wrote
+the plugin, and members are shown this, so a `javascript:` URL would be a link
+injection into every one of their clients. Anything else is dropped and the
+plugin still loads.
+
+## What Gryt refuses
+
+You don't have to check any of this yourself. A message is dropped before your
+plugin sees it if:
+
+| | |
+| --- | --- |
+| the sender hasn't joined | no token, no message |
+| the topic isn't a short routing key | up to 64 letters, digits, `.` `-` `:` `_` |
+| the payload is over 8 KB | measured in bytes, so one emoji is four |
+| it nests more than 8 deep | a thousand levels fits in 8 KB, and breaks whatever walks it |
+| it holds more than 512 values | 8 KB of `{"a":1,"b":1,…}` is thousands of keys |
+| it has a `__proto__`, `constructor` or `prototype` key | the obvious deep merge walks straight into it |
+| somebody sends more than 30 in ten seconds | per person, per plugin |
+
+Everything past that is yours. Gryt checks the structure; you check the meaning.
+
+## A pair that works
+
+Both halves of a plugin that shows what people are playing.
+
+<Steps>
+
+<Step>
+### The server half
+
+On the server, in your plugins folder, `presence/manifest.json`:
+
+```json
+{
+  "id": "presence",
+  "name": "Presence",
+  "version": "1.0.0",
+  "main": "index.mjs",
+  "author": "you",
+  "description": "Shows what people are playing",
+  "capabilities": ["messaging", "members:read"]
+}
+```
+
+And `presence/index.mjs`:
+
+```js
+// Who is playing what. Lost on restart, which is fine — every client sends
+// again when it reconnects.
+const playing = new Map();
+
+export function activate(api) {
+  api.messaging.on("playing", (message) => {
+    // Somebody else's bytes. A game name is a string or it is nothing.
+    const game = typeof message.data?.game === "string" ? message.data.game.slice(0, 80) : null;
+
+    if (game) playing.set(message.userId, { who: message.nickname, game });
+    else playing.delete(message.userId);
+
+    api.messaging.send("everyone", [...playing.values()]);
+  });
+
+  // Somebody left, so stop telling people they are playing something.
+  api.on("member:left", (member) => {
+    if (!playing.delete(member.userId)) return;
+    api.messaging.send("everyone", [...playing.values()]);
+  });
+}
+```
+
+</Step>
+
+<Step>
+### The client half
+
+In your addons folder, `presence/manifest.json`:
+
+```json
+{
+  "id": "presence",
+  "name": "Presence",
+  "version": "1.0.0",
+  "type": "plugin",
+  "main": "index.js",
+  "capabilities": ["messaging"]
+}
+```
+
+And `presence/index.js`:
+
+```js
+export function activate() {
+  const bus = window.gryt.messaging("presence");
+
+  bus.on("everyone", ({ host, data }) => {
+    // `data` came from your own server half, which built it from other
+    // people's messages. Still worth checking.
+    if (!Array.isArray(data)) return;
+    for (const entry of data) {
+      console.log(`[${host}] ${entry.who} is playing ${entry.game}`);
+    }
+  });
+
+  // Tell the servers that are listening.
+  const say = (game) => {
+    for (const host of bus.servers()) {
+      bus.send("playing", { game }, host);
+    }
+  };
+
+  say("Factorio");
+}
+```
+
+</Step>
+
+<Step>
+### Turn both on
+
+Restart the server, then enable the addon in Settings, Addons, and allow
+**Exchange its own messages with the servers you are on**.
+
+The server log tells you the half it loaded:
+
+```
+ℹ plugin presence 1.0.0 started (messaging, members:read)
+```
+
+Everybody on that server can now see `presence` in the list of what it runs,
+and that it reads who joins and leaves.
+
+</Step>
+
+</Steps>
+
+The client half in that example asks the person nothing — it says Factorio and
+means it. Reading what you're actually running isn't possible yet; a plugin
+can't see your processes, and [the client addons
+page](/docs/client/addons) says why. Until that changes, a real one would ask
+you to type it, or read it from a game that publishes it somewhere a web page
+can reach.
+
+## Versions
+
+Two people will be on different versions of your plugin the day after you
+publish it, and Gryt won't help you with that — the server doesn't say which
+version it's running, deliberately.
+
+So put one in your own payloads and ignore what you don't understand:
+
+```js
+bus.send("playing", { v: 1, game });
+```
+
+That's between your two halves, which is where it belongs.
+
+## When nothing happens
+
+**`bus.servers()` is empty.** No server you're on is running the other half, or
+you're on a server old enough not to say. Check the server log says your plugin
+started.
+
+**Messages send and nothing comes back.** The server drops a message for a
+plugin it isn't running, silently and on purpose. Check the server log says your
+plugin started.
+
+**`window.gryt.messaging` throws.** The addon's manifest is missing
+`"capabilities": ["messaging"]`, or the switch under it in Settings is off. Both
+have to be true.
+
+**Nothing arrives after a while.** Thirty messages per ten seconds is the limit.
+Past that the client gets a `plugin:error` and the message is dropped.
+
+## What this doesn't protect you from
+
+Both halves run as themselves — the client half in the app's own page, the
+server half in the server process. Neither is sandboxed, and both pages say so
+at length.
+
+A pair is two pieces of somebody else's code, on your machine and on the
+server's. Install ones you'd trust the author with.

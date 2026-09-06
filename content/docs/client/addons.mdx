@@ -63,6 +63,11 @@ register an app with them, do the PKCE flow in a popup, poll their
 currently-playing endpoint, and put the result through `setActivity`. Gryt
 doesn't need to know Spotify exists.
 
+**Anything a server will do for you works too**, if you write the other half. A
+plugin can send to a copy of itself running on the server and hear back, which
+is how anything other people can see gets there. [Plugin
+pairs](/docs/guide/plugin-pairs) is the whole of it.
+
 **Anything that needs the operating system doesn't.** Watching which game
 you're running means reading the process list, which is Node's job, not the
 page's. Gryt would have to expose that from its main process first. That hands
@@ -89,9 +94,22 @@ A plugin says what it needs in its manifest:
 Whoever runs it turns that on in Settings, under the addon. Until they do,
 `setActivity` throws.
 
-There's one capability today, `status`. A name Gryt doesn't recognise is
-ignored rather than refused, so a manifest written for a newer version still
-works on an older one. It just doesn't get the new part.
+Two of them:
+
+| Capability | What it lets a plugin do |
+| --- | --- |
+| `status` | Set what you are doing, on every server you are on |
+| `messaging` | Exchange its own messages with the servers you are on |
+
+The second is how a plugin talks to a copy of itself running on a server, so
+what it knows reaches other people — see [plugin
+pairs](/docs/guide/plugin-pairs). It's the one capability where agreeing
+involves somebody else's server as well as this plugin: what the plugin sends
+reaches a server you joined, and what comes back was written by whoever runs it.
+
+A name Gryt doesn't recognise is ignored rather than refused, so a manifest
+written for a newer version still works on an older one. It just doesn't get the
+new part.
 
 ## What permission does and doesn't mean
 
