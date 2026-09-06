@@ -1,0 +1,253 @@
+---
+title: Plugins
+description: Code that runs inside your server, what it can hear, and why installing one is a bigger decision than a theme
+icon: Blocks
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Steps, Step } from 'fumadocs-ui/components/steps';
+
+A server plugin is JavaScript that runs inside your Gryt server. It hears about
+things as they happen — a message being sent, somebody joining, somebody being
+banned — and it runs with everything the server has.
+
+That last part is the whole story, so it comes first.
+
+<Callout type="warn">
+**Installing a plugin is running somebody else's code on your machine, with
+your database.** It can read your files, open connections, and do anything the
+server process can do. The capability list in a manifest is a plugin telling you
+what it means to do. It is not a wall around it.
+</Callout>
+
+There's no sandbox and no plan for one that would still be useful. Install
+plugins you'd trust the author with, and read the code if you can. If that
+sounds like too much, you probably want [a bot](/docs/bot) instead — a bot talks
+to your server over the network like any other client, sees only what you let it
+into, and can be turned off without touching the server.
+
+## Turning them on
+
+Plugins are off until you say otherwise. Set `GRYT_PLUGINS_DIR` to a folder:
+
+```bash
+GRYT_PLUGINS_DIR=/srv/gryt/plugins
+```
+
+There's no default path on purpose. A default would mean upgrading your server
+could start running whatever happened to be sitting in a directory you'd
+forgotten about.
+
+Each plugin is a folder inside that one. Gryt reads them at startup, so adding
+or removing one means a restart.
+
+## What a plugin looks like
+
+Two files. A `manifest.json`:
+
+```json
+{
+  "id": "automod",
+  "name": "Automod",
+  "version": "1.0.0",
+  "main": "index.mjs",
+  "description": "Watches for people posting the same thing in every channel",
+  "author": "you",
+  "capabilities": ["messages:read", "members:read"]
+}
+```
+
+And the entry point, which exports `activate`:
+
+```js
+export function activate(api) {
+  api.log.info("watching");
+
+  api.on("message:created", (message) => {
+    api.log.info(`${message.nickname} said ${message.text.length} characters`);
+  });
+}
+```
+
+Either ESM or CommonJS works. A default export is used if there's no `activate`.
+
+## What a plugin can hear
+
+Three events so far:
+
+| Event | When | Needs |
+| --- | --- | --- |
+| `message:created` | Somebody sends a message in a channel | `messages:read` |
+| `member:joined` | Somebody joins for the first time, or comes back after a kick | `members:read` |
+| `member:left` | Somebody leaves, is kicked, or is banned | `members:read` |
+
+`member:joined` doesn't fire on a reconnect. Somebody whose wifi drops twenty
+times an hour joins once.
+
+`member:left` carries `reason`, which is `"left"`, `"kicked"` or `"banned"`, so
+a plugin can tell a departure from a moderator having already dealt with it.
+
+### Two kinds of message you won't see
+
+**Direct messages.** They're between two people. A plugin you installed doesn't
+get to read them.
+
+**Encrypted messages.** Gryt holds the ciphertext and nothing else, so there's
+nothing to hand over. These are skipped rather than delivered with empty text,
+which would look like somebody sending nothing.
+
+## What a plugin can't do yet
+
+Act. This first version can watch and log and call out to something else, and it
+can't ban anybody, kick anybody or delete a message. That's coming, and it's
+separate because it needs answers this version didn't: who a plugin is acting
+as in the audit trail, and what stops a buggy plugin banning everybody who
+speaks.
+
+So today a plugin can notice somebody spamming and tell you. It can't do
+anything about it.
+
+## Asking for permission
+
+`capabilities` in the manifest is the list. Subscribing to an event whose
+capability you didn't declare throws, at startup, with the line named — rather
+than silently never firing, which is a much worse afternoon.
+
+A capability Gryt doesn't recognise is ignored rather than refused, so a plugin
+written for a newer version still loads on an older server. It just doesn't get
+the new part.
+
+The list is there so you can read what a plugin intends before you run it, and
+so the log says what was running when you go back and look. It is not
+enforcement, as above.
+
+## Writing one
+
+<Steps>
+
+<Step>
+### Make the folder
+
+```bash
+mkdir -p /srv/gryt/plugins/watchdog
+```
+
+</Step>
+
+<Step>
+### `manifest.json`
+
+```json
+{
+  "id": "watchdog",
+  "name": "Watchdog",
+  "version": "1.0.0",
+  "main": "index.mjs",
+  "capabilities": ["messages:read", "members:read"]
+}
+```
+
+</Step>
+
+<Step>
+### `index.mjs`
+
+```js
+// Anybody who posts more than five messages in ten seconds gets mentioned in
+// the log. Acting on it is not possible yet, so this is as far as it goes.
+const RECENT = new Map();
+const WINDOW_MS = 10_000;
+const LIMIT = 5;
+
+export function activate(api) {
+  api.on("message:created", (message) => {
+    const now = Date.now();
+    const times = (RECENT.get(message.userId) ?? []).filter((t) => now - t < WINDOW_MS);
+    times.push(now);
+    RECENT.set(message.userId, times);
+
+    if (times.length > LIMIT) {
+      api.log.warn(`${message.nickname ?? message.userId} sent ${times.length} messages in ten seconds`);
+    }
+  });
+
+  api.on("member:left", (member) => {
+    // They are gone, so the window is not worth keeping.
+    RECENT.delete(member.userId);
+  });
+}
+```
+
+</Step>
+
+<Step>
+### Restart
+
+```bash
+docker compose restart gryt-server
+```
+
+The log tells you what loaded:
+
+```
+ℹ Loading plugins from /srv/gryt/plugins
+ℹ plugin watchdog 1.0.0 started (messages:read, members:read)
+✔ 1 plugin loaded: watchdog
+```
+
+</Step>
+
+</Steps>
+
+## When it doesn't load
+
+Gryt names the folder and the reason, then carries on starting. A plugin never
+stops your server booting.
+
+**`no manifest.json`** — the folder has no manifest, so it isn't a plugin. Often
+a leftover directory sitting next to the real ones.
+
+**`manifest.json could not be read`** — it's there and it isn't valid JSON. A
+trailing comma is usually the culprit.
+
+**`name is missing`**, and the same for `id`, `version` and `main` — the field
+is absent or blank.
+
+**`id ... must be lower case letters, digits, dot, dash or underscore`** — the
+id becomes part of a path, so it's kept to something that can be one.
+
+**`main resolves outside the plugin folder`** — the entry point points somewhere
+else on disk.
+
+**`id automod is already used by a-copy`** — two folders claim the same id.
+The first one alphabetically wins and the second is skipped.
+
+**`failed to start and was skipped`** — the plugin threw while loading. The
+stack trace is in the log, and anything it subscribed before it threw is
+dropped.
+
+## When it stops working
+
+A plugin that throws while handling an event doesn't take anything else down.
+The error is logged with the plugin and the event named, and the next plugin
+still gets called.
+
+If one throws ten times, Gryt stops calling it and says so once:
+
+```
+✖ plugin watchdog failed 10 times and will not be called again: message.text is undefined
+```
+
+It stays off until you restart. That's deliberate — the alternative is a broken
+plugin writing a log line for every message forever.
+
+## Plugins and addons
+
+They're different things.
+
+A [client addon](/docs/client/addons) is a theme or a plugin somebody installs
+in their own Gryt app. It affects them and nobody else.
+
+A server plugin is installed by whoever runs the server, and it affects
+everybody on it. Nobody joining your server can see what plugins you're running.
+That's worth remembering when you pick one.
