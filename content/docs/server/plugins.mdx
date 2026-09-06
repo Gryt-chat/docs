@@ -9,7 +9,7 @@ import { Steps, Step } from 'fumadocs-ui/components/steps';
 
 A server plugin is JavaScript that runs inside your Gryt server. It hears about
 things as they happen — a message being sent, somebody joining, somebody being
-banned — and it runs with everything the server has.
+banned — it can kick and ban, and it runs with everything the server has.
 
 That last part is the whole story, so it comes first.
 
@@ -81,6 +81,12 @@ Three events so far:
 | `member:joined` | Somebody joins for the first time, or comes back after a kick | `members:read` |
 | `member:left` | Somebody leaves, is kicked, or is banned | `members:read` |
 
+And one thing it can do, covered below:
+
+| Action | What it does | Needs |
+| --- | --- | --- |
+| `api.moderation.kick` / `.ban` | Removes a member, not a moderator | `moderation` |
+
 `member:joined` doesn't fire on a reconnect. Somebody whose wifi drops twenty
 times an hour joins once.
 
@@ -96,22 +102,78 @@ get to read them.
 nothing to hand over. These are skipped rather than delivered with empty text,
 which would look like somebody sending nothing.
 
-## What a plugin can't do yet
+## What a plugin can do about it
 
-Act. This first version can watch and log and call out to something else, and it
-can't ban anybody, kick anybody or delete a message. That's coming, and it's
-separate because it needs answers this version didn't: who a plugin is acting
-as in the audit trail, and what stops a buggy plugin banning everybody who
-speaks.
+Kick and ban, with the `moderation` capability:
 
-So today a plugin can notice somebody spamming and tell you. It can't do
-anything about it.
+```js
+const result = await api.moderation.kick(message.userId, { reason: "spam" });
+if (!result.ok) api.log.warn(`could not kick: ${result.reason}`);
+
+// Permanent unless you say otherwise.
+await api.moderation.ban(message.userId, { reason: "spam", durationMs: 60 * 60 * 1000 });
+```
+
+Both take the member id that comes on every event, and both hand back
+`{ ok: true }` or `{ ok: false, reason }` rather than throwing. A refusal is an
+ordinary answer — the member is a moderator, or they already left — and your
+plugin should log it and carry on.
+
+Reaching for `api.moderation` without declaring the capability does throw, at
+startup, so you find out then rather than on the first person you try to ban.
+
+### It can't touch a moderator
+
+A plugin holds no role, so there's nothing to compare it against the way one
+moderator outranks another. The rule that replaces that is simple: **a plugin
+can't act on a moderator, or on you.**
+
+Anybody holding kick, ban, mute, manage messages or manage roles is out of
+reach. Manage roles is in that list because giving yourself the ban permission
+is the same thing one step removed.
+
+It's deliberately not "anybody below rank 40" or similar. Ranks are yours to
+arrange, and a rule written against the numbers would mean reordering your roles
+quietly changed who a plugin could ban.
+
+### It can only do twenty of these a minute
+
+Per plugin. That's not there to stop a plugin that means harm — one that does
+has the whole Node runtime and doesn't need this API. It's there for the plugin
+with a bug that bans everybody who speaks, which is a much more likely Tuesday.
+
+Twenty is far more than a real automod does on a normal day and far fewer than a
+loop gets through before somebody notices. Past that, calls come back
+`{ ok: false }` and the server log says so loudly.
+
+### You'll be able to tell it wasn't a person
+
+A plugin isn't a member, so it doesn't borrow anybody's name. A ban it places
+shows `plugin:automod` where a moderator's name would go, and the audit log
+records `plugin:ban` rather than the `ban` a person writes. If you're ever
+looking at a ban wondering who did it, that's the answer.
+
+### What it still can't do
+
+Delete a message. That one's coming — it needs some untangling inside the chat
+handler first, because deleting a message also cleans up its attachments, its
+thread counters and the cache, and none of that can be called from outside yet.
+
+So for now an automod can take the person out and can't take the post down.
 
 ## Asking for permission
 
-`capabilities` in the manifest is the list. Subscribing to an event whose
-capability you didn't declare throws, at startup, with the line named — rather
-than silently never firing, which is a much worse afternoon.
+`capabilities` in the manifest is the list. There are three:
+
+| Capability | What it lets a plugin do |
+| --- | --- |
+| `messages:read` | Read every message sent in a channel |
+| `members:read` | See who joins and leaves, and the invite code they used |
+| `moderation` | Kick and ban members, but not moderators or you |
+
+Subscribing to an event, or reaching for `api.moderation`, without declaring
+what it needs throws at startup with the line named — rather than silently
+never firing, which is a much worse afternoon.
 
 A capability Gryt doesn't recognise is ignored rather than refused, so a plugin
 written for a newer version still loads on an older server. It just doesn't get
@@ -143,7 +205,7 @@ mkdir -p /srv/gryt/plugins/watchdog
   "name": "Watchdog",
   "version": "1.0.0",
   "main": "index.mjs",
-  "capabilities": ["messages:read", "members:read"]
+  "capabilities": ["messages:read", "members:read", "moderation"]
 }
 ```
 
@@ -153,22 +215,30 @@ mkdir -p /srv/gryt/plugins/watchdog
 ### `index.mjs`
 
 ```js
-// Anybody who posts more than five messages in ten seconds gets mentioned in
-// the log. Acting on it is not possible yet, so this is as far as it goes.
+// More than five messages in ten seconds and you are out for an hour.
 const RECENT = new Map();
 const WINDOW_MS = 10_000;
 const LIMIT = 5;
+const BAN_MS = 60 * 60 * 1000;
 
 export function activate(api) {
-  api.on("message:created", (message) => {
+  api.on("message:created", async (message) => {
     const now = Date.now();
     const times = (RECENT.get(message.userId) ?? []).filter((t) => now - t < WINDOW_MS);
     times.push(now);
     RECENT.set(message.userId, times);
 
-    if (times.length > LIMIT) {
-      api.log.warn(`${message.nickname ?? message.userId} sent ${times.length} messages in ten seconds`);
-    }
+    if (times.length <= LIMIT) return;
+
+    const result = await api.moderation.ban(message.userId, {
+      reason: `${times.length} messages in ten seconds`,
+      durationMs: BAN_MS,
+    });
+
+    // Worth logging rather than ignoring. Most of the time this is Gryt saying
+    // the person is a moderator, which is exactly what you want it to say.
+    if (result.ok) api.log.info(`banned ${message.nickname ?? message.userId} for an hour`);
+    else api.log.warn(`did not ban ${message.userId}: ${result.reason}`);
   });
 
   api.on("member:left", (member) => {
@@ -191,7 +261,7 @@ The log tells you what loaded:
 
 ```
 ℹ Loading plugins from /srv/gryt/plugins
-ℹ plugin watchdog 1.0.0 started (messages:read, members:read)
+ℹ plugin watchdog 1.0.0 started (messages:read, members:read, moderation)
 ✔ 1 plugin loaded: watchdog
 ```
 
