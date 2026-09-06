@@ -5,6 +5,7 @@
   "pages": [
     "index",
     "identity",
+    "plugins",
     "api-reference",
     "rate-limiting",
     "multi-server"
