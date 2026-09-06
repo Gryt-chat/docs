@@ -345,11 +345,33 @@ an attacker would otherwise have to ask.
 are shown it as a link, so a `javascript:` URL in a manifest would be a link
 injection into their clients.
 
+They read it in the server menu, under **What this server runs** — the same menu
+that has Leave in it, one row above. That's not an accident of ordering.
+
+The capabilities are written out there, not shown as `messages:read`: "Reads
+every message you send in a channel", "Can kick you, ban you, and delete your
+messages". Somebody who's never read this page still gets to decide.
+
 <Callout>
-Right now this arrives with the rest of the server details, which means somebody
-sees it just after joining rather than before. Showing it before is worth doing
-and isn't done yet.
+It arrives with the rest of the server details, which means people see it just
+after joining rather than before. Showing it before they join is worth doing and
+isn't done yet.
 </Callout>
+
+### It also tells them what they're missing
+
+If one of your plugins has a client half — anything with `messaging` — Gryt tells
+people who don't have it installed:
+
+> **One of these has a part you do not have.** Everything here works without
+> them. You will just not see whatever they add.
+
+Nobody gets turned away. A missing plugin means missing whatever it adds, not
+being refused: the messages and the voice are the server, and a plugin is what
+you put on top.
+
+If you want people to be able to go and get it, put a `homepage` in the
+manifest. The row links to it.
 
 ## Talking to a client plugin
 
