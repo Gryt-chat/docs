@@ -86,6 +86,7 @@ And one thing it can do, covered below:
 | Action | What it does | Needs |
 | --- | --- | --- |
 | `api.moderation.kick` / `.ban` | Removes a member, not a moderator | `moderation` |
+| `api.moderation.deleteMessage` | Takes a post down | `moderation` |
 
 `member:joined` doesn't fire on a reconnect. Somebody whose wifi drops twenty
 times an hour joins once.
@@ -153,13 +154,23 @@ shows `plugin:automod` where a moderator's name would go, and the audit log
 records `plugin:ban` rather than the `ban` a person writes. If you're ever
 looking at a ban wondering who did it, that's the answer.
 
-### What it still can't do
+### It can delete a message too
 
-Delete a message. That one's coming — it needs some untangling inside the chat
-handler first, because deleting a message also cleans up its attachments, its
-thread counters and the cache, and none of that can be called from outside yet.
+Usually the more proportionate answer. Most spam wants the post gone rather than
+the person:
 
-So for now an automod can take the person out and can't take the post down.
+```js
+const result = await api.moderation.deleteMessage(message.channelId, message.messageId);
+```
+
+Both ids come straight off `message:created`. It's the same delete a moderator
+does from the app, so the attachments go with it and it disappears from
+everybody's screen the same way.
+
+Channels only, same as reading. And it won't delete a moderator's message —
+that's acting on a moderator, quieter than banning them but the same kind of
+thing. A message from somebody who has since left is still fair game, so
+somebody leaving doesn't strand their spam.
 
 ## Asking for permission
 
@@ -169,7 +180,7 @@ So for now an automod can take the person out and can't take the post down.
 | --- | --- |
 | `messages:read` | Read every message sent in a channel |
 | `members:read` | See who joins and leaves, and the invite code they used |
-| `moderation` | Kick and ban members, but not moderators or you |
+| `moderation` | Kick and ban members and delete their messages, but not a moderator&rsquo;s |
 
 Subscribing to an event, or reaching for `api.moderation`, without declaring
 what it needs throws at startup with the line named — rather than silently
@@ -229,6 +240,9 @@ export function activate(api) {
     RECENT.set(message.userId, times);
 
     if (times.length <= LIMIT) return;
+
+    // The post first, so it is gone whether or not the ban lands.
+    await api.moderation.deleteMessage(message.channelId, message.messageId);
 
     const result = await api.moderation.ban(message.userId, {
       reason: `${times.length} messages in ten seconds`,
