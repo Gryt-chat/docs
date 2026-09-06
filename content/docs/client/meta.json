@@ -9,6 +9,7 @@
     "build-from-source",
     "voice-communication",
     "audio-processing",
-    "user-interface"
+    "user-interface",
+    "addons"
   ]
 }
