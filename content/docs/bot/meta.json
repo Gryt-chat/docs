@@ -3,6 +3,7 @@
   "title": "Bot SDK",
   "icon": "Bot",
   "pages": [
-    "index"
+    "index",
+    "api-reference"
   ]
 }
