@@ -34,26 +34,30 @@ of it.
 
 ```js
 // manifest.json needs "capabilities": ["messaging"]
-const bus = window.gryt.messaging("presence");
+await gryt.messaging.send("playing", { game: "Factorio" });
 
-bus.send("playing", { game: "Factorio" });
-
-bus.on("playing", ({ host, data }) => {
+gryt.messaging.on("playing", ({ host, data }) => {
   // Somebody on `host` is playing something.
 });
 ```
+
+It's `gryt`, not `window.gryt`: your plugin runs in a worker, and you don't pass
+your addon's id because Gryt already knows which plugin is calling.
 
 `send` goes to every server you're on unless you name one. A server that isn't
 running the other half drops it, so sending into nothing is cheap rather than an
 error — most servers won't have your plugin.
 
-`bus.servers()` tells you which ones do:
+`gryt.messaging.servers()` tells you which ones do:
 
 ```js
-for (const host of bus.servers()) {
-  console.log(`${host} runs the other half`);
+for (const host of await gryt.messaging.servers()) {
+  gryt.log.info(`${host} runs the other half`);
 }
 ```
+
+It's a promise — the answer lives in the app, and your plugin is on the other
+side of a message port.
 
 Hosts, and nothing else. There's no version in there on purpose — see
 [versions](#versions) below.
@@ -111,7 +115,7 @@ There's no way to turn that off. A server plugin reads the messages people send,
 and the people sending them get to know what's reading them. An operator who'd
 rather that weren't visible is the case this exists for.
 
-For your plugin it means `bus.servers()` just works. For everybody on the server
+For your plugin it means `gryt.messaging.servers()` just works. For everybody on the server
 it means the more important thing: the capabilities are there, because "this
 server runs automod" tells nobody anything, and "…which reads every message you
 send" is a sentence somebody can act on.
@@ -237,21 +241,19 @@ And `presence/index.js`:
 
 ```js
 export function activate() {
-  const bus = window.gryt.messaging("presence");
-
-  bus.on("everyone", ({ host, data }) => {
+  gryt.messaging.on("everyone", ({ host, data }) => {
     // `data` came from your own server half, which built it from other
     // people's messages. Still worth checking.
     if (!Array.isArray(data)) return;
     for (const entry of data) {
-      console.log(`[${host}] ${entry.who} is playing ${entry.game}`);
+      gryt.log.info(`[${host}] ${entry.who} is playing ${entry.game}`);
     }
   });
 
   // Tell the servers that are listening.
-  const say = (game) => {
-    for (const host of bus.servers()) {
-      bus.send("playing", { game }, host);
+  const say = async (game) => {
+    for (const host of await gryt.messaging.servers()) {
+      await gryt.messaging.send("playing", { game }, host);
     }
   };
 
@@ -296,14 +298,14 @@ version it's running, deliberately.
 So put one in your own payloads and ignore what you don't understand:
 
 ```js
-bus.send("playing", { v: 1, game });
+gryt.messaging.send("playing", { v: 1, game });
 ```
 
 That's between your two halves, which is where it belongs.
 
 ## When nothing happens
 
-**`bus.servers()` is empty.** No server you're on is running the other half, or
+**`gryt.messaging.servers()` is empty.** No server you're on is running the other half, or
 you're on a server old enough not to say. Check the server log says your plugin
 started — and check the server menu, under **What this server runs**, which
 lists what that server admits to.
@@ -312,18 +314,26 @@ lists what that server admits to.
 plugin it isn't running, silently and on purpose. Check the server log says your
 plugin started.
 
-**`window.gryt.messaging` throws.** The addon's manifest is missing
+**`gryt.messaging` calls reject.** The addon's manifest is missing
 `"capabilities": ["messaging"]`, or the switch under it in Settings is off. Both
-have to be true.
+have to be true. The message says which.
 
 **Nothing arrives after a while.** Thirty messages per ten seconds is the limit.
 Past that the client gets a `plugin:error` and the message is dropped.
 
 ## What this doesn't protect you from
 
-Both halves run as themselves — the client half in the app's own page, the
-server half in the server process. Neither is sandboxed, and both pages say so
-at length.
+The two halves are not the same shape here, and it is worth knowing which is
+which.
 
-A pair is two pieces of somebody else's code, on your machine and on the
-server's. Install ones you'd trust the author with.
+The client half runs in a worker. It can reach the `gryt` API for what it was
+granted, and the internet, and nothing else — not the DOM, not your messages,
+not your identity key.
+
+The server half runs in the server process, with the server's own database and
+filesystem, and nothing contains it. That is what makes it useful and it is
+also the whole of the risk.
+
+Both keep their internet connection either way, so what either half is given it
+can send anywhere. A pair is two pieces of somebody else's code, one on your
+machine and one on the server's. Install ones you'd trust the author with.
