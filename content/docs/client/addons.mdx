@@ -79,9 +79,11 @@ plugin can send to a copy of itself running on the server and hear back, which
 is how anything other people can see gets there. [Plugin
 pairs](/docs/guide/plugin-pairs) is the whole of it.
 
-**Drawing things doesn't.** A plugin can't add a button or change how a message
-looks, because it isn't on the page. If that's what you wanted, Gryt doesn't do
-it — and the reason is the section below.
+**Drawing goes one way only.** A plugin can put a panel beside the member list
+by describing it — a title and rows of text, which Gryt renders. What it can't
+do is add a button, change how a message looks, or put an element on the page,
+because it isn't on the page. [A panel of your own](#a-panel-of-your-own) below
+is the whole of what drawing means here.
 
 **Anything that needs the operating system doesn't.** Watching which game
 you're running means reading the process list, which is Node's job, not the
@@ -92,6 +94,62 @@ own rather than riding on `status`.
 
 It's on the list. Until it lands, a game plugin has to ask you what you're
 playing rather than work it out.
+
+## A panel of your own
+
+`gryt.ui.panel()` puts a list under the member list. It needs `display`.
+
+```js
+await gryt.ui.panel({
+  title: "Playing now",
+  rows: [
+    { label: "sam", value: "Tetris" },
+    { label: "kari", value: "Factorio" },
+  ],
+});
+```
+
+That draws as:
+
+```
+PLAYING NOW
+Presence
+sam                    Tetris
+kari                   Factorio
+```
+
+Your addon's name goes under the title and you don't get to choose it. A panel
+is your words in Gryt's chrome, and somebody reading it should be able to tell
+whose words they are.
+
+You send text. Gryt draws it. There's no markup, no colour, no class name and no
+element you hand over — a worker has no DOM and this is what it gets instead of
+one. Angle brackets in a label come out as angle brackets.
+
+One panel per plugin. Calling `panel()` again replaces what's there, so you
+never have to track a handle, and `gryt.ui.clear()` takes it down. Turning your
+addon off clears it for you.
+
+### What Gryt trims
+
+Rows usually come from somewhere else — the presence example builds them out of
+nicknames other people picked — so a panel is cut to fit rather than refused:
+
+| | |
+| --- | --- |
+| Title | 48 characters |
+| Rows | 20 |
+| Label | 48 characters |
+| Value | 64 characters |
+
+A row that isn't a row is dropped and the rest survive. Control characters go,
+including the bidirectional overrides — one of those in a label reorders
+everything drawn after it, which is how a row renders as something other than
+what it says.
+
+The shape is still yours to check. Dropping an entry whose name isn't a string
+is your job; Gryt won't draw `undefined` for you, but it won't stop you asking
+it to either.
 
 ## Asking for permission
 
