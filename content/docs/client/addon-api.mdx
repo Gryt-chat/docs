@@ -40,25 +40,26 @@ says which is missing.
 | `status` | Set what you are doing, on every server you are on |
 | `messaging` | Exchange its own messages with the servers you are on |
 | `display` | Show its own panel beside the member list |
+| `processes` | See which of your listed programs are running |
 
 ## The manifest
 
 `manifest.json`, in your addon's folder.
 
-| Field | Type | Required |
+| Field | Type | What it is |
 | --- | --- | --- |
-| `id` | `string` | yes |
-| `name` | `string` | yes |
-| `version` | `string` | yes |
-| `type` | `"plugin" \| "theme"` | yes |
-| `description` | `string` | no |
-| `author` | `string` | no |
-| `banner` | `string` | no |
-| `styles` | `string[]` | no |
-| `main` | `string` | no |
-| `requiresReloadOnDisable` | `boolean` | no |
-| `capabilities` | `string[]` | no |
-| `repository` | `string` | no |
+| `id` | `string` |  |
+| `name` | `string` |  |
+| `version` | `string` |  |
+| `type` | `"plugin" \| "theme"` |  |
+| `description?` | `string` |  |
+| `author?` | `string` |  |
+| `banner?` | `string` |  |
+| `styles?` | `string[]` | Theme-only: CSS files to inject |
+| `main?` | `string` | Plugin-only: JS entry point |
+| `requiresReloadOnDisable?` | `boolean` | Plugin-only: if true, disabling the addon reloads the client |
+| `capabilities?` | `string[]` | Plugin-only: what it says it needs to do (GRYT-928). Declared here and agreed to per addon before `window.gryt` will answer. **Not a sandbox** — see `capabilities.ts` for what this does and does not buy. A plugin runs in the app's own page and could go around it. Unknown names are dropped rather than refused, so a manifest written against a newer Gryt still loads on an older one. |
+| `repository?` | `string` | Where the addon is published, as `owner/repo` on GitHub. Optional. An addon without it never reports an update, which is the right default for one somebody wrote for themselves and dropped in the folder. Not free-form: this string decides what gets fetched, so a manifest whose repository is anything other than two plain path segments is rejected when it is read rather than when it is used. |
 
 ## `gryt`
 
@@ -130,6 +131,35 @@ servers(): Promise<string[]>
 Needs `messaging`.
 
 Which servers run the other half. A round trip, so a promise.
+
+### `gryt.processes`
+
+#### `running()`
+
+```ts
+running(): Promise<string[]>
+```
+
+Needs `processes`.
+
+Which of the programs the person listed are running.
+
+Their list, not their machine. Somebody who has written down two games
+gets an answer about those two games and nothing about the other two
+hundred things they have open — which is what makes the capability's
+wording true rather than a euphemism.
+
+Empty in a browser, and empty on the desktop until somebody lists
+something. Both look the same from here on purpose: a plugin should
+degrade rather than tell people to go and configure Gryt.
+
+#### `on()`
+
+```ts
+on(handler: (running: string[]) => void): () => void
+```
+
+Hear when that answer changes. Needs `processes`.
 
 ### `gryt.ui`
 
