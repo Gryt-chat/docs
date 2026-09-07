@@ -39,6 +39,7 @@ says which is missing.
 | --- | --- |
 | `status` | Set what you are doing, on every server you are on |
 | `messaging` | Exchange its own messages with the servers you are on |
+| `display` | Show its own panel beside the member list |
 
 ## The manifest
 
@@ -129,6 +130,35 @@ servers(): Promise<string[]>
 Needs `messaging`.
 
 Which servers run the other half. A round trip, so a promise.
+
+### `gryt.ui`
+
+#### `panel()`
+
+```ts
+panel(panel: { title: string; rows: { label: string; value?: string }[] }): Promise<unknown>
+```
+
+Needs `display`.
+
+Draw a panel beside the member list.
+
+A title and rows of text, and nothing else — no markup, no colours, no
+node handed over. The app renders it with its own components, which is
+what lets a plugin be seen at all from inside a worker with no DOM.
+
+Calling it again replaces what is there. There is one panel per plugin,
+so a plugin does not have to track handles or clean up more than one.
+
+#### `clear()`
+
+```ts
+clear(): Promise<unknown>
+```
+
+Needs `display`.
+
+Take it down.
 
 ### `gryt.log`
 
