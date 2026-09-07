@@ -31,42 +31,52 @@ A theme uses `"type": "theme"` and a `styles` array instead of `main`.
 
 ## What a plugin can do
 
-Gryt puts a small API on `window.gryt`. It holds the app version, the current
-theme, an event for when the theme changes, and one thing a plugin can change:
+Your plugin gets a `gryt` global. It holds the app version, the current theme,
+an event for when the theme changes, and one thing a plugin can change:
 
 ```js
-window.gryt.setActivity("nowplaying", "🎧 Bohemian Rhapsody — Queen");
+await gryt.setActivity("🎧 Bohemian Rhapsody — Queen");
 ```
 
 That's the line under your name in the member list, on every server you're on.
 An empty string clears it.
 
-The first argument is your addon's `id`, the same one from the manifest.
+It's `gryt`, not `window.gryt` — your plugin runs in a worker and there's no
+`window` in one. And you don't pass your addon's id: Gryt knows which plugin is
+calling, because each one has a worker of its own.
 
 <Callout type="warn">
-`setActivity` throws if your plugin hasn't been given permission. A status that
-silently doesn't appear is harder to work out than an error in the console.
+Everything on `gryt` returns a promise, and it rejects if your plugin hasn't
+been given permission. A status that silently doesn't appear is harder to work
+out than an error in the console.
 </Callout>
 
 ## What a plugin can reach
 
-A plugin runs in the same page as the app, so it can do what a web page can do.
-Fetch things over HTTP. Open a popup for an OAuth flow. Read and write
-`localStorage`. Touch the DOM.
+A plugin runs in a worker. It can talk to the internet — `fetch`, `WebSocket` —
+and it can call the `gryt` API for the things it was given permission for.
 
-It can't do what a web page can't do. Gryt runs with `contextIsolation` on and
-`nodeIntegration` off, so there's no `require`, no filesystem, and no way to
-list running processes.
+That's the whole list. There's no `window`, no `document`, no `localStorage`, no
+`indexedDB`, and no way to start a worker that would have them. Your plugin
+can't see Gryt's own code, its sockets, your messages, or the key that is your
+identity — not because it promises not to, but because they aren't there.
 
-**Anything with a web API works today.** Spotify is the obvious one. You
-register an app with them, do the PKCE flow in a popup, poll their
-currently-playing endpoint, and put the result through `setActivity`. Gryt
-doesn't need to know Spotify exists.
+**Anything with a web API works.** Spotify is the obvious one. You register an
+app with them, poll their currently-playing endpoint, and put the result through
+`setActivity`. Gryt doesn't need to know Spotify exists.
+
+The one wrinkle: an OAuth flow usually wants a popup, and a worker can't open
+one. Do the sign-in on your own page, keep the refresh token, and have the
+plugin use it.
 
 **Anything a server will do for you works too**, if you write the other half. A
 plugin can send to a copy of itself running on the server and hear back, which
 is how anything other people can see gets there. [Plugin
 pairs](/docs/guide/plugin-pairs) is the whole of it.
+
+**Drawing things doesn't.** A plugin can't add a button or change how a message
+looks, because it isn't on the page. If that's what you wanted, Gryt doesn't do
+it — and the reason is the section below.
 
 **Anything that needs the operating system doesn't.** Watching which game
 you're running means reading the process list, which is Node's job, not the
@@ -113,27 +123,28 @@ new part.
 
 ## What permission does and doesn't mean
 
+A plugin runs in a worker of its own, and the only thing it can reach is the
+`gryt` API. Gryt checks every call against the manifest and the switch you set,
+and refuses what you didn't agree to. There's no other way in — a plugin can't
+ignore the API and help itself, because there's nothing else there to take.
+
+That wasn't true until recently. Plugins used to run on the app's own page, and
+the switches were a plugin telling you what it intended rather than a limit on
+what it could do. If you read that here before, this is the part that changed.
+
 <Callout type="warn">
-**A plugin runs as part of Gryt.** It can reach anything the app can: your
-messages, your servers, and the key that is your identity. The permission
-switches are a plugin telling you what it intends to do, not a wall around it.
+**What it still can't stop: where a plugin sends what you gave it.** A plugin
+keeps its internet connection — one that can't reach Spotify isn't a
+now-playing plugin. So the switches bound what a plugin can **read**, not what
+it does with it afterwards.
 </Callout>
 
-Gryt loads a plugin as a script in its own page. That's what makes plugins
-useful, because they can see the app and change it, and it's also why nothing
-stops one from ignoring the API and doing whatever it likes. A plugin that
-respects the permissions is easy to write. A plugin that doesn't has to go
-around them on purpose.
+That's the honest shape of it. Letting a plugin read your messages is trusting
+whoever wrote it with those messages, wherever they decide to put them. Install
+ones you'd trust the author with.
 
-So the switches get you three things. A plugin has to say what it wants before
-you enable it. You get to read that and decide. And anything it does outside
-what you agreed to was somebody's decision rather than an accident.
-
-They don't protect you from a plugin that means you harm. Install ones you'd
-trust the author with.
-
-Themes are different. CSS can't call anything, so the worst a bad theme does is
-look wrong.
+Themes are different again. CSS can't call anything, so the worst a bad theme
+does is look wrong.
 
 ## A plugin that sets your status
 
@@ -167,35 +178,29 @@ Settings, Addons, **Open folder**, then a new folder inside it called
 ### `index.js`
 
 ```js
-const ADDON_ID = "nowplaying";
-
 // Whatever you're reading from. A service you've authenticated with, a local
 // player's HTTP API, anything you can fetch. This one cycles two strings so
 // you can see it working before wiring the real thing up.
 const tracks = ["🎧 Bohemian Rhapsody — Queen", "🎧 Blue Monday — New Order"];
 let i = 0;
 
-const timer = setInterval(() => {
+const timer = setInterval(async () => {
   try {
-    window.gryt.setActivity(ADDON_ID, tracks[i % tracks.length]);
+    await gryt.setActivity(tracks[i % tracks.length]);
     i += 1;
   } catch (err) {
-    // Throws until the permission is granted. Stop rather than log this every
+    // Rejects until the permission is granted. Stop rather than log this every
     // thirty seconds forever.
-    console.warn("[nowplaying]", err.message);
+    gryt.log.warn(err.message);
     clearInterval(timer);
   }
 }, 30_000);
 
-// Gryt fires this when the addon is turned off. Clear the status on the way
-// out, or it sits under your name until you reconnect.
-window.addEventListener(`gryt:addon-cleanup:${ADDON_ID}`, () => {
+// Your one chance to tidy up. Clear the status on the way out, or it sits under
+// your name until you reconnect.
+gryt.on("cleanup", () => {
   clearInterval(timer);
-  try {
-    window.gryt.setActivity(ADDON_ID, "");
-  } catch {
-    // Already revoked. Nothing to clean up.
-  }
+  gryt.setActivity("").catch(() => {});
 });
 ```
 
@@ -216,8 +221,9 @@ underneath.
 **The addon doesn't appear.** Check the folder has a `manifest.json` with an
 `id`, a `name`, a `version` and a `type`.
 
-**`setActivity` throws.** Either `capabilities` is missing from the manifest, or
-the switch under the addon is off. Both have to be true.
+**`setActivity` rejects.** Either `capabilities` is missing from the manifest,
+or the switch under the addon is off. Both have to be true. The message says
+which.
 
 **The status doesn't show up.** Your role on that server might not allow it. Ask
 whoever runs it about the **Set what you are doing** permission.
@@ -239,9 +245,11 @@ Leave is the next row down.
 
 ## Removing one
 
-Turn it off in Settings, or delete the folder. Some plugins ask Gryt to restart
-when they're turned off, because there's no reliable way to undo everything a
-script did.
+Turn it off in Settings, or delete the folder.
+
+Turning a plugin off stops its worker. It gets a `cleanup` event first, and is
+stopped whether or not it finishes — a plugin can't keep running by never
+tidying up.
 
 Turning one off leaves its permissions where they were, so switching it back on
 doesn't ask again. Deleting the folder clears them, so a different addon can't
