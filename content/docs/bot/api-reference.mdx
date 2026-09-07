@@ -111,29 +111,31 @@ fetch(conversationId: string, limit = 50): Promise<void>
 Ask for the last N messages in a channel. Answered on the `message` event.
 ### `GrytBotEvents`
 
-| Field | Type |
-| --- | --- |
-| `ready` | `[ServerInfo]` |
-| `message` | `[Message]` |
-| `members` | `[Member[]]` |
-| `channels` | `[Channel[]]` |
-| `error` | `[Error]` |
-| `waiting` | `[string]` |
-| `disconnected` | `[string]` |
+| Field | Type | What it is |
+| --- | --- | --- |
+| `ready` | `[ServerInfo]` |  |
+| `message` | `[Message]` |  |
+| `members` | `[Member[]]` |  |
+| `channels` | `[Channel[]]` |  |
+| `error` | `[Error]` | Something the server refused. Always worth logging; often a permission. |
+| `waiting` | `[string]` | Turned away pending approval. Not an error — see the note in `wire`. |
+| `disconnected` | `[string]` |  |
+
 ### `GrytBotOptions`
 
-| Field | Type |
-| --- | --- |
-| `host` | `string` |
-| `nickname` | `string` |
-| `identityPath` | `string` |
-| `identity` | `BotIdentity` |
-| `wants` | `string[]` |
-| `description` | `string` |
-| `botToken` | `string` |
-| `prefix` | `string` |
-| `helpCommand` | `boolean` |
-| `secure` | `boolean` |
+| Field | Type | What it is |
+| --- | --- | --- |
+| `host` | `string` | `chat.example.com`, or `localhost:5001`. Scheme optional. |
+| `nickname?` | `string` | What the member list will call it. |
+| `identityPath?` | `string` | Where the key lives. The file *is* the bot — see identity.ts. |
+| `identity?` | `BotIdentity` | An already-loaded identity, if you keep the key somewhere of your own. |
+| `wants?` | `string[]` | Sent once, the first time it turns up, and shown to whoever approves it. Ask for the least that works. **Fixed from then on.** A later run declaring more gets the answer to the question the first one asked — the run asking for more may not be yours. |
+| `description?` | `string` | One line, shown beside the ask. Say what the bot is for. |
+| `botToken?` | `string` | A token from a registration an operator set up in advance. The unattended path: no approval to wait for, because the approving already happened. Single-use — the first bot to present it becomes that registration. |
+| `prefix?` | `string` | The command prefix. Set to "" to turn the router off entirely. |
+| `helpCommand?` | `boolean` | Whether to answer `help` with a listing. On by default. |
+| `secure?` | `boolean` | Force http/https rather than guessing from the host. |
+
 ### `parseCommand`
 
 Which command a message invokes, if any.
@@ -151,25 +153,28 @@ splitArgs(rest: string): string[]
 ```
 ### `CommandContext`
 
-| Field | Type |
-| --- | --- |
-| `message` | `Message` |
-| `rest` | `string` |
-| `args` | `string[]` |
-| `reply` | `(text: string): Promise<void>` |
-| `react` | `(emoji: string): Promise<void>` |
+| Field | Type | What it is |
+| --- | --- | --- |
+| `message` | `Message` | The message that invoked it. |
+| `rest` | `string` | Everything after the command word, trimmed. Empty string, never null. |
+| `args` | `string[]` | `rest` split on whitespace, with empties dropped. |
+| `reply` | `(text: string): Promise<void>` | Reply in the channel the command came from. |
+| `react` | `(emoji: string): Promise<void>` | React to the message that invoked it. |
+
 ### `CommandOptions`
 
-| Field | Type |
-| --- | --- |
-| `description` | `string` |
-| `requires` | `Permission[]` |
+| Field | Type | What it is |
+| --- | --- | --- |
+| `description?` | `string` | One line, for the help listing. |
+| `requires?` | `Permission[]` | Permissions the *bot* needs before this command is worth offering. Checked before the handler runs, so a command that replies is skipped outright on a server where the bot may not post — rather than running, failing at the socket, and leaving whoever typed it watching nothing happen. This is about the bot, not about the person who typed it: what *they* may do is the server's business and it is already enforcing it. |
+
 ### `RegisteredCommand`
 
-| Field | Type |
-| --- | --- |
-| `name` | `string` |
-| `handler` | `(ctx: CommandContext) => void \| Promise<void>` |
+| Field | Type | What it is |
+| --- | --- | --- |
+| `name` | `string` |  |
+| `handler` | `(ctx: CommandContext) => void \| Promise<void>` |  |
+
 ### `createIdentity`
 
 Mint a new identity. The bot this belongs to has never been seen anywhere.
@@ -199,29 +204,32 @@ PERMISSIONS_BEFORE_CATALOGUE: readonly Permission[] = [ "send_messages", "attach
 ```
 ### `BotIdentity`
 
-| Field | Type |
-| --- | --- |
-| `subject` | `string` |
-| `certificate` | `(): Promise<string>` |
-| `assertion` | `(audience: string, nonce: string): Promise<string>` |
+| Field | Type | What it is |
+| --- | --- | --- |
+| `subject` | `string` | The id this bot will be known by on every server. Derived from the key. |
+| `certificate` | `(): Promise<string>` | A certificate that vouches for itself, valid for an hour. |
+| `assertion` | `(audience: string, nonce: string): Promise<string>` | Proof, bound to one server's challenge, that this bot holds the key. |
+
 ### `Attachment`
 
-| Field | Type |
-| --- | --- |
-| `file_id` | `string` |
-| `mime` | `string \| null` |
-| `size` | `number \| null` |
-| `original_name` | `string \| null` |
-| `width` | `number \| null` |
-| `height` | `number \| null` |
-| `has_thumbnail` | `boolean` |
+| Field | Type | What it is |
+| --- | --- | --- |
+| `file_id` | `string` |  |
+| `mime` | `string \| null` |  |
+| `size` | `number \| null` |  |
+| `original_name` | `string \| null` |  |
+| `width` | `number \| null` |  |
+| `height` | `number \| null` |  |
+| `has_thumbnail` | `boolean` |  |
+
 ### `Channel`
 
-| Field | Type |
-| --- | --- |
-| `id` | `string` |
-| `name` | `string` |
-| `type` | `"text" \| "voice"` |
+| Field | Type | What it is |
+| --- | --- | --- |
+| `id` | `string` |  |
+| `name` | `string` |  |
+| `type` | `"text" \| "voice"` |  |
+
 ### `ServerRefusal`
 
 Why the server refused something.
@@ -230,36 +238,39 @@ The machine-readable half is `error`, which is what the server actually
 sends; `code` is accepted too because it is the name half of this SDK reached
 for first and getting it wrong turned "waiting to be approved" into a crash.
 
-| Field | Type |
-| --- | --- |
-| `error` | `string` |
-| `code` | `string` |
-| `message` | `string` |
-| `permission` | `string` |
+| Field | Type | What it is |
+| --- | --- | --- |
+| `error?` | `string` |  |
+| `code?` | `string` |  |
+| `message?` | `string` |  |
+| `permission?` | `string` | Named when the refusal was a permission. |
+
 ### `Member`
 
-| Field | Type |
-| --- | --- |
-| `serverUserId` | `string` |
-| `nickname` | `string` |
-| `role` | `string` |
-| `status` | `"online" \| "in_voice" \| "afk" \| "offline"` |
-| `avatarFileId` | `string \| null` |
+| Field | Type | What it is |
+| --- | --- | --- |
+| `serverUserId` | `string` |  |
+| `nickname` | `string` |  |
+| `role` | `string` |  |
+| `status` | `"online" \| "in_voice" \| "afk" \| "offline"` |  |
+| `avatarFileId` | `string \| null` |  |
+
 ### `Message`
 
-| Field | Type |
-| --- | --- |
-| `conversationId` | `string` |
-| `messageId` | `string` |
-| `senderServerUserId` | `string` |
-| `senderNickname` | `string \| null` |
-| `text` | `string \| null` |
-| `attachments` | `Attachment[]` |
-| `createdAt` | `Date` |
-| `editedAt` | `Date \| null` |
-| `replyToMessageId` | `string \| null` |
-| `isSystem` | `boolean` |
-| `isOwn` | `boolean` |
+| Field | Type | What it is |
+| --- | --- | --- |
+| `conversationId` | `string` |  |
+| `messageId` | `string` |  |
+| `senderServerUserId` | `string` |  |
+| `senderNickname` | `string \| null` |  |
+| `text` | `string \| null` |  |
+| `attachments` | `Attachment[]` |  |
+| `createdAt` | `Date` |  |
+| `editedAt` | `Date \| null` |  |
+| `replyToMessageId` | `string \| null` |  |
+| `isSystem` | `boolean` | True for the "X joined the server" kind of message, which has no sender. |
+| `isOwn` | `boolean` | True when this bot sent it. Handlers are not called for these. |
+
 ### `Permission`
 
 A permission id. The server owns the list; see `GrytBot.permissions`.
@@ -269,11 +280,12 @@ export type Permission = string;
 ```
 ### `ServerInfo`
 
-| Field | Type |
-| --- | --- |
-| `serverId` | `string` |
-| `name` | `string` |
-| `description` | `string` |
-| `permissions` | `Permission[]` |
-| `role` | `string` |
+| Field | Type | What it is |
+| --- | --- | --- |
+| `serverId` | `string` |  |
+| `name` | `string` |  |
+| `description` | `string` |  |
+| `permissions` | `Permission[]` | What this bot may do here. Empty until the server has said. |
+| `role` | `string` | The role this bot holds. |
+
 

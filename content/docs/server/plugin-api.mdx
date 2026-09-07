@@ -36,16 +36,16 @@ rather than refused, so a plugin written against a newer Gryt still loads.
 
 `manifest.json`, beside your entry point.
 
-| Field | Type | Required |
+| Field | Type | What it is |
 | --- | --- | --- |
-| `id` | `string` | yes |
-| `name` | `string` | yes |
-| `version` | `string` | yes |
-| `main` | `string` | yes |
-| `description` | `string` | no |
-| `author` | `string` | no |
-| `homepage` | `string` | no |
-| `capabilities` | `PluginCapability[]` | yes |
+| `id` | `string` | Folder name by convention, and the key everything else hangs off: the log prefix, the config section, the storage namespace. |
+| `name` | `string` |  |
+| `version` | `string` |  |
+| `main` | `string` | Entry point, relative to the plugin's own folder. |
+| `description?` | `string` |  |
+| `author?` | `string` |  |
+| `homepage?` | `string` | Where to go and read what this plugin is (GRYT-941). Members are told this, so it is checked rather than trusted: `http` or `https` and nothing else. A `javascript:` or `data:` URL rendered as a link in somebody's client is the reason this is not just a string. |
+| `capabilities` | `PluginCapability[]` | Normalised: deduplicated, in catalogue order, unknown names dropped. |
 
 ## `api`
 
@@ -129,7 +129,7 @@ Needs `messages:read`.
 api.on("message:created", (payload) => {})
 ```
 
-| Field | Type |  |
+| Field | Type | What it is |
 | --- | --- | --- |
 | `messageId` | `string` |  |
 | `channelId` | `string` |  |
@@ -147,7 +147,7 @@ Needs `members:read`.
 api.on("member:joined", (payload) => {})
 ```
 
-| Field | Type |  |
+| Field | Type | What it is |
 | --- | --- | --- |
 | `userId` | `string` |  |
 | `nickname` | `string \| null` |  |
@@ -162,7 +162,7 @@ Needs `members:read`.
 api.on("member:left", (payload) => {})
 ```
 
-| Field | Type |  |
+| Field | Type | What it is |
 | --- | --- | --- |
 | `userId` | `string` |  |
 | `nickname` | `string \| null` |  |
@@ -234,12 +234,12 @@ listening.
 
 ### What a handler is given
 
-| Field | Type | Where it comes from |
+| Field | Type | What it is |
 | --- | --- | --- |
-| `topic` | `string` | the sender picked it, within the limits below |
-| `data` | `unknown` | **the member's own bytes — check it** |
-| `userId` | `string` | the connection, so it cannot be faked |
-| `nickname` | `string \| null` | the connection, so it cannot be faked |
+| `topic` | `string` | **The sender picked it**, within the limits below.  |
+| `data` | `unknown` | **The member's own bytes — check it.** Whatever the client plugin sent. **Not validated beyond its size** — this is the member's own bytes and a server plugin has to check it. |
+| `userId` | `string` | **From the connection**, so it cannot be faked. Who sent it, as their id on this server. |
+| `nickname` | `string \| null` | **From the connection**, so it cannot be faked.  |
 
 ### What Gryt drops before you see it
 
