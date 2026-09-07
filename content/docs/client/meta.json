@@ -10,6 +10,7 @@
     "voice-communication",
     "audio-processing",
     "user-interface",
-    "addons"
+    "addons",
+    "addon-api"
   ]
 }
