@@ -3,13 +3,8 @@ import { source } from '@/lib/source';
 import { notFound } from 'next/navigation';
 
 /**
- * A single documentation page as markdown.
- *
- * Reached as `/docs/<path>.md` — see the rewrite in next.config.mjs. /llms.txt
- * indexes the docs and /llms-full.txt is all of it at once, which is a lot to
- * read when the question is about one page. This is the middle size: append
- * `.md` to any docs URL and get that page's source without the surrounding
- * HTML.
+ * A single documentation page as markdown, reached as `/docs/<path>.md`. The middle size
+ * between /llms.txt, which is an index, and /llms-full.txt, which is everything.
  */
 export const dynamic = 'force-static';
 

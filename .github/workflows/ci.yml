@@ -18,6 +18,10 @@ jobs:
           cache: yarn
       - run: yarn install --frozen-lockfile
 
+      # No comment runs past two lines. The script carries the list of paths still
+      # to be swept, and that list only ever shrinks.
+      - run: yarn test:comment-length
+
       # `next build` type-checks as part of building and there is no separate
       # typecheck script, so this is both.
       - run: yarn build
