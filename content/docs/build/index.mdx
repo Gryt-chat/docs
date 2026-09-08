@@ -1,0 +1,55 @@
+---
+title: Building on Gryt
+description: Bots, addons, plugins, and the packages you can build against
+icon: Blocks
+---
+
+Four ways to extend Gryt, and they run in different places. Which one you want
+depends on where your code needs to live.
+
+## Pick where your code runs
+
+<Cards>
+  <Card
+    title="A bot"
+    description="Its own process, joins a server like a person does"
+    href="/docs/build/bots"
+  />
+  <Card
+    title="A client addon"
+    description="Runs in the app, changes what you see"
+    href="/docs/build/addons"
+  />
+  <Card
+    title="A server plugin"
+    description="Runs in the server, sees messages and members"
+    href="/docs/build/server-plugins"
+  />
+  <Card
+    title="Both halves"
+    description="A server plugin and a client addon that talk to each other"
+    href="/docs/build/plugin-pairs"
+  />
+</Cards>
+
+## Which pages are generated
+
+Three of these are written by a script that reads the source, and CI regenerates
+them, so they cannot fall behind what the code exports. Editing one by hand gets
+your change wiped on the next run. Change the source it reads instead.
+
+| Generated | What it documents |
+|---|---|
+| [Addon API](/docs/build/addon-api) | Everything on the `gryt` object a client plugin runs against |
+| [Server plugin API](/docs/build/server-plugin-api) | Every capability, event and call a server plugin gets |
+| [Bot API](/docs/build/bot-api) | Everything `@gryt/bot` exports |
+
+[Server API](/docs/build/server-api) is the exception: it's the REST and
+Socket.IO surface, and it's written by hand.
+
+## Packages you can build against
+
+[`@gryt/voice`](/docs/build/voice) is the voice engine the Gryt client runs on
+itself: the microphone, the SFU connection, and the hooks around them.
+[`@gryt/ui`](/docs/build/ui) is the component library, with a [React Native
+build](/docs/build/ui-react-native) for mobile.

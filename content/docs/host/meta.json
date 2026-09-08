@@ -1,0 +1,28 @@
+{
+  "title": "Host Gryt",
+  "description": "Run a server, on anything from a spare PC to a VPS",
+  "pages": [
+    "index",
+    "---Getting one up---",
+    "quick-start",
+    "cli",
+    "from-the-app",
+    "docker-compose",
+    "windows",
+    "---Letting people reach it---",
+    "no-domain",
+    "cloudflare-tunnel",
+    "tailscale",
+    "---The services---",
+    "server",
+    "sfu",
+    "configuration",
+    "identity",
+    "multi-server",
+    "---Running it---",
+    "rate-limiting",
+    "backups",
+    "monitoring",
+    "voice-debugging"
+  ]
+}

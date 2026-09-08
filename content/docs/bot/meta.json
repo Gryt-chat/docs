@@ -1,9 +1,0 @@
-{
-  "root": true,
-  "title": "Bot SDK",
-  "icon": "Bot",
-  "pages": [
-    "index",
-    "api-reference"
-  ]
-}

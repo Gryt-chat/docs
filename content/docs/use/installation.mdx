@@ -1,0 +1,176 @@
+---
+title: Installation
+description: Download and install the Gryt desktop client on Windows, macOS, or Linux
+icon: Download
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+
+The Gryt desktop client is available for Windows, macOS, and Linux.
+
+| Platform | Options |
+|----------|---------|
+| **Windows** | [GitHub Releases](https://github.com/Gryt-chat/gryt/releases/latest) |
+| **macOS** | [GitHub Releases](https://github.com/Gryt-chat/gryt/releases/latest) |
+| **Linux** | [Snap Store](https://snapcraft.io/gryt-chat) · [AUR](https://aur.archlinux.org/packages/gryt-chat-bin) · [GitHub Releases](https://github.com/Gryt-chat/gryt/releases/latest) |
+| **Web** | [app.gryt.chat](https://app.gryt.chat) |
+
+## Beta desktop builds
+
+Beta installers are attached to prereleases on the
+[GitHub Releases page](https://github.com/Gryt-chat/gryt/releases). Their
+versions use the form `1.2.3-beta.N`. Install the asset for your platform from
+the prerelease you want to test.
+
+Beta builds may not behave correctly with stable servers. Use a matching beta
+client when testing a beta server, and keep the stable installer available if
+you need to switch back.
+
+<Tabs items={["Windows", "macOS", "Linux"]}>
+<Tab value="Windows">
+
+### Download
+
+Two Windows builds are published:
+
+| File | What it is |
+|------|------------|
+| `Gryt-Chat-x.x.x-win-x64.exe` | The installer |
+| `Gryt-Chat-x.x.x-win-x64-portable.exe` | Runs without installing, for a USB stick or a machine you can't install on |
+
+Both are on the [releases page](https://github.com/Gryt-chat/gryt/releases).
+
+### Install
+
+1. Run the `.exe` installer
+2. If Windows SmartScreen shows **"Windows protected your PC"**, click **More info** then **Run anyway**. This happens because the app isn't yet signed with an EV code signing certificate.
+3. Follow the installer prompts
+4. Gryt will launch automatically after installation
+
+The app installs to `C:\Users\<user>\AppData\Local\Programs\gryt-chat\` and auto-updates when new versions are released.
+
+### Uninstall
+
+Go to **Settings → Apps → Gryt Chat → Uninstall**, or run the uninstaller from the install directory.
+
+</Tab>
+<Tab value="macOS">
+
+### Download
+
+Two files are published, both Apple Silicon:
+
+| File | What it is |
+|------|------------|
+| `Gryt-Chat-x.x.x-mac-arm64.dmg` | The usual way in |
+| `Gryt-Chat-x.x.x-mac-arm64.zip` | The same app, and what the updater uses |
+
+Get either from the [releases page](https://github.com/Gryt-chat/gryt/releases).
+
+### Install
+
+Open the `.dmg` and drag **Gryt Chat.app** into **Applications**. With the
+`.zip`, extract it first and drag the app across yourself.
+
+The app is code-signed and notarized, so it opens normally. There's no
+right-click-Open step, and if macOS does complain that it can't be checked for
+malicious software, that's worth reporting rather than working around.
+
+### Uninstall
+
+Drag **Gryt Chat.app** from Applications to the Trash.
+
+</Tab>
+<Tab value="Linux">
+
+### Snap Store (recommended)
+
+Install from the [Snap Store](https://snapcraft.io/gryt-chat):
+
+```bash
+sudo snap install gryt-chat
+```
+
+Auto-updates are handled by snapd.
+
+### Arch Linux (AUR)
+
+Install [`gryt-chat-bin`](https://aur.archlinux.org/packages/gryt-chat-bin) with your preferred AUR helper:
+
+```bash
+yay -S gryt-chat-bin
+```
+
+### .deb package (Debian / Ubuntu)
+
+Download **Gryt-Chat-x.x.x-linux-amd64.deb** from the [releases page](https://github.com/Gryt-chat/gryt/releases/latest).
+
+```bash
+sudo dpkg -i Gryt-Chat-*-linux-amd64.deb
+```
+
+Launch from your application menu or run `gryt-chat` from the terminal.
+
+### AppImage (all distros)
+
+Download **Gryt-Chat-x.x.x-linux-x86_64.AppImage** from the [releases page](https://github.com/Gryt-chat/gryt/releases/latest).
+
+```bash
+mkdir -p ~/Applications
+mv Gryt-Chat-*-linux-x86_64.AppImage ~/Applications/
+chmod +x ~/Applications/Gryt-Chat-*.AppImage
+~/Applications/Gryt-Chat-*.AppImage
+```
+
+<Callout type="warn">
+Run the AppImage from a **permanent location** like `~/Applications/`. Running it from `~/Downloads/` or `/tmp/` will break the `gryt://` protocol handler needed for login, since the registered path won't persist between launches.
+</Callout>
+
+AppImages are self-contained and run on most distributions without installation. To integrate with your desktop environment (application menu, file associations), use [AppImageLauncher](https://github.com/TheAssassin/AppImageLauncher) or create a `.desktop` file manually.
+
+### Uninstall
+
+```bash
+# Snap
+sudo snap remove gryt-chat
+
+# AUR
+sudo pacman -R gryt-chat-bin
+
+# .deb
+sudo apt remove gryt-chat
+
+# AppImage — just delete the file
+rm Gryt-Chat-*.AppImage
+```
+
+</Tab>
+</Tabs>
+
+## Connecting to a server
+
+1. Open the Gryt desktop app
+2. Click **Add Server**
+3. Enter the server address (e.g. `gryt.example.com` or `192.168.1.100:5000`)
+4. Sign in with your Gryt account
+
+Servers on your local network are discovered automatically via mDNS and will appear in the server list without manual entry.
+
+<Callout type="info">
+The first user to join a brand-new server becomes the owner/admin. After that, the server is invite-only. Ask the server owner for an invite link, or if you're on the same LAN and the owner has enabled **LAN open join**, you can join without an invite.
+</Callout>
+
+## Web client
+
+If you don't want to install anything, you can use the hosted web client at [app.gryt.chat](https://app.gryt.chat). Global push-to-talk, LAN server discovery and auto-updates are desktop-only.
+
+## Prefer to build from source?
+
+See the [Build from Source](/docs/about/build-the-client) guide to compile the client yourself.
+
+Once it is installed, [Updates](/docs/use/updates) covers how new versions arrive and how to change the channel.
+
+## Troubleshooting
+
+See [Troubleshooting](/docs/use/troubleshooting) for common installation issues, including OS security warnings and update problems.

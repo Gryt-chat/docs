@@ -1,0 +1,138 @@
+---
+title: User Interface
+description: Design system, themes, and accessibility
+icon: Palette
+---
+
+The Gryt client is built on `@gryt/ui`, Gryt's own component library, with Tailwind for styling and [Motion](https://motion.dev/) for animation. It follows the system light and dark preference unless told otherwise, and accepts imported themes.
+
+## What it's built on
+
+| Piece | What it does |
+|-------|--------------|
+| `@gryt/ui` | Gryt's own component library, shared with the mobile app |
+| Tailwind CSS 4 | Utility styling |
+| Motion | Layout animations and transitions |
+| React Icons | Material Design icons, via `react-icons/md` |
+
+## Theming
+
+`useTheme()` gives the current appearance and the scaling settings:
+
+- `resolvedAppearance` — `"light"` or `"dark"`, after resolving the system preference
+- `accentColor` — the accent hue
+- `uiScale` — global interface scaling
+- `chatFontSize` — message text size
+
+There's no theme provider component wrapping the tree. The appearance class goes
+straight onto `document.documentElement`, along with `color-scheme`, because
+overlays portal to `document.body` and would otherwise sit outside anything the
+variables were painted on.
+
+Custom themes work the same way: their variables are set on the root element, and
+every property is removed before the next theme's are applied. A theme isn't
+obliged to declare everything the previous one did, so switching from a theme
+with a split light accent to one without would otherwise leave the old accent
+behind on an element nothing else cleans.
+
+Preferences persist per user.
+
+### CSS variables
+
+```css
+:root {
+  --default-font-family: "Atkinson Hyperlegible Next", sans-serif;
+  --code-font-family: "Atkinson Hyperlegible Mono", monospace;
+  --scaling: 1.15;
+}
+
+.dark {
+  --color-background: #111318;
+  --color-panel-solid: #1a1d24;
+}
+
+.light {
+  --color-background: #eef0f4;
+  --color-panel-solid: #ffffff;
+}
+```
+
+## Typography
+
+Gryt uses [Atkinson Hyperlegible Next](https://brailleinstitute.org/freefont) as its primary typeface and **Atkinson Hyperlegible Mono** for monospaced text. Created by the Braille Institute of America, these fonts maximize character differentiation for users with low vision while looking great for everyone. See the [Accessibility](/docs/use/accessibility) page for more details.
+
+Both fonts ship as variable WOFF2 files supporting weights 200–900.
+
+## Invites and membership
+
+Gryt servers are **invite-only**.
+
+- The **first user** to join a brand-new server automatically becomes **owner/admin**.
+- After that, new users must join via an **invite link**.
+- Existing members can rejoin without an invite.
+
+Admins can manage invites in **Server settings > Invites**:
+
+- Create **single-use** or **multi-use** invites (max uses)
+- Create **infinite-use** invites
+- Revoke invites (revocation is permanent)
+
+Each invite shows its usage:
+
+- Finite: `uses remaining / max uses`
+- Infinite: `uses consumed / ∞`
+
+## Emoji
+
+### Standard shortcodes
+
+Type `:smile:` or any other standard shortcode in the chat input and it will be rendered as the corresponding Unicode emoji. Over 1800 standard emojis are supported via the `gemoji` dataset, including names, aliases, and tags.
+
+### Custom server emoji
+
+Server admins can upload custom emojis (PNG, JPEG, WebP, GIF, or SVG). Animated GIFs are preserved as GIFs; all other formats are resized to 128px height and converted to PNG. Multiple images can be selected at once, and `.zip` archives containing images are automatically extracted. Shortcodes are derived from filenames and deduplicated against existing server emojis. Custom emojis are used with the same `:shortcode:` syntax and render as inline images in messages.
+
+Each emoji shows an individual upload progress bar during upload, which is especially useful for larger GIF files. After uploading, admins can rename any emoji by clicking the edit icon in the emoji list.
+
+### Autocomplete
+
+When you type `:` followed by two or more characters, a popup appears above the chat input showing matching emojis. The search uses a ranked algorithm:
+
+1. **Prefix match** — `:smi` matches `:smile:`
+2. **Word-boundary match** — `:up` matches `:thumbs_up:`
+3. **Substring match** — `:rin` matches `:grinning:`
+4. **Tag/alias match** — `:happy` matches emojis tagged "happy"
+
+Navigate with arrow keys, press Enter/Tab to insert, or click a result. Custom server emojis are included and marked with a "custom" badge.
+
+### The message box
+
+The chat input is a `contenteditable` editor that renders emojis inline. Standard emojis appear as native Unicode characters and custom emojis appear as small inline images, so you can see exactly what your message will look like before sending.
+
+## How the code is laid out
+
+The client is organized into feature packages under `src/packages/`:
+
+| Package | Purpose |
+|---------|---------|
+| `addons` | The plugin API and addon loading |
+| `audio` | Microphone, audio pipeline, RNNoise, push-to-talk, speakers |
+| `common` | Auth (Keycloak), shared hooks, utility functions |
+| `dialogues` | Dialog/modal components |
+| `lib` | Shared utilities |
+| `mobile` | Mobile-related hooks |
+| `settings` | Settings UI, theme, server management |
+| `socket` | Socket.IO connections, server list, member sidebar |
+| `webRTC` | SFU connection, voice room, camera, screen share |
+
+Top-level components live in `src/components/` and include the titlebar, browser banner, error boundary, welcome screen, and microphone debug overlay.
+
+## Accessibility
+
+See the [Accessibility guide](/docs/use/accessibility) for our commitment and current status. Key points:
+
+- **Atkinson Hyperlegible** typeface for maximum legibility
+- `@gryt/ui` components carry their ARIA attributes and keyboard behaviour
+- Dark/light themes with system preference detection
+- Keyboard shortcuts for mute, deafen, disconnect, and push-to-talk
+- Ongoing work on full keyboard navigation, screen reader support, and focus management

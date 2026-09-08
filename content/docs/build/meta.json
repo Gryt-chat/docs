@@ -1,0 +1,26 @@
+{
+  "title": "Build on Gryt",
+  "description": "Bots, addons, plugins and the SDKs",
+  "pages": [
+    "index",
+    "---Addons and plugins---",
+    "addons",
+    "addon-api",
+    "server-plugins",
+    "server-plugin-api",
+    "plugin-pairs",
+    "---Bots---",
+    "bots",
+    "bot-api",
+    "---The server's own API---",
+    "server-api",
+    "---Voice SDK---",
+    "voice",
+    "voice-getting-started",
+    "voice-seams",
+    "voice-hooks",
+    "---Component library---",
+    "ui",
+    "ui-react-native"
+  ]
+}

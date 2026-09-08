@@ -1,0 +1,380 @@
+---
+title: Security
+description: How Gryt protects your identity across untrusted servers
+icon: Shield
+---
+
+Gryt is designed so that **anyone can run a server** without being able to impersonate
+the users who join it. This page explains the authentication model and the security
+properties it provides.
+
+## The problem with token forwarding
+
+Most chat platforms that support third-party servers face a fundamental issue: when
+you connect to a server, you need to prove who you are. The naive approach is to send
+a bearer token (like a JWT from an identity provider) directly to the server.
+
+The problem: a malicious server operator can capture that token and replay it to
+impersonate you on other servers that accept the same token.
+
+Gryt solves this with **challenge-response authentication** — you prove your identity
+without ever sending a reusable credential to the server.
+
+## How it works
+
+Gryt uses three services for authentication:
+
+- **Keycloak** (`auth.gryt.chat`) — the identity provider. You log in here once.
+- **Identity Service** (`id.gryt.chat`) — signs certificates that bind your public key to your Gryt identity.
+- **Community Servers** — run by anyone. They verify your identity cryptographically without receiving any reusable token.
+
+### One-time setup
+
+When you first sign in, the client:
+
+1. Authenticates with Keycloak (OIDC + PKCE, same as before)
+2. Generates an **ECDSA P-256 keypair** stored locally on your device
+3. Sends the **public key** to the Identity Service (authenticated with your Keycloak token)
+4. Receives a **signed certificate** — a JWT that says "Gryt confirms that public key X belongs to user Y"
+
+The certificate is cached locally and renewed automatically (valid for 30 days).
+
+### Joining a server
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant S as Community Server
+    participant ID as Identity Service
+
+    C->>S: server:identify (client nonce)
+    S-->>C: server:identity (proof signed by server key)
+    C->>C: Check proof against the pinned key
+    C->>S: server:join (nickname, invite code)
+    S-->>C: server:challenge (nonce, server host)
+    C->>C: Sign assertion (aud=server host, nonce)
+    C->>S: server:verify (certificate, assertion)
+    S->>ID: Fetch JWKS (cached)
+    S->>S: Verify certificate, assertion, nonce
+    S-->>C: server:joined (access token)
+```
+
+The first two steps run on every connection, before anything else is sent — see
+[Authenticating the server](#authenticating-the-server).
+
+1. You request to join. The server responds with a **random nonce** and its hostname.
+2. Your client signs an **assertion** — a short-lived JWT containing the server's hostname, the nonce, and your user ID — using your private key.
+3. Your client sends the assertion along with your **identity certificate** (the one signed by the Identity Service).
+4. The server verifies:
+   - The certificate is signed by the Gryt Identity Service (via its public JWKS endpoint)
+   - The assertion is signed by the public key in the certificate
+   - The `aud` claim in the assertion matches the server's own hostname
+   - The nonce matches and hasn't been used before
+
+If everything checks out, the server issues a **server-scoped access token** (a short-lived JWT signed with the server's own secret). All subsequent API calls use this server token.
+
+## What the server sees
+
+| Data | Can the server see it? |
+|------|----------------------|
+| Your Gryt user ID | Yes — needed to identify returning users |
+| Your public key | Yes — it's in the certificate |
+| Your Keycloak token | **No** — never sent to community servers |
+| Your private key | **No** — never leaves your device |
+| Messages you send in a channel | Yes — that's how server-hosted chat works |
+| Direct messages | **No**, once both clients have published a key |
+| Who you send them to, and when | Yes — it delivers them |
+| Uploads, including in a direct message | Yes — attachments aren't encrypted yet |
+
+## Direct messages are encrypted
+
+A direct message is encrypted on the device that sends it and decrypted on the
+devices that receive it. The server stores an envelope and has never had the text.
+
+This page said the opposite until recently, and the change is worth stating plainly
+rather than quietly editing: direct messages used to be stored as text, in the
+server's database, readable by whoever ran it. Anything sent before your server and
+both clients were updated still is.
+
+### Nothing is asked of anybody central
+
+Each device works out a message key per server from the same seed its identity comes
+from, publishes the public half signed by the identity key it joined that server with,
+and every other client checks that signature itself.
+
+`id.gryt.chat` is not involved. A certificate saying which servers you are on would
+hand it exactly the map Gryt is built not to hand anybody, so the design does without
+one — which also means guests get encrypted messages, not only account holders.
+
+### What it protects
+
+The words and the files, from the server and from anybody who ends up with its disk. A
+stolen backup, a resold drive, a compromised host, an order served on an operator: all
+of them get ciphertext.
+
+Every message gets its own key, wrapped once for each member. Somebody added to a group
+later has no key for anything sent before they arrived. Nothing enforces that. There is
+nothing there for them to open.
+
+An attachment gets its own key too, and it travels inside the message. So a picture is
+encrypted before it leaves your device, and the server stores it without knowing what it
+is called, what type it is, or how big the picture is — only how many bytes it was
+handed and when.
+
+### What it does not
+
+- **Who you talk to, and when.** The server delivers the messages, so it knows. Nothing
+  cheap changes that.
+- **That a file exists.** An attachment is encrypted, but the server still sees that one
+  was sent, how large the ciphertext is, and when. Padding it to hide the size is a
+  separate piece of work and is not pretended at here.
+- **Previews of encrypted pictures.** A thumbnail is made by decoding the image, and the
+  server is handed noise — so an encrypted picture is fetched whole and opened on your
+  device.
+- **Channels.** A channel is a room with a member list rather than a pair of people, and
+  it is not encrypted. A sealed message sent to one is refused rather than half-done.
+- **The first exchange.** Below.
+
+### Trust on first use, again
+
+Your client records the key it first sees for somebody and refuses a change, exactly as
+it does for [a server's identity key](#trust-on-first-use). A server that swaps a key
+later is caught the moment it does, and the client says so instead of quietly
+encrypting to the new one.
+
+What that cannot catch is a server that swapped it from the very first message, because
+the server is what introduced the two of you. Every system where somebody else does the
+introduction has this problem, and they all answer it the same way: the two people check
+with each other, somewhere the introducer is not.
+
+So each member's card carries a sixty-digit code worked out from both of your keys.
+Read it to them on a phone call, or in a room. If they read back the same numbers,
+nobody is in the middle. If nobody ever does it, you still have everything above — you
+have just not closed the first handshake.
+
+The code says nothing about *who* they are. Compared with the wrong person it matches
+perfectly, so it is worth doing on a call where you recognise the voice.
+
+### A conversation that cannot be encrypted says so
+
+Both people need a client new enough to publish a key, and a server new enough to carry
+it. Until then the conversation is text, and the composer says which member is holding
+it up rather than letting anybody assume.
+
+### The web client is weaker than the desktop one here
+
+Whatever serves you the web client also serves the code that would check it, so a
+checksum computed inside the page proves nothing. The desktop app is signed and
+notarised and downloaded once, and a chat server cannot reach it at all.
+
+Both encrypt the same way. What differs is how much you have to take on trust that they
+do.
+
+### Checking the client you downloaded
+
+Encryption takes the server out of the trusted set and leaves your own client in it. No
+protocol removes it: the client sees your words before any of this runs, holds the keys,
+and draws the screen that tells you whether you are safe. What can change is whether
+"trust the client" is a promise or something you can check.
+
+Every release carries a `SHA256SUMS.txt` with a hash for each file on it:
+
+```bash
+sha256sum --check --ignore-missing SHA256SUMS.txt
+```
+
+That only says the file matches a number we published next to it, which is worth
+something against a broken download and nothing against us. So each artifact is also
+attested: a signed statement, in a public append-only log run by [Sigstore](https://www.sigstore.dev/),
+saying these exact bytes came out of a build in the Gryt repository.
+
+```bash
+gh attestation verify Gryt-Chat-1.6.52-win-x64.exe --repo Gryt-chat/gryt
+```
+
+A hash we sign ourselves proves the binary and the hash came from the same place. An entry
+in a log nobody can quietly remove means a build served to one person cannot be hidden
+from everybody else.
+
+It is still not a [reproducible build](https://reproducible-builds.org/), where you
+compile the source yourself and get the same bytes. Electron makes that genuinely hard:
+timestamps, embedded paths, native modules, notarisation. Until it is done, the
+attestation says a build happened here rather than that the source in front of you is
+what went into it.
+
+### Checking a server, and the container images
+
+The same two things cover everything else Gryt ships. A [server release](https://github.com/Gryt-chat/server/releases)
+carries a `SHA256SUMS.txt` for its self-hosted bundles, and both container images are
+attested by digest:
+
+```bash
+gh attestation verify oci://ghcr.io/gryt-chat/server:1.6.4 --repo Gryt-chat/gryt
+gh attestation verify oci://ghcr.io/gryt-chat/client:1.6.52 --repo Gryt-chat/gryt
+```
+
+`--repo Gryt-chat/gryt` for all of them, including the server: the releases live in
+their own repositories, but the workflow that builds them runs in the monorepo, and an
+attestation names the repository that made it.
+
+The client image is the web build — what you get if you host Gryt yourself instead of
+installing the app. It is worth checking for the same reason the desktop app is, and it
+is [the weaker of the two](#the-web-client-is-weaker-than-the-desktop-one-here) once it
+is being served to somebody: this checks the image you are about to run, not what a
+visitor's browser is handed.
+
+### What an operator loses
+
+Worth knowing from this side too: on an encrypted message the server cannot run
+profanity filtering, cannot search, cannot show a moderator the text and cannot export
+it. See [what that costs you](/docs/host/configuration#direct-messages-are-encrypted-and-what-that-costs-you).
+
+## What a malicious server can't do
+
+Even if a server operator captures everything sent during the join flow:
+
+- **Can't impersonate you on another server.** The assertion contains `aud: "evil-server.com"` — any other server rejects it because the audience doesn't match.
+- **Can't replay the assertion.** The nonce is single-use and expires in 60 seconds.
+- **Can't forge new assertions.** They don't have your private key.
+- **Can't use your certificate alone.** A certificate isn't a bearer token — it only links a public key to an identity. Without the corresponding private key, it's useless.
+- **Can't pose as a server you already trust.** Servers are pinned by their identity key, so answering at a known address with a different key gets refused before anything is sent. See [Authenticating the server](#authenticating-the-server).
+- **Can't read a direct message** between two people whose clients have both published a key. It stores an envelope it has no key for.
+- **Can't swap somebody's message key unnoticed.** Clients pin the key they first saw and refuse a change; two people comparing a code catch even the first one.
+
+## Authenticating the server
+
+Everything above proves *you* to the server. The other direction matters too: how does
+your client know the server answering at an address is the one you joined before?
+
+On `app.gryt.chat` TLS answers that — a certificate for the domain proves the endpoint.
+On a LAN there's no TLS, no DNS authority, and mDNS advertisements are unauthenticated.
+Anyone on the network can advertise a service with any name and any server ID, so a
+server ID is a **discovery hint and never a credential**.
+
+### Trust on first use
+
+Each server generates a long-lived **ECDSA P-256 identity keypair** on first run and
+stores the private half in its data directory as `server-identity-key.json`. This is
+separate from the identity certificate authority, and separate from the server ID.
+
+The first time you join a server, your client records its public key — the same
+assumption SSH makes on a first connection. On every later connection, before your
+client sends a token, a certificate or anything else:
+
+1. The client sends a random nonce.
+2. The server signs it with its identity key.
+3. The client checks that signature against the key it pinned.
+
+Because the pin is filed under the **key** rather than the address, a server that moves
+to a new host or port is still recognised as the same server. That's what makes
+automatic recovery safe when a server changes port — recognising it by server ID alone
+would let anyone who read that ID over mDNS take its place.
+
+### When a server's identity changes
+
+If a different key answers at an address you have joined before, Gryt refuses the
+connection and records it. Nothing is sent to that server. You'll see
+**"Server identity not recognised"**, and the server appears under
+**Settings → You → Server identities**, showing the key that was expected and the one
+that answered.
+
+This is deliberately a refusal rather than a warning you can click through. A dismissable
+warning trains people to dismiss it.
+
+The common innocent cause is that you rebuilt or reinstalled the server and its data
+directory wasn't preserved, so it generated a new identity. To confirm that's what
+happened, check the server's startup log — it prints its identity key on boot:
+
+```
+✔ Server identity key ready (85lc28xWNMb-UkGlcc_kDowxgGHaeLKSYI0jVaKyTq4)
+```
+
+If that matches the fingerprint shown in settings, unblock it there. Unblocking retires
+the old identity and pins the new one on the next connection.
+
+<Callout type="warn">
+  If you self-host, **back up `server-identity-key.json` along with your data**, and keep
+  it when moving a server to a new machine. Lose it and every client that has joined will
+  refuse to connect until each user unblocks the server by hand.
+</Callout>
+
+### What this doesn't cover
+
+Pinning stops anyone **forging or impersonating** a server: without the private key they
+can't produce a valid proof. It doesn't stop someone **relaying** a genuine server's
+proof in order to sit in the middle of an unencrypted LAN connection. They still can't
+authenticate as you — your assertion is bound to the address you dialled — but they can
+read traffic that was already plaintext over `ws://`.
+
+Encrypting LAN traffic is a separate, larger question. Over TLS (`wss://`), which is what
+any internet-facing deployment should use, this doesn't apply.
+
+### Rotating a server's key
+
+A server can replace its identity key on purpose without every client treating it as an
+attack:
+
+```bash
+yarn admin:rotate-identity --yes
+```
+
+This generates a new keypair and leaves a **succession statement** signed by the outgoing
+key naming its replacement. The server offers that statement to clients alongside its
+proof, and a client pinned to the old key follows the change automatically. Statements
+last 180 days, so a client that was offline during the rotation still catches up, and a
+client several rotations behind follows the chain forward.
+
+<Callout type="warn">
+  **This is for planned rotation, not for recovering from a compromised key.** The
+  statement is signed by the key being retired, so anyone who already has that key can
+  sign one too. If you believe a key has leaked, rotate it and then have users verify the
+  new fingerprint out of band — the same caveat that applies to SSH's `known_hosts`.
+</Callout>
+
+## Token refresh
+
+Once you've joined a server, token refresh uses only your **server-specific refresh token**
+(a UUID stored in the server's database). No identity proof is needed for refresh — the
+refresh token itself proves a valid prior session on that specific server and is useless
+on any other server.
+
+## Key management
+
+Your ECDSA keypair is stored in IndexedDB (browser) or secure storage (Electron desktop app).
+If you switch devices, a new keypair is generated and a new certificate is issued automatically
+on first sign-in.
+
+If you want to revoke a keypair (for example, if a device is compromised), sign in from
+another device — the old certificate will expire naturally within 30 days, and the old
+device's keypair becomes useless without a valid Keycloak session to obtain a new certificate.
+
+## No server registration required
+
+Servers don't need to be registered anywhere. Any server can verify certificates by
+fetching the Identity Service's public JWKS — the same way any server already validates
+Keycloak tokens today. This means you can run a server binary, point it at the JWKS URL,
+and it works.
+
+## Summary
+
+| Property | How |
+|----------|-----|
+| Identity proof without token forwarding | Challenge-response with client-signed assertions |
+| Server-bound proofs | Assertion `aud` claim matches the target server |
+| Single-use proofs | Random nonce with 60-second TTL |
+| No central server registry | Servers verify certificates via public JWKS |
+| Key compromise recovery | Certificates expire; new keypairs generated per device |
+| Server identity | Long-lived server keypair, pinned by the client on first join |
+| Safe recovery when a server moves | Pins are filed under the key, not the address |
+| Direct messages the server can't read | A key per message, wrapped once per member; private keys never leave the device |
+| No central party learns where you are | Message keys are published per server and signed by the key that joined it |
+| A swapped message key is caught | Peers are pinned on first sight; a change is refused and shown |
+| The first exchange can be checked | A sixty-digit code, compared somewhere the server isn't |
+| Message contents | **Not protected from the server** — see [Direct messages](#direct-messages-are-not-private-from-the-server) |
+
+## Further reading
+
+- [Architecture](/docs/about/architecture) — system overview and data flow
+- [Why Gryt?](/docs/about/why-gryt) — trust boundaries and philosophy
+- [Configuration](/docs/host/configuration) — server security settings
+- [AI policy](/docs/about/ai) — which code is audited line by line, and how to verify it
