@@ -2,13 +2,8 @@ import { BASE_URL, SITE_SUMMARY, pageToMarkdown } from '@/lib/llms';
 import { source } from '@/lib/source';
 
 /**
- * The whole documentation as one markdown file, for language models.
- *
- * Companion to /llms.txt, which is an index, and to /docs/<path>.md, which is
- * one page. This is everything, for when a model would rather read the lot in
- * a single fetch than crawl 36 HTML pages and strip the chrome out of each.
- *
- * Convention: https://llmstxt.org
+ * The whole documentation as one markdown file, for language models, when a model would
+ * rather read the lot than crawl 36 HTML pages. Convention: https://llmstxt.org
  */
 export const dynamic = 'force-static';
 

@@ -2,14 +2,8 @@ import { BASE_URL, SITE_SUMMARY } from '@/lib/llms';
 import { source } from '@/lib/source';
 
 /**
- * An index of the documentation, for language models.
- *
- * A model asked about Gryt would otherwise scrape rendered HTML and get the
- * navigation, theme toggle and search box along with the prose. This lists
- * every page with its description and URL, so a model can pick what it needs
- * and fetch that instead of guessing from a sitemap.
- *
- * Convention: https://llmstxt.org
+ * An index of the documentation, for language models: every page with its description and
+ * URL, so a model fetches what it needs rather than scraping chrome. https://llmstxt.org
  */
 export const dynamic = 'force-static';
 

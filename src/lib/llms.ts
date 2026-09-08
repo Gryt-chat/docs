@@ -12,15 +12,8 @@ export const SITE_SUMMARY = [
 ].join('\n');
 
 /**
- * Drop the leading YAML frontmatter block from raw MDX.
- *
- * The title and description are printed above the body instead, so keeping the
- * block would repeat them — and its `---` fences are the same marker used to
- * separate pages in llms-full.txt, which left that document's structure
- * ambiguous.
- *
- * Anchored to the start of the string on purpose: the blog guide contains a
- * fenced yaml example showing what frontmatter looks like, and that is content.
+ * Drop the leading YAML frontmatter block from raw MDX: the title and description are
+ * printed above the body, and its `---` fences are what separates pages in llms-full.txt.
  */
 export function stripFrontmatter(raw: string): string {
   const match = raw.match(/^\s*---\r?\n[\s\S]*?\r?\n---\r?\n?/);
@@ -28,26 +21,16 @@ export function stripFrontmatter(raw: string): string {
 }
 
 /**
- * Drop the MDX component imports.
- *
- * `import { Callout } from 'fumadocs-ui/components/callout'` is scaffolding for
- * rendering the page. It tells a reader nothing about Gryt, and there are a
- * couple of dozen of them across the docs.
- *
- * The components themselves are left alone — `<Callout type="info">` reads
- * fine with the tag still around it, and unwrapping them risks mangling the
- * text inside.
+ * Drop the MDX component imports, which are scaffolding. The components themselves are left
+ * alone: `<Callout type="info">` reads fine, and unwrapping risks mangling the text.
  */
 function stripImports(raw: string): string {
   return raw.replace(/^import\s+.*?from\s+['"][^'"]+['"];?\s*$/gm, '').trimStart();
 }
 
 /**
- * Turn root-relative links into absolute ones.
- *
- * Links are authored as `/docs/guide/accessibility`, which the site resolves
- * against its own origin. In llms-full.txt there is no origin to resolve
- * against — the file could be read anywhere — so they become dead ends.
+ * Turn root-relative links into absolute ones. In llms-full.txt there is no origin to
+ * resolve `/docs/guide/accessibility` against, so they would be dead ends.
  */
 function absolutiseLinks(raw: string): string {
   return raw.replace(/\]\(\/(?!\/)/g, `](${BASE_URL}/`);

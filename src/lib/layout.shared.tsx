@@ -1,11 +1,8 @@
 import type { BaseLayoutProps } from 'fumadocs-ui/layouts/shared';
 
 /**
- * Shared layout configurations for Gryt Documentation
- *
- * you can customise layouts individually from:
- * Home Layout: app/(home)/layout.tsx
- * Docs Layout: app/docs/layout.tsx
+ * Shared layout configuration. Individual layouts are app/(home)/layout.tsx and
+ * app/docs/layout.tsx.
  */
 export function baseOptions(): BaseLayoutProps {
   return {
