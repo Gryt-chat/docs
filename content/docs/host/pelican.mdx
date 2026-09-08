@@ -1,0 +1,109 @@
+---
+title: Pelican panel
+description: One-click Gryt server if you already run Pelican or Pterodactyl
+icon: Egg
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+
+If you already run a [Pelican](https://pelican.dev) or Pterodactyl panel, this is the
+quickest way to get a Gryt server going. The egg is in Pelican's official repository, so
+it shows up in the panel's egg importer and you don't have to go hunting for a file.
+
+Carlo maintains the egg at
+[pelican-eggs/voice](https://github.com/pelican-eggs/voice/tree/main/gryt), not here. If
+the egg itself is broken, that's where it goes.
+
+<Callout type="info">
+  amd64 only. The Gryt Linux bundle is built for x64, so an ARM node won't run it.
+</Callout>
+
+## Three ports, not one
+
+A Gryt server needs **three allocations**. Voice stays silent until all three line up.
+
+| Allocation | Default | Protocol | Variable | What goes over it |
+|---|---|---|---|---|
+| default | 5000 | TCP | picked up automatically | Chat, logins, uploads — everything except voice |
+| extra #1 | 5005 | TCP | `SFU_PORT` | Voice signalling |
+| extra #2 | 3478 | UDP | `ICE_UDP_MUX_PORT` | The voice and video itself |
+
+Add the two extra allocations first, then set `SFU_PORT` and `ICE_UDP_MUX_PORT` in the
+Startup tab to the ports the panel gave you.
+
+<Steps>
+
+<Step>
+### Import the egg
+
+In the panel, go to **Nests → Import Egg** and pick Gryt from the official voice eggs.
+Then create a server from it.
+</Step>
+
+<Step>
+### Give it three allocations
+
+One default and two extra, as above. Set `SFU_PORT` and `ICE_UDP_MUX_PORT` to the two
+extra ports.
+</Step>
+
+<Step>
+### Point clients at the SFU
+
+Set `SFU_PUBLIC_HOST` to the address clients will use. Something like
+`203.0.113.10:5005`, or `wss://sfu.example.com` if you're terminating TLS in front of it.
+
+Leave it empty and chat works fine but voice doesn't. That's the usual reason a server
+ends up half-working.
+</Step>
+
+<Step>
+### Join it
+
+Open the [desktop app](https://gryt.chat/download) or
+[app.gryt.chat](https://app.gryt.chat) and point it at your server. **The first person to
+join becomes the owner.** After that it's invite-only, and invites live under Server
+settings → Invites.
+</Step>
+
+</Steps>
+
+## Settings worth knowing
+
+The egg exposes the server's configuration as panel variables. The full list is in the
+[egg's README](https://github.com/pelican-eggs/voice/tree/main/gryt). These are the ones
+that decide whether it works at all.
+
+| Variable | Default | What it does |
+|---|---|---|
+| `SFU_PUBLIC_HOST` | empty | The SFU address handed to clients. Voice needs it |
+| `ICE_ADVERTISE_IP` | empty | Usually leave it empty, since the SFU finds its public IP over STUN. Set it when NAT makes STUN guess wrong |
+| `GRYT_IDENTITY_TIERS` | `account` | Add `local` to let people join without a Gryt account |
+| `EXTERNAL_HOST` | empty | The URL clients use to reach the server, like `http://203.0.113.10:5000` |
+| `JWT_SECRET` | empty | Leave it empty and it's generated on first start, then kept |
+| `GRYT_VERSION` | `latest` | Pin a version, then reinstall to apply it |
+
+## When voice doesn't work
+
+If chat works and voice doesn't, it's nearly always one of the three ports.
+
+- `SFU_PORT` has to be reachable over **TCP**.
+- `ICE_UDP_MUX_PORT` has to be reachable over **UDP**. Panels and firewalls tend to
+  default to TCP, so this is the one that gets missed.
+- Both have to match the allocations the panel actually handed the server.
+
+If people connect but nobody can hear anything, set `ICE_ADVERTISE_IP` to the public IP
+that UDP port is reachable through. Not `127.0.0.1`, not `0.0.0.0`, and not a private
+container or LAN address. Leave `DISABLE_STUN` at `false`.
+
+There's more in [Voice debugging](/docs/host/voice-debugging).
+
+## Updating and backups
+
+Set `GRYT_VERSION` and reinstall the server, or leave it on `latest` and reinstall. The
+install script only replaces the program files, so `data/` and the generated
+`.jwt_secret` survive.
+
+Everything worth keeping is in `data/`: `gryt.db` and `uploads/`. Stop the server and copy
+that directory. [Backups](/docs/host/backups) covers what to do with it after that.
