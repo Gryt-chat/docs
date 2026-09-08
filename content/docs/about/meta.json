@@ -3,16 +3,20 @@
   "description": "How it works, what it promises, and how to help",
   "pages": [
     "index",
+    "---What Gryt is---",
     "why-gryt",
     "architecture",
     "security",
+    "---Where it is going---",
     "roadmap",
-    "contributing",
     "feature-requests",
+    "---Helping---",
+    "contributing",
     "build-the-client",
     "client-internals",
     "website",
     "blog",
+    "---Policies---",
     "ai",
     "licensing"
   ]
