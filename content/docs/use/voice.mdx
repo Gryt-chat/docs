@@ -1,0 +1,110 @@
+---
+title: Voice
+description: Talking to people, and what happens when things go wrong
+icon: Mic
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+Click a voice channel to join it. Everyone in that channel hears you, and the
+member list shows who is in which channel and who is speaking.
+
+Audio is Opus at 48 kHz. The processing chain between your microphone and the
+network is covered in [audio processing](/docs/use/audio); this
+page is about using voice rather than tuning it.
+
+## Controls
+
+**Mute** stops your microphone. It's the last stage of the audio chain, so
+nothing upstream can leak through it, and the state is synchronised with the
+server so other people see the right indicator on your name.
+
+**Deafen** stops both directions. Muting yourself is implied, because being heard
+while hearing nothing isn't a state anybody wants to be in by accident.
+
+**Push-to-talk** transmits only while a key is held. Selecting it disables the
+noise gate entirely, since holding a key is the same job done better. On the
+desktop app the key works while Gryt is in the background; a browser can't see
+keys it doesn't have focus for, so the web client's push-to-talk only works
+while the window is focused.
+
+## Bitrate
+
+Opus can go up to 510 kbps, and the channel's cap is a server setting. The
+default ceiling is 96 kbps, which is more than speech needs.
+
+eSports mode caps it at 128 kbps and switches Opus to 10 ms frames, which is
+where most of its latency saving comes from: a shorter frame is less time spent
+filling a packet before it can be sent.
+
+## Screen share
+
+**Audio isolation.** Sharing system audio without also capturing Gryt's own
+output needs a native helper that excludes Gryt's process tree, so it's a
+desktop feature. In a browser you get the tab or window audio the browser is
+willing to give.
+
+**Codec.** Auto, H.264, VP9 or AV1. Auto picks H.264, because every current GPU
+encodes it in hardware through NVENC, Quick Sync or AMF. AV1 compresses better
+and wants recent hardware to encode without cooking the CPU.
+
+The SFU forwards whatever the two ends negotiate. It doesn't transcode, so the
+codec choice is between you and the people watching.
+
+## When the server restarts
+
+Voice keeps working. This is worth knowing because it looks alarming and isn't.
+
+Signalling and media are separate connections to separate services. The server
+holds sessions, member lists and permissions; the SFU forwards audio and knows
+nothing about any of that. Restarting the server doesn't touch the media path,
+so people carry on hearing each other while the member list is stale.
+
+When the server comes back:
+
+1. Socket.IO reconnects on its own.
+2. The client sends `session:restore` with the access token it already had, so
+   the nickname and identity come back rather than being re-negotiated.
+3. The client fully disconnects and reconnects to the SFU, rather than trying to
+   patch up the old state. Speaking indicators, stream mapping and voice status
+   in the member list are all derived from that state, and rebuilding it's more
+   reliable than reconciling it.
+
+What you see is a brief reconnecting notice, voice dropping and coming back with
+the connect sound, and the member list correcting itself. Step 3 is the reason
+voice audibly blips even though step 1 and 2 didn't need it.
+
+<Callout title="A dropped client is different">
+This is about the server restarting. If your own connection drops, media goes
+with it, because that connection is the media path.
+</Callout>
+
+## Speaking indicators
+
+Voice activity is detected on each client and broadcast, rather than being
+measured at the SFU. The ring around an avatar is that client saying it's
+talking.
+
+That means indicators depend on the signalling connection, and audio doesn't.
+A member list that has gone quiet while you can still hear everybody is a
+signalling problem, not an audio one.
+
+## Latency
+
+The panel in **Settings → Advanced** shows your round-trip time to the SFU
+alongside everybody else's, plus the jitter buffer, which is highlighted above
+80 ms.
+
+If you're on the same network as the SFU and the remote address is a private
+one at near-zero latency, media is staying on the LAN. A public address at 20 ms
+or more means it's going out to the internet and back, which is expected when
+the SFU is hosted elsewhere and worth investigating when it isn't.
+
+## When it doesn't work
+
+Voice failing for everybody except people on your own network is nearly always
+the media port or STUN, not anything on this page. The
+[voice debugging guide](/docs/host/voice-debugging) covers it.
+
+For your voice specifically not arriving, work down the audio chain: mute, input
+device, browser permission, then the noise gate.

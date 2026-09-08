@@ -1,0 +1,181 @@
+---
+title: Monitoring
+description: Monitor your Gryt instance with Prometheus and Grafana
+icon: ChartLine
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+Both the **Server** and the **SFU** expose a `/metrics` endpoint in Prometheus
+exposition format. You can scrape these with any Prometheus-compatible system, or
+use the built-in monitoring profile to spin up Prometheus + Grafana alongside the
+rest of the stack.
+
+<Callout type="warn">
+Metrics are served on port **9091**, not on the port clients connect to, and the
+Compose files do not publish it. That is on purpose: a reverse proxy or a tunnel
+in front of the server only ever sees the main port, so it cannot pass `/metrics`
+through to the internet.
+
+Prometheus reaches it as `server:9091` and `sfu:9091` over the Compose network,
+which needs no published port. **Do not publish 9091**, and be aware that host
+networking bypasses this and puts metrics back on the public internet.
+</Callout>
+
+## Quick start
+
+The `docker-compose.yml` includes an optional **monitoring** profile.
+Enable it to spin up Prometheus and Grafana alongside the rest of the stack:
+
+```bash
+docker compose --profile monitoring up -d
+```
+
+If you downloaded only the compose file (as in the
+[Docker Compose quick start](/docs/host/docker-compose#quick-start)), you
+also need the monitoring config directory. Grab it with:
+
+```bash
+# Run from the same directory as your docker-compose.yml
+curl -L https://github.com/Gryt-chat/gryt/tarball/main \
+  | tar xz --strip-components=4 --include='*/ops/deploy/compose/monitoring'
+```
+
+This starts two extra containers:
+
+| Service | URL | Default login |
+|---------|-----|---------------|
+| **Prometheus** | [http://localhost:9090](http://localhost:9090) | *(none)* |
+| **Grafana** | [http://localhost:3000](http://localhost:3000) | `admin` / `admin` |
+
+Grafana ships with a **Gryt Overview** dashboard as the home page — it covers
+all custom metrics from the server and SFU, plus process-level health for both
+services. No manual setup needed.
+
+## Configuration
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PROMETHEUS_PORT` | `9090` | Host port for Prometheus UI |
+| `GRAFANA_PORT` | `3000` | Host port for Grafana UI |
+| `GRAFANA_ADMIN_USER` | `admin` | Grafana admin username |
+| `GRAFANA_ADMIN_PASSWORD` | `admin` | Grafana admin password |
+
+<Callout type="warn" title="Change the Grafana password">
+The default `admin`/`admin` credentials are fine for local/dev use. For
+production, set `GRAFANA_ADMIN_PASSWORD` to a strong value in your `.env` file.
+</Callout>
+
+## Available metrics
+
+### Server (Node.js)
+
+Exposed at `http://server:9091/metrics`, on the Compose network. Set `METRICS_PORT`
+to move it, or `METRICS_PORT=0` to stop serving it at all.
+
+| Metric | Type | Description |
+|--------|------|-------------|
+| `gryt_http_requests_total` | Counter | HTTP requests by `method`, `route`, `status` |
+| `gryt_http_request_duration_seconds` | Histogram | Request latency by `method`, `route` |
+| `gryt_socketio_connections_active` | Gauge | Live Socket.IO connections |
+| `nodejs_*` / `process_*` | Various | Default Node.js metrics (event loop lag, heap, GC, file descriptors) |
+
+### SFU (Go)
+
+Exposed at `http://sfu:9091/metrics`, on the Compose network. Set `SFU_METRICS_PORT`
+to move it, or `SFU_METRICS_PORT=0` to stop serving it at all.
+
+| Metric | Type | Description |
+|--------|------|-------------|
+| `gryt_sfu_rooms_active` | Gauge | Number of active voice rooms |
+| `gryt_sfu_peers_active` | Gauge | Total connected peers across all rooms |
+| `gryt_sfu_websocket_connections_active` | Gauge | Active WebSocket connections |
+| `gryt_sfu_tracks_active` | Gauge | Media tracks being forwarded |
+| `go_*` / `process_*` | Various | Default Go runtime metrics (goroutines, memory, GC) |
+
+## Useful queries
+
+Here are some PromQL queries to get started in Prometheus or Grafana:
+
+```text
+# Request rate (per second) across all routes
+rate(gryt_http_requests_total[5m])
+
+# 95th-percentile request latency
+histogram_quantile(0.95, rate(gryt_http_request_duration_seconds_bucket[5m]))
+
+# Active voice users
+gryt_sfu_peers_active
+
+# SFU memory usage (bytes)
+go_memstats_alloc_bytes{job="gryt-sfu"}
+
+# Server event loop lag (seconds)
+nodejs_eventloop_lag_seconds{quantile="0.99"}
+```
+
+## Built-in dashboard
+
+The **Gryt Overview** dashboard is provisioned automatically and set as the
+Grafana home page. It includes:
+
+| Row | Panels |
+|-----|--------|
+| **Overview** | Server / SFU up status, Socket.IO connections, SFU peers, rooms, media tracks, SFU WebSockets |
+| **HTTP** | Request rate by route, request rate by status, latency percentiles (P50 / P95 / P99), error rate (4xx / 5xx) |
+| **Server Process (Node.js)** | Memory (RSS, heap used, heap total), CPU usage, event loop lag |
+| **SFU Process (Go)** | Memory (RSS, heap alloc, heap in-use), CPU usage, goroutines |
+
+The dashboard JSON lives at `monitoring/grafana/provisioning/dashboards/gryt-overview.json`
+relative to the compose file. You can edit it or add more JSON files to the same
+directory — Grafana picks them up automatically.
+
+## Community dashboards
+
+Grafana has a large library of community dashboards you can import by ID for
+deeper runtime visibility:
+
+| Dashboard | Grafana ID | Covers |
+|-----------|-----------|--------|
+| **Node.js Application** | `11159` | Event loop, heap, GC, HTTP |
+| **Go Processes** | `6671` | Goroutines, memory, GC |
+
+To import: Grafana → **Dashboards** → **New** → **Import** → paste the ID → select **Prometheus** as the datasource.
+
+## Using an external Prometheus
+
+If you already run a Prometheus instance, skip the monitoring profile and just
+add the Gryt targets to your existing `prometheus.yml`:
+
+```yaml
+scrape_configs:
+  - job_name: gryt-server
+    static_configs:
+      - targets: ["your-gryt-host:5000"]
+
+  - job_name: gryt-sfu
+    static_configs:
+      - targets: ["your-gryt-host:5005"]
+```
+
+Both endpoints are unauthenticated, which is why they are not on the port the
+world talks to. Anything that can reach port 9091 can read them, so keep it
+inside the Compose network.
+
+## Disabling monitoring
+
+The monitoring profile is entirely opt-in. If you don't pass `--profile monitoring`,
+no monitoring containers are created and the `/metrics` endpoints simply go
+unscraped. The overhead of the endpoints themselves is negligible (a few KB of
+in-memory counters).
+
+Because most deployments never turn monitoring on, the metrics port is closed to
+the outside by default rather than by configuration — there is nothing to set and
+nothing to forget. To stop serving them altogether, set `METRICS_PORT=0` and
+`SFU_METRICS_PORT=0`.
+
+To stop the monitoring stack without affecting the rest of the services:
+
+```bash
+docker compose --profile monitoring stop prometheus grafana
+```

@@ -1,0 +1,106 @@
+---
+title: Contributing
+description: How to contribute to Gryt
+icon: Heart
+---
+
+## Prerequisites
+
+- **Node.js** 22.13 or newer, and **yarn**. Not npm: `packages/client` and
+  `packages/server` ship a `yarn.lock`, and `npm install` resolves a different
+  tree and writes a competing lockfile.
+- **Go** 1.24 or newer for the SFU, 1.25 for the CLI
+- **Docker**, if you want to run anything in a container
+
+## Setup
+
+```bash
+git clone --recurse-submodules https://github.com/YOUR_USERNAME/gryt.git
+cd gryt
+```
+
+Install dependencies and start everything with the dev script:
+
+```bash
+ops/start_dev.sh
+```
+
+The script installs dependencies for all packages and starts the client, server, and SFU in development mode.
+
+## Workflow
+
+1. Create a [feature request](https://feedback.gryt.chat) or a [bug report](https://github.com/Gryt-chat/gryt/issues)
+2. Fork the repo and create a branch
+3. Make changes and add tests
+4. Run lint and tests
+5. Submit a pull request
+
+## Code style
+
+### TypeScript
+
+- Use strict mode
+- Follow ESLint and Prettier configs
+- Add JSDoc comments for public APIs
+
+```typescript
+/**
+ * Manages microphone input and audio processing.
+ * @param shouldAccess - Whether to request microphone access
+ */
+const useMicrophone = (shouldAccess: boolean): MicrophoneState => {
+  // ...
+};
+```
+
+### Go
+
+- Follow `gofmt` formatting
+- Add godoc comments for exported functions
+- Handle errors explicitly
+
+## Testing
+
+```bash
+# Server
+cd packages/server && yarn test
+
+# SFU
+cd packages/sfu && go test ./...
+
+# CLI
+cd packages/cli && go test ./...
+```
+
+The client has no general test suite yet. What it has is `yarn typecheck` and
+`yarn lint`, and one targeted check, `yarn test:updater-bridge`. Run the first
+two before opening a pull request.
+
+## Blog and site content
+
+The marketing site and blog live in `packages/site`. Blog posts are MDX files in `content/blog/` — see the [Site docs](/docs/about/blog) for the full writing guide.
+
+Quick steps to add a blog post:
+
+1. Create `packages/site/content/blog/my-post.mdx` with frontmatter (`title`, `author`, `date`)
+2. Place images in `packages/site/public/` and reference them as `![alt](/filename.png)`
+3. Run `npm run dev` in `packages/site` to preview
+
+## AI-assisted contributions
+
+You may use AI assistance anywhere in Gryt — but you have to say so. Tick the AI-assisted box in the pull request template if any part of your patch was AI-generated.
+
+Some areas are audited more critically than others. The SFU, authentication and identity code, the client's key handling, the image worker and the data layer are read line by line before anything merges, whoever wrote them. Expect a slower review there, and questions about anything that changes behaviour. See the [AI policy](/docs/about/ai) for the full list of paths and the reasoning.
+
+## Pull request checklist
+
+- Tests pass where they exist (`yarn test` in the server, `go test ./...` in the
+  SFU and CLI)
+- Types check and the linter is clean (`yarn typecheck`, `yarn lint`, `go fmt ./...`)
+- Documentation is updated if needed
+- No breaking changes (or clearly marked)
+- AI-assisted code is disclosed (see the [AI policy](/docs/about/ai))
+
+## License
+
+Contributions are licensed under the [AGPL-3.0](/docs/about/licensing). By submitting a pull request, you agree that your contributions will be licensed under the same terms.

@@ -1,9 +1,0 @@
-{
-  "root": true,
-  "title": "SFU",
-  "icon": "Radio",
-  "pages": [
-    "index",
-    "voice-debugging"
-  ]
-}

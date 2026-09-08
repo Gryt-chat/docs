@@ -1,0 +1,338 @@
+---
+title: Troubleshooting
+description: Common issues and solutions for Gryt
+icon: Bug
+---
+
+## Installation warnings
+
+### Windows SmartScreen blocks the installer
+
+Windows SmartScreen may show **"Windows protected your PC"** when running the installer. This happens because the app isn't yet signed with an EV code signing certificate. Click **More info → Run anyway**.
+
+If the option doesn't appear, your organization may have a Group Policy blocking unsigned apps. In that case, [build from source](/docs/about/build-the-client) instead.
+
+### macOS says the app can't be checked
+
+Released macOS builds are code-signed and notarized, so this shouldn't happen.
+If it does, you're most likely running a build you compiled yourself, or one
+that didn't come from the [releases page](https://github.com/Gryt-chat/gryt/releases).
+
+For a local build, right-click the app → **Open** → confirm **Open**, which is
+remembered for future launches. For something you downloaded as a release,
+please report it rather than clicking through: a notarized app failing this
+check is worth knowing about.
+
+### Linux AppImage won't launch
+
+The AppImage may not have the execute permission set after download:
+
+```bash
+chmod +x Gryt-Chat-*.AppImage
+./Gryt-Chat-*.AppImage
+```
+
+## Update issues
+
+### Profile resets on every launch or update
+
+If you have to set up your profile every time you launch or update Gryt, the likely cause is a stale installation from before version **1.0.122**. In that release the Electron package name was changed from `client` to `gryt-chat`, which moved the install directory from `C:\Users\<user>\AppData\Local\Programs\client` to `C:\Users\<user>\AppData\Local\Programs\gryt-chat`. The old installation still exists at the previous path and conflicts with the new one, so profile and settings data doesn't persist between launches.
+
+To fix this:
+
+1. Fully **uninstall** the Gryt client (Settings → Apps → Gryt Chat → Uninstall).
+2. Delete any leftover `C:\Users\<user>\AppData\Local\Programs\client` folder if it still exists.
+3. **Download and install** the latest version from [gryt.chat](https://gryt.chat).
+
+## Connection issues
+
+### WebSocket connection fails
+
+```bash
+curl http://localhost:5000/health    # server
+curl http://localhost:5005/health    # SFU
+```
+
+- Verify ports 5000 and 5005 aren't blocked by a firewall. Both are TCP, and
+  neither carries voice — if chat works and audio doesn't, it's the UDP
+  media port instead, covered under
+  [nobody can hear anyone](#people-connect-and-chat-but-nobody-can-hear-anyone)
+- Check CORS: `CORS_ORIGIN` in `server/.env` must include `http://127.0.0.1:15738` (desktop app), `https://app.gryt.chat` (web client), and any custom client origins
+- In production, ensure WSS (not WS) is used
+
+### Server clock is wrong
+
+If joining fails with a message about the server's clock, the two machines
+disagree about the time by more than a minute.
+
+A server proves who it is by signing a short statement, good for 60 seconds. Your
+client checks it hasn't expired. When the server's clock is off, a proof it
+signed a moment ago looks like one signed minutes ago, and the client refuses it.
+Nothing is wrong with the server's identity and nothing is being attacked. The
+clock is just wrong.
+
+Gryt tells you which way and by how much, so a message saying the server is four
+minutes behind you means the server is the one to fix.
+
+On the server:
+
+```bash
+timedatectl
+```
+
+You want `System clock synchronized: yes`. If it says `no`, or `NTP service:
+n/a`, the machine has no time sync running. Fresh VPS images often ship without
+it:
+
+```bash
+apt update && apt install -y chrony
+timedatectl
+```
+
+chrony corrects the clock on startup rather than drifting slowly into place, so
+the next join works immediately. No need to restart Gryt, since the proof is
+signed from the clock at the moment it's asked for.
+
+If `timedatectl set-ntp true` answers `NTP not supported`, that's the same
+thing: `systemd-timesyncd` isn't installed. Installing chrony above fixes it, or
+install `systemd-timesyncd` and enable it instead.
+
+Container hosts inherit the clock from the machine underneath, so fix it there
+rather than inside the container.
+
+### "Server identity not recognised"
+
+The server answering at this address presented a different identity key than the one
+pinned when you first joined, so Gryt refused the connection before sending anything.
+
+Almost always this means the server was rebuilt or reinstalled without preserving its
+data directory, so it generated a new identity. Confirm by checking the server's startup
+log, which prints its key on boot:
+
+```bash
+docker compose logs server | grep "identity key"
+# ✔ Server identity key ready (85lc28xWNMb-UkGlcc_kDowxgGHaeLKSYI0jVaKyTq4)
+```
+
+Compare that to the fingerprint under **Settings → You → Server identities**. If it
+matches, unblock the server there and reconnect.
+
+If it doesn't match, something else is answering at that address. Don't unblock it.
+
+To avoid this when moving or rebuilding a server, keep `server-identity-key.json` from
+the server's `DATA_DIR` — see [Security](/docs/about/security#authenticating-the-server).
+
+### People connect and chat, but nobody can hear anyone
+
+This is the signature of a wrong or unreachable advertised address, and it's
+worth recognising because nothing in the app will say so.
+
+Chat and voice don't travel the same way. The signalling connection uses the
+address people joined on, so if they can see the server and send messages, that
+address is fine. Media doesn't use it: WebRTC connects directly to whatever the
+SFU advertises, which is `ICE_ADVERTISE_IP` and `SFU_PUBLIC_HOST`. Get those
+wrong, or leave the UDP port closed, and everything except the audio works.
+
+So the fault doesn't look like a network problem. It looks like broken audio.
+
+Check, in this order:
+
+- `ICE_ADVERTISE_IP` is your real public IP, not the machine's LAN address. A
+  server behind NAT can't discover this by looking at itself.
+- `ICE_UDP_MUX_PORT` is open and forwarded to the SFU host. There's one media
+  port and it's UDP, 3478 unless you set `ICE_UDP_MUX_PORT` to something
+  else.
+- The forward points at the machine running the SFU, which isn't necessarily
+  the machine running the server.
+
+Testing this from the server itself proves nothing. Some routers will let a
+machine reach its own public IP and some won't, and neither answer tells you
+what somebody outside your network sees. It has to be tried from outside, by
+somebody on a different connection or on mobile data with Wi-Fi off.
+
+### SFU connection fails
+
+```bash
+wscat -c ws://localhost:5005
+```
+
+- Verify STUN servers are reachable: `dig stun.l.google.com`
+- Ensure `ICE_UDP_MUX_PORT` is open as **UDP**. All media shares that one port
+- Check the SFU actually started. It binds the mux port at boot and exits if
+  something else holds it, logging `failed to create ICE UDP mux on port`
+- `curl -s localhost:5005/health` — a 503 with `"status":"starting"` means its
+  UDP readiness probe hasn't passed yet
+- If you use Cloudflare Tunnel / Cloudflare proxy for the SFU WebSocket, remember WebRTC media is still **direct UDP** to the SFU host — set `ICE_ADVERTISE_IP` to your real public IPs and open the UDP port(s) there
+- Verify the SFU hostname DNS record is set to **Proxied** (orange cloud) in Cloudflare — a grey-cloud (DNS-only) record won't route through the tunnel
+- Review SFU logs: `docker compose logs sfu`
+
+### Joining voice does nothing for fifteen seconds, then blames your network
+
+You click a voice channel, nothing happens for about fifteen seconds, and then
+a message says the network may not allow voice traffic through. Trying again
+usually works.
+
+It is usually DNS filtering, not the network.
+
+Gryt has no TURN relay, so a call has to find a direct path. Each side asks a
+STUN server what its address looks like from outside. That answer is what the
+other side connects to. Without one there is nothing to offer, and the browser
+spends about fifteen seconds trying before it gives up.
+
+Ad-blocking resolvers — AdGuard Home, Pi-hole, NextDNS — sometimes carry
+`stun.l.google.com` on a tracker list. It is a STUN server, not a tracker, but
+it is a Google hostname and the lists are broad. When it is blocked it resolves
+to `0.0.0.0` and the request goes nowhere.
+
+Check it from a machine on the same network:
+
+```bash
+dig +short stun.l.google.com
+```
+
+If that comes back `0.0.0.0`, or with no answer, something is filtering it.
+Compare against one that is rarely on a list:
+
+```bash
+dig +short stun.cloudflare.com
+```
+
+Then allow the hostname on whichever resolver is doing it. In AdGuard Home that
+is **Filters → Custom filtering rules**:
+
+```
+@@||stun.l.google.com^
+```
+
+An allowlist rule beats a blocklist entry, even an `$important` one. AdGuard
+caches its answers, so give it a minute before testing again.
+
+A blocked STUN server costs more than the one candidate. It also holds ICE
+gathering open. A list with one blocked entry and one working entry still gets
+a candidate, but gathering never finishes, and that is where most of the
+fifteen seconds go.
+
+The server decides which STUN servers clients use, through `STUN_SERVERS`. The
+default spans two providers, so one of them being filtered is not fatal. If
+yours has been cut down to a single provider, add another.
+
+## Audio issues
+
+### Microphone not working
+
+- Check browser permissions (`chrome://settings/content/microphone`)
+- WebRTC requires HTTPS in production
+- Try a different browser or audio device
+
+### Poor quality / echo
+
+- Use headphones to avoid feedback loops
+- Adjust the noise gate threshold in audio settings
+- Ensure `echoCancellation` and `noiseSuppression` are enabled (default)
+
+### Others hear themselves when I screen share with audio
+
+On the **desktop app** (Windows/macOS), Gryt automatically excludes its own audio from the screen share capture using OS-native APIs. If this isn't working:
+
+- **Windows**: Requires Windows 10 build 20348 or later. Check with `winver`.
+- **macOS**: Requires macOS 13.0 (Ventura) or later.
+- If the native binary is missing, the feature is silently unavailable. Rebuild with `npm run build:native` or reinstall the app.
+
+On the **web client** and **Linux desktop app**, there's no OS-level API to separate Gryt audio from other system audio. Your options:
+- Use headphones so Gryt voice audio isn't picked up by the screen capture.
+- Route Gryt to a separate audio output device (virtual audio cable) and share only your main output.
+
+### Audio cutting out
+
+- Check network stability
+- Review SFU logs for connection state changes
+- See the [Voice Debugging](/docs/host/voice-debugging) guide
+
+## Server restart / reconnection
+
+### Voice shows "Unknown" user after restart
+
+This was fixed in the latest release. The root cause was a race condition where
+clients would re-join with a stale local nickname before the server finished
+restoring their session from the JWT. Ensure you're running the latest server
+and client versions.
+
+### Voice activity indicators missing after restart
+
+Gryt now performs a full SFU disconnect and reconnect when the signaling server
+comes back online. This cleanly re-establishes stream mapping, speaking
+indicators, and member list voice status. The reconnect takes roughly 2–3
+seconds after the server is available again.
+
+### Member list stuck on "Online" instead of "In Voice"
+
+The member sidebar status is now based on `hasJoinedChannel` alone rather than
+requiring a secondary WebRTC confirmation flag. After updating, member status
+should reflect voice participation as soon as the client rejoins the channel.
+
+## Docker issues
+
+### Containers fail to start
+
+```bash
+docker compose logs
+docker stats
+```
+
+- Check for port conflicts: `netstat -tulpn | grep :5000`
+- Rebuild: `docker compose down; docker compose build --no-cache; docker compose up -d`
+
+### High resource usage
+
+```yaml
+# Limit resources in compose
+services:
+  server:
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+```
+
+## Kubernetes issues
+
+### Pods stuck or crashing
+
+```bash
+kubectl get pods -l app.kubernetes.io/name=gryt
+kubectl describe pod <pod-name>
+kubectl logs <pod-name>
+```
+
+### Services not reachable
+
+```bash
+kubectl get services -l app.kubernetes.io/name=gryt
+kubectl get ingress
+```
+
+## Debug logging
+
+```bash
+DEBUG=gryt:* npm run dev          # all components
+DEBUG=gryt:audio:* npm run dev    # audio only
+DEBUG=gryt:websocket:* npm run dev
+```
+
+## Health and metrics endpoints
+
+| Endpoint | Service | Description |
+|----------|---------|-------------|
+| `GET /health` | server, SFU | Health check |
+| `GET /metrics` | server, SFU | Prometheus metrics |
+
+## Reporting issues
+
+For **feature requests**, use [feedback.gryt.chat](https://feedback.gryt.chat).
+
+When opening a **bug report** on [GitHub Issues](https://github.com/Gryt-chat/gryt/issues), include:
+1. OS, browser, and Docker/K8s version
+2. Sanitized environment variables
+3. Server and browser console logs
+4. Steps to reproduce

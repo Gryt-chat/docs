@@ -1,0 +1,286 @@
+---
+title: Configuration
+description: How each Gryt service is configured, and the settings that span more than one
+icon: Settings
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+Every service takes its settings from the environment. The full variable lists
+live with the service they belong to:
+
+- [Server](/docs/host/server) — the largest set, plus the four settings that live in its database
+- [SFU](/docs/host/sfu) — nine variables, most of which you'll never touch
+- [CLI](/docs/host/cli) — writes all of this for you, if you would rather not
+
+This page covers the client, and the settings that only make sense across
+services: CORS, proxies, TLS, and which address the SFU is reachable on.
+
+## The client
+
+The desktop and web clients need to know which identity stack to trust. Nothing
+else about them is configured this way; audio devices, volume and the noise gate
+are runtime settings in the UI, and capture is fixed at 48 kHz.
+
+| Setting | Default |
+|---------|---------|
+| `GRYT_OIDC_ISSUER` | `https://auth.gryt.chat/realms/gryt` |
+| `GRYT_OIDC_REALM` | `gryt`, or derived from the issuer |
+| `GRYT_OIDC_CLIENT_ID` | `gryt-web` |
+| `GRYT_IDENTITY_URL` | `https://id.gryt.chat` |
+| `GRYT_AUTH_API` | `https://auth.gryt.chat`, or derived from the issuer |
+| `GRYT_AUTH_CALLBACK_URL` | `https://gryt.chat/auth/callback` |
+
+### Three places these come from
+
+In development, Vite reads them from `packages/client/.env` with a `VITE_`
+prefix:
+
+```bash
+VITE_GRYT_OIDC_ISSUER=http://localhost:8080/realms/gryt
+VITE_GRYT_IDENTITY_URL=http://localhost:8081
+```
+
+In production, the nginx container writes `/config.js` at startup from its own
+environment, which sets `window.__GRYT_CONFIG__` with the unprefixed names. No
+`VITE_` variable is set in a production build at all, which is why the same
+image can be pointed at a different identity stack without rebuilding.
+
+A user can also override the issuer and the identity URL from the account
+settings screen; those are stored in `localStorage` and beat both of the above.
+
+<Callout type="warn" title="Which one wins depends on the build">
+A development build reads `VITE_` first and falls back to the window config. A
+production build reads the window config first and falls back to `VITE_`.
+
+That flip is deliberate. Reading the window first everywhere meant the tracked
+`public/config.js`, which holds production defaults, beat the local values in
+development. A dev session would sign in against production Keycloak while the
+dev servers trusted only the local certificate authority. The only symptom was a
+401 from the identity service saying "no applicable key found in the JWKS",
+which describes what happened and not why: the token was genuine, it was just
+signed by the wrong Keycloak.
+</Callout>
+
+### Realm and auth API are usually derived
+
+Set `GRYT_OIDC_ISSUER` to something like
+`https://keycloak.example.com/realms/mycommunity` and the realm and the auth API
+base are pulled out of it. You only set those two by hand for a layout that does
+not follow the `/realms/<name>` convention.
+
+`GRYT_IDENTITY_URL` is never derived, because there's nothing in an issuer URL
+to derive it from. It's a different service on a different host: `id.gryt.chat`
+sits next to `auth.gryt.chat`, and your own certificate authority sits next to
+your own Keycloak.
+
+<Callout type="warn" title="The identity URL has to move too">
+Pointing the client at your own Keycloak without also moving `GRYT_IDENTITY_URL`
+gets you a token from your issuer posted to Gryt's certificate authority, which
+validates against its own configured issuer and rejects it. Same 401, same
+misleading message.
+</Callout>
+
+### Self-hosting the web client
+
+The web client is built for local development and for contributing. Self-hosting
+it against `auth.gryt.chat` doesn't work, because your domain isn't a
+registered redirect URI there. Use the desktop app or
+[app.gryt.chat](https://app.gryt.chat) to reach your server.
+
+With your own Keycloak it works, and your members get identities that are yours
+rather than ones that carry across other Gryt servers.
+
+## Reaching the SFU
+
+Two variables, and they're usually different values for the same thing.
+
+```bash
+SFU_WS_HOST="ws://sfu:5005"
+SFU_PUBLIC_HOST="wss://sfu.example.com"
+```
+
+`SFU_WS_HOST` is how the server reaches the SFU, on the internal Docker network.
+`SFU_PUBLIC_HOST` is what the server hands to clients. A browser can't resolve
+`sfu`, so getting these the same way round is the difference between voice
+working and voice sitting on "connecting".
+
+`SFU_PUBLIC_HOST` takes a comma-separated list. Clients are given all of them and
+use whichever answers fastest, which is how one server can be reachable over a
+LAN and over the internet at the same time:
+
+```bash
+SFU_PUBLIC_HOST="ws://192.168.1.50:5005,wss://sfu.example.com"
+```
+
+### The media port
+
+Signalling is a WebSocket and goes wherever your other traffic goes. Media is
+UDP, on one port, and it has to be reachable directly:
+
+```yaml
+ports:
+  - "3478:3478/udp"
+```
+
+<Callout type="warn" title="Tunnels don't carry UDP">
+Cloudflare Tunnel proxies HTTP and WebSockets, so signalling works through it and
+voice doesn't. `ICE_UDP_MUX_PORT` has to be exposed some other way. This is the
+single most common reason voice connects for people on the LAN and for nobody
+else.
+</Callout>
+
+There used to be a UDP port *range*. There isn't any more. See the
+[SFU page](/docs/host/sfu) for what replaced it and why.
+
+## CORS
+
+`CORS_ORIGIN` is a comma-separated list of origins allowed to connect. Unset, it
+is:
+
+```
+http://127.0.0.1:15738,https://app.gryt.chat,https://beta.gryt.chat
+```
+
+`127.0.0.1:15738` is what the desktop app loads from. Outside production,
+`http://localhost:3666` and `http://127.0.0.1:3666` are added as well, which is
+the Vite dev port in both spellings. A server started by hand without those
+rejects the dev client with a bare 400 on the Socket.IO handshake and no
+explanation.
+
+Origins are matched exactly, port included, so a server on `:5001` doesn't
+accept an origin at `:5002` on the same machine.
+
+Two things get in without being listed. `Origin: null` is allowed, which is what
+a `file://` Electron build sends. And an origin naming the same host the request
+was sent to is allowed, which is what lets the mobile app in: React Native sets
+`Origin` from the URL it dials, so a phone connecting to `chat.example.com`
+arrives claiming `http://chat.example.com`.
+
+That second rule matches the exact host, so `chat.example.com` doesn't get to
+speak for `evil.example`, and a different port on the same machine is still a
+different origin. The reasoning is that CORS exists to stop one site reading
+another through a browser. An origin naming the host it's talking to is
+same-origin, and a page served from that server could do all of it already.
+
+## Behind a proxy
+
+```bash
+GRYT_TRUSTED_PROXY_HOPS=1
+```
+
+Zero unless you say otherwise. `x-forwarded-for` is a header any client can set,
+so believing it blindly lets one client walk around every per-IP limit by
+varying a string. Hops are counted from the right, which is the only end
+infrastructure writes.
+
+A server behind a reverse proxy or a tunnel has to set this. Without it every
+client arrives wearing the proxy's address and shares a single rate-limit bucket,
+so one noisy visitor locks out everybody.
+
+One for a single reverse proxy. More only if you genuinely chained them.
+
+## Object storage
+
+`STORAGE_BACKEND` is `s3` by default. Point it at any S3-compatible store:
+
+```bash
+STORAGE_BACKEND=s3
+S3_ENDPOINT=http://minio:9000
+S3_BUCKET=gryt
+S3_REGION=us-east-1
+S3_ACCESS_KEY_ID=...
+S3_SECRET_ACCESS_KEY=...
+S3_FORCE_PATH_STYLE=true
+```
+
+`S3_FORCE_PATH_STYLE=true` is what MinIO and most self-hosted stores want.
+
+`STORAGE_BACKEND=filesystem` puts uploads under `DATA_DIR` instead. No extra
+containers, and no thumbnails, because those come from the image worker.
+
+Object keys are flat, `uploads/<uuid>.<ext>`, with nothing naming the server in
+them. Several servers can share one bucket: nothing ever lists it, and every
+delete uses a key stored in that server's own database.
+
+## Settings that aren't environment variables
+
+Four of the server's settings live in its database rather than its environment,
+because changing them has to do something rather than just record something.
+Turning discovery off has to withdraw the mDNS advertisement.
+
+| Setting | Values |
+|---------|--------|
+| `joinPolicy` | `invite`, `open` |
+| `discoverable` | on, off |
+| `lanOpen` | on, off |
+| `profanityMode` | `off`, `flag`, `censor`, `block` |
+
+`lanOpen` lets anybody already on the same network join without an invite. It's
+worth being deliberate about: it treats "can reach this machine" as good enough,
+which is reasonable on a home network and not on a coffee shop's.
+
+Owners change these from a client. An operator who isn't the owner changes them
+through the [management API](/docs/host/server#the-management-api), which is what the
+`gryt` CLI's settings screen uses.
+
+### Direct messages are encrypted, and what that costs you
+
+Direct messages between people whose clients have both published a key are
+encrypted before they reach the server. The server stores the envelope and has
+never had the text. Files sent in one are encrypted too, so what lands in your
+bucket is bytes with no name and no type.
+
+That is worth knowing before you need it, because five things you have on
+channels you do not have on those messages:
+
+- **Profanity filtering does not run.** `profanityMode` applies to channels and
+  to any direct message still going in the clear. There is nothing to match
+  against in a sealed one.
+- **They are not searchable**, by you or by anything you run against the
+  database.
+- **A report gives you the message id and not the message.** Somebody can report
+  a direct message, and you can see who sent it and when, and you cannot read
+  it. Whoever reported it can, so the practical route is asking them for what
+  they saw.
+- **They are not in an export.** A database dump of an encrypted conversation is
+  a column of ciphertext.
+- **An attached picture is not a picture.** It is not validated, thumbnailed or
+  measured on the way in, and it is served as a download rather than shown
+  inline. Your storage still fills up at the same rate — the `upload_max_bytes`
+  limit applies exactly as before — you simply cannot see what is in it.
+
+None of that is switchable. It is what "the server cannot read it" means, and a
+setting that turned it off would be a setting that turned off the encryption.
+
+`allowDms` still works the way it did: off means no new conversation can be
+opened and nothing can be sent to an existing one. That is the lever, and it is
+all of it or none of it.
+
+Messages in the clear are unaffected — a conversation where somebody has not
+updated their client yet still arrives as text, and the client says so on the
+composer rather than letting anybody assume otherwise.
+
+## Administrative commands
+
+Run inside the server container, or beside a built server:
+
+```bash
+yarn admin:set-owner
+yarn admin:rotate-identity
+```
+
+The first hands ownership to a different member, which is how you recover a
+server whose owner is gone. The second replaces the server's identity keypair.
+
+## Health checks
+
+| Service | Endpoint | Notes |
+|---------|----------|-------|
+| Server | `GET /health` | `{ status, service, serverName, timestamp }` |
+| SFU | `GET /health` | Answers 503 with `"status":"starting"` until its UDP probe passes |
+| Image worker | `GET /` on `HEALTH_PORT`, 8080 | Any path other than `/version` answers health. `/version` gives just the version |
+
+The SFU's starting state is worth knowing about in Compose: it's what stops
+dependent services coming up before the container's UDP forwarding is actually
+in place.

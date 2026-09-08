@@ -1,0 +1,505 @@
+---
+title: Docker Compose
+description: Self-host Gryt with a single docker compose up — no cloning required
+icon: Container
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+
+The fastest way to self-host Gryt. Everything runs from pre-built images published to
+GitHub Container Registry — no need to clone any repos or build anything.
+
+## What's included
+
+| Service | Image | Purpose | Required? |
+|---------|-------|---------|-----------|
+| **Server** | `ghcr.io/gryt-chat/server` | Signaling, chat, file uploads | Yes |
+| **SFU** | `ghcr.io/gryt-chat/sfu` | WebRTC media forwarding | Yes |
+| **MinIO** | `minio/minio` | S3-compatible file storage | Yes |
+| **Image Worker** | `ghcr.io/gryt-chat/image-worker` | Background image compression + thumbnailing | Optional (recommended) |
+| **Client** | `ghcr.io/gryt-chat/client` | Web UI (React + Nginx) | Dev / local only |
+| **Prometheus** | `prom/prometheus` | Metrics collection | Optional |
+| **Grafana** | `grafana/grafana` | Metrics dashboards | Optional |
+
+Most users connect via the [Gryt desktop app](https://github.com/Gryt-chat/gryt/releases) (available for Linux, macOS, and Windows).
+
+<Callout type="warn" title="Web client and authentication">
+The web client Docker image is included for **local development and contributing** to Gryt. It is **not recommended for production self-hosting** because the OIDC login flow requires your domain to be registered as a redirect URI with the centralized auth service at `auth.gryt.chat` — and only official Gryt domains are whitelisted.
+
+If you need a web-based interface, use the hosted client at [app.gryt.chat](https://app.gryt.chat), or connect with the desktop app.
+
+You _can_ self-host your own Keycloak, but that means your users will have separate accounts that don't work on other Gryt servers (no cross-server identity).
+</Callout>
+
+## Quick start
+
+<Steps>
+
+<Step>
+### Download the compose file and example env
+
+<Tabs items={["curl", "wget"]}>
+<Tab value="curl">
+```bash
+mkdir gryt && cd gryt
+curl -Lo docker-compose.yml https://raw.githubusercontent.com/Gryt-chat/gryt/main/ops/deploy/compose/prod.yml
+curl -Lo .env https://raw.githubusercontent.com/Gryt-chat/gryt/main/ops/deploy/compose/.env.example
+```
+</Tab>
+<Tab value="wget">
+```bash
+mkdir gryt && cd gryt
+wget -O docker-compose.yml https://raw.githubusercontent.com/Gryt-chat/gryt/main/ops/deploy/compose/prod.yml
+wget -O .env https://raw.githubusercontent.com/Gryt-chat/gryt/main/ops/deploy/compose/.env.example
+```
+</Tab>
+</Tabs>
+
+</Step>
+
+<Step>
+### Edit the `.env` file
+
+Open `.env` in your editor and configure at minimum:
+
+```bash
+# Give your server a name
+SERVER_NAME=My Gryt Server
+
+# Set a real secret in production
+JWT_SECRET=<run: openssl rand -base64 48>
+
+# Allowed origins (desktop app + hosted web client)
+CORS_ORIGIN=http://127.0.0.1:15738,https://app.gryt.chat
+```
+
+</Step>
+
+<Step>
+### Start the server
+
+```bash
+docker compose up -d
+```
+
+This starts the core services: **Server**, **SFU**, and **MinIO**.
+Connect with the [Gryt desktop app](https://github.com/Gryt-chat/gryt/releases) or
+the hosted web client at [app.gryt.chat](https://app.gryt.chat).
+
+**Invite-only**: the **first user** to join a brand-new server becomes the **owner/admin** automatically.
+After that, the server is **invite-only**. Create invite links in **Server settings → Invites** and share them.
+
+</Step>
+
+</Steps>
+
+## Architecture
+
+```mermaid
+graph TD
+  Desktop["Gryt Desktop App"] --> Server["Server :5000"]
+  Desktop --> SFU["SFU :5005"]
+  WebClient["app.gryt.chat"] --> Server
+  subgraph Docker Network
+    Server --> SFU
+    Server --> SQLite["SQLite (embedded)"]
+    Server --> MinIO["MinIO :9000"]
+    ImageWorker["Image Worker"] -->|"read/write images"| MinIO
+  end
+```
+
+## Configuration reference
+
+### Image versions
+
+Images default to `latest`. Pin a specific version for reproducible deploys:
+
+```bash
+SERVER_VERSION=x.y.z
+SFU_VERSION=x.y.z
+IMAGE_WORKER_VERSION=x.y.z  # only if running image-worker
+```
+
+Browse available tags at [github.com/orgs/gryt-chat/packages](https://github.com/orgs/gryt-chat/packages).
+
+### Beta channel
+
+The Gryt server, SFU, image worker, and web client publish a `latest-beta`
+image. To follow the beta channel, set the version variables in `.env`:
+
+```bash
+SERVER_VERSION=latest-beta
+SFU_VERSION=latest-beta
+IMAGE_WORKER_VERSION=latest-beta
+
+# Only used when the optional web profile is enabled
+CLIENT_VERSION=latest-beta
+```
+
+Then pull and restart the stack:
+
+```bash
+docker compose pull
+docker compose up -d
+```
+
+`latest-beta` moves whenever a new beta is published. For a predictable
+deployment, replace it with the exact tag shown in the package registry, such
+as `1.2.3-beta.4`. Pin each service separately because its version may differ
+from the others.
+
+<Callout type="warn" title="Back up before trying a beta">
+Beta builds may change the SQLite schema when the server starts. Gryt has no
+down-migration system, so an older server can't undo those changes. Back up the
+server data directory before upgrading. To return to stable, restore that
+backup, change the version variables to `latest` or exact stable tags, then run
+`docker compose pull` and `docker compose up -d` again.
+</Callout>
+
+A beta server doesn't change any other server a user belongs to. The risk is
+at the client-server boundary: a stable client may not understand a beta-only
+event or endpoint, and a beta client may expect something a stable server does
+not provide. Run the matching beta desktop client when testing a beta server.
+
+People joining can't rely on the client to identify a self-hosted server's
+release channel. Add `Beta` to `SERVER_NAME` and mention the version in
+`SERVER_DESCRIPTION` so they know what they're joining:
+
+```bash
+SERVER_NAME=My Gryt Server (Beta)
+SERVER_DESCRIPTION=Testing Gryt 1.2.3-beta.4
+```
+
+### Image Worker
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `IMAGE_WORKER_CONCURRENCY` | `2` | Max images processed in parallel |
+| `IMAGE_WORKER_POLL_MS` | `1000` | Poll interval for queued jobs (ms) |
+
+### Ports
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SERVER_PORT` | `5000` | Signaling API + WebSocket |
+| `SFU_PORT` | `5005` | SFU WebSocket |
+| `ICE_UDP_MUX_PORT` | `3478` | The one UDP port all WebRTC media flows over |
+
+### Server
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SERVER_NAME` | `My Gryt Server` | Display name in the server browser |
+| `SERVER_DESCRIPTION` | `A Gryt voice chat server` | Server description |
+| `SERVER_PASSWORD` | *(empty)* | Optional server↔SFU shared secret (**not** a user join password) |
+| `SERVER_INVITE_MAX_RETRIES` | `8` | Invalid invite attempts before lockout (per IP+user) |
+| `SERVER_INVITE_RETRY_WINDOW_MS` | `300000` | Sliding window for attempt counting (5 min) |
+| `SERVER_INVITE_RETRY_COOLDOWN_MS` | `60000` | Base cooldown after lockout (1 min) |
+| `SERVER_INVITE_MAX_COOLDOWN_MS` | `3600000` | Cooldown escalation cap (1 hour) |
+| `SERVER_INVITE_IP_MAX_RETRIES` | `20` | Per-IP invalid invite attempts before lockout |
+| `VOICE_MAX_USERS` | *(auto)* | Optional voice seat limit override |
+| `REFRESH_TOKEN_TTL_DAYS` | `7` | Refresh token lifetime (days) |
+| `JWT_SECRET` | `change-me-in-production` | Session token secret |
+| `CORS_ORIGIN` | see below | Allowed origins (comma-separated). Always include `http://127.0.0.1:15738` (desktop app). Include `https://app.gryt.chat` if you want users to connect via the hosted web client. |
+
+If you set `SERVER_PASSWORD`, keep it stable. Changing it may require restarting the SFU, because the SFU caches the password per server ID.
+
+### Changing the server owner (CLI)
+
+The **first user** to join a brand-new server becomes the **owner/admin** automatically.
+
+To change the owner later, run:
+
+```bash
+docker compose exec server node admin-setOwner.js --grytUserId <keycloak_sub>
+```
+
+`<keycloak_sub>` is your Gryt user ID. You can find it in the desktop app or web client by going to **Settings → Profile** and scrolling to the bottom.
+
+### Authentication
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `GRYT_IDENTITY_TIERS` | `account` | Comma-separated identity types the server accepts. Add `local` to admit people without a Gryt account. |
+| `GRYT_SERVER_ENABLED` | `true` | Whether the server accepts joins. `false` rejects every join while it's out of service. Any other value also rejects joins and reports itself as misconfigured. The old name `GRYT_AUTH_MODE`, with `required` and `disabled`, still works; the new name wins when both are set. |
+| `GRYT_OIDC_ISSUER` | `https://auth.gryt.chat/realms/gryt` | OIDC issuer URL |
+| `GRYT_OIDC_AUDIENCE` | `gryt-web` | OIDC audience |
+
+### WebRTC / NAT
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `STUN_SERVERS` | Google STUN | Comma-separated STUN URIs |
+| `SFU_PUBLIC_HOST` | `ws://localhost:5005` | Public SFU URL(s) for browsers (comma-separated for multi-network) |
+| `ICE_ADVERTISE_IP` | *(auto)* | Public IP(s) to advertise in ICE candidates (comma-separated for multi-network) |
+
+### Storage
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `MINIO_ROOT_USER` | `minioadmin` | MinIO admin username |
+| `MINIO_ROOT_PASSWORD` | `minioadmin` | MinIO admin password |
+| `S3_BUCKET` | `gryt` | Bucket for file uploads |
+
+## Production checklist
+
+<Callout type="warn" title="Before going public">
+- [ ] Set a strong `JWT_SECRET` — generate with `openssl rand -base64 48`
+- [ ] Change `MINIO_ROOT_USER` and `MINIO_ROOT_PASSWORD`
+- [ ] Open `ICE_UDP_MUX_PORT` as **UDP** for the SFU
+- [ ] Set `ICE_ADVERTISE_IP` if behind NAT
+- [ ] Set `SFU_PUBLIC_HOST` to your public `wss://` URL
+- [ ] Ensure `CORS_ORIGIN` includes `http://127.0.0.1:15738` (desktop app) and `https://app.gryt.chat` (hosted web client)
+- [ ] Put a reverse proxy (Caddy, Nginx, Traefik) in front for TLS
+- [ ] Pin image versions instead of `latest`
+</Callout>
+
+### TLS with Caddy (recommended)
+
+The simplest way to add HTTPS is [Caddy](https://caddyserver.com/) — it handles certificates automatically.
+
+Add this to your `docker-compose.yml`:
+
+```yaml
+services:
+  caddy:
+    image: caddy:latest
+    container_name: gryt-caddy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+    networks:
+      - gryt
+    restart: unless-stopped
+
+volumes:
+  caddy-data:
+```
+
+And create a `Caddyfile`:
+
+```
+api.example.com {
+    reverse_proxy server:5000
+}
+
+sfu.example.com {
+    reverse_proxy sfu:5005
+}
+```
+
+Then update your `.env`:
+
+```bash
+CORS_ORIGIN=http://127.0.0.1:15738,https://app.gryt.chat
+SFU_PUBLIC_HOST=wss://sfu.example.com
+
+# Multi-network example (LAN party + public):
+# SFU_PUBLIC_HOST=wss://sfu.example.com,ws://192.168.1.100:5005
+# ICE_ADVERTISE_IP=203.0.113.10,192.168.1.100
+```
+
+## LAN optimization
+
+<Callout type="info" title="Hosting for a LAN party or local network?">
+Add your server's LAN IP to `ICE_ADVERTISE_IP` and `SFU_PUBLIC_HOST` so clients on the same
+network connect directly — skipping external STUN entirely for near-zero-latency voice.
+</Callout>
+
+```bash
+# Your server's LAN IP (find it with: hostname -I | awk '{print $1}')
+ICE_ADVERTISE_IP=192.168.1.100
+SFU_PUBLIC_HOST=ws://192.168.1.100:5005
+```
+
+For mixed setups where some users are on the LAN and others connect over the internet, use
+comma-separated values. The client automatically pings each SFU endpoint and picks the fastest:
+
+```bash
+ICE_ADVERTISE_IP=203.0.113.10,192.168.1.100
+SFU_PUBLIC_HOST=wss://sfu.example.com,ws://192.168.1.100:5005
+```
+
+## Managing the stack
+
+```bash
+# View logs
+docker compose logs -f
+
+# View logs for a single service
+docker compose logs -f server
+
+# Restart a service after config change
+docker compose restart server
+
+# Update to latest images
+docker compose pull && docker compose up -d
+
+# Update a single service to a specific version
+SFU_VERSION=x.y.z docker compose up -d sfu
+
+# Stop everything
+docker compose down
+
+# Stop and remove all data (clean slate)
+docker compose down -v
+```
+
+## Health checks
+
+All services expose health endpoints. Check the stack health:
+
+```bash
+curl http://localhost:5000/health   # server
+curl http://localhost:5005/health   # sfu
+```
+
+The image worker's health endpoint (`GET /` on port 8080) is internal-only — it's used by Docker's built-in healthcheck and isn't exposed to the host.
+
+Or use `docker compose ps` to see the health status of all containers.
+
+## Monitoring
+
+Both the Server and SFU expose Prometheus metrics at `/metrics`. Enable the
+optional monitoring stack (Prometheus + Grafana) with:
+
+```bash
+docker compose --profile monitoring up -d
+```
+
+Grafana is available at [http://localhost:3000](http://localhost:3000) (default login: `admin` / `admin`).
+
+See the full [Monitoring guide](/docs/host/monitoring) for configuration, available metrics, and recommended dashboards.
+
+## Upgrading
+
+```bash
+# Pull the latest images
+docker compose pull
+
+# Recreate containers with new images
+docker compose up -d
+
+# Verify
+docker compose ps
+```
+
+To upgrade to specific versions, edit the `*_VERSION` vars in `.env`:
+
+```bash
+SERVER_VERSION=x.y.z
+SFU_VERSION=x.y.z
+```
+
+Then run `docker compose up -d`.
+
+## Running more than one server
+
+One compose file can run as many Gryt servers as you like. They're fully separate — their own channels,
+members, invites and roles — and they share the expensive parts of the stack.
+
+What each extra server needs:
+
+| Needs its own | Why |
+|---|---|
+| `DATA_DIR` volume | The SQLite database. This is the one that matters — two servers pointed at one `gryt.db` will corrupt each other's state. |
+| `SERVER_NAME` | It's part of the server's identity on the SFU. See the warning below. |
+| Published port | One port per server on the host. |
+| Image worker | A worker reads exactly one `DATA_DIR`, so it serves exactly one server. |
+
+What they share, safely:
+
+- **One SFU.** Voice rooms are namespaced per server, so a single SFU serves all of them. This is how
+  gryt.chat itself runs — three servers, one SFU.
+- **One MinIO, one bucket.** Every stored object is keyed by a UUID, so two servers writing to the same
+  bucket can't collide. Give them separate buckets if you would rather keep the storage separable.
+
+<Callout type="warn">
+**Give every server a different `SERVER_NAME`.** A server identifies itself to the SFU as
+`SERVER_NAME_PORT_SERVER_INSTANCE_ID`, and voice rooms are keyed on that. Two servers that produce the same
+string will fight over room registration and the second one's voice will fail to start. On a bridge network
+every container has the same internal `PORT`, so the name is usually the only thing telling them apart — or
+set `SERVER_INSTANCE_ID` explicitly, which is what the bundled dev stack does.
+</Callout>
+
+### Adding a second server
+
+Copy the `server` and `image-worker` blocks, and change four things — the container names, the port, the
+data volume, and the name:
+
+```yaml
+services:
+  server-2:
+    image: ghcr.io/gryt-chat/server:${SERVER_VERSION:-latest}
+    container_name: gryt-prod-server-2
+    network_mode: host
+    extra_hosts:
+      - "sfu:127.0.0.1"
+      - "minio:127.0.0.1"
+    environment:
+      PORT: 5010                      # a free port on the host
+      SERVER_NAME: My Second Server   # must differ from the first
+      DATA_DIR: /data                 # its own volume, mounted below
+      JWT_SECRET: ${JWT_SECRET_2:?Set JWT_SECRET_2 in .env}
+      SFU_WS_HOST: ws://sfu:${SFU_PORT:-5005}   # the same SFU
+      S3_BUCKET: ${S3_BUCKET:-gryt}             # the same bucket
+      IMAGE_WORKER_URL: http://127.0.0.1:8082
+      # …every other variable copied from the first server
+    volumes:
+      - gryt-prod-server-2-data:/data
+
+  image-worker-2:
+    image: ghcr.io/gryt-chat/image-worker:${IMAGE_WORKER_VERSION:-latest}
+    container_name: gryt-prod-image-worker-2
+    ports:
+      - "127.0.0.1:8082:8080"         # a different health port
+    environment:
+      DATA_DIR: /data
+      S3_ENDPOINT: http://minio:9000
+      S3_BUCKET: ${S3_BUCKET:-gryt}
+      # …credentials copied from the first worker
+    volumes:
+      - gryt-prod-server-2-data:/data # the same volume as its own server
+
+volumes:
+  gryt-prod-server-2-data:
+```
+
+`ops/deploy/compose/prod.yml` ships this as a commented-out block, so uncommenting it's usually faster than
+writing it out.
+
+<Callout type="info">
+The image worker isn't on the critical path. Uploads succeed whether or not a worker is running — what you
+lose without one is thumbnails, recompression and the dominant colour used to tint voice tiles. If you don't
+care about those on a second server, you can leave its worker out entirely.
+</Callout>
+
+<Callout type="warn">
+The bundled `server` uses `network_mode: host` so it can advertise itself on the LAN through avahi, and the
+avahi service file has a fixed name. Two host-networked servers on one machine will overwrite each other's
+file, and only one of them will be discoverable on the LAN. Both still work normally by address. If LAN
+discovery matters for both, put them on separate machines or move them to the bridge network and drop the
+`/etc/avahi/services` mount.
+</Callout>
+
+## Using external S3
+
+To use an external S3-compatible provider (AWS, Cloudflare R2, etc.) instead of the bundled MinIO, remove the
+`minio` and `minio-init` services from `docker-compose.yml` and set the appropriate environment variables on the
+`server` service directly:
+
+```yaml
+server:
+  environment:
+    S3_ENDPOINT: "https://<account-id>.r2.cloudflarestorage.com"
+    S3_REGION: auto
+    S3_ACCESS_KEY_ID: "<your-key>"
+    S3_SECRET_ACCESS_KEY: "<your-secret>"
+    S3_BUCKET: gryt
+    S3_FORCE_PATH_STYLE: "false"
+```

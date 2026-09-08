@@ -1,9 +1,0 @@
-{
-  "root": true,
-  "title": "UI",
-  "icon": "Blocks",
-  "pages": [
-    "index",
-    "react-native"
-  ]
-}

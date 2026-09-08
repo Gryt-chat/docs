@@ -2,15 +2,9 @@
   "title": "Documentation",
   "pages": [
     "index",
-    "guide",
-    "client",
-    "voice",
-    "bot",
-    "ui",
-    "server",
-    "sfu",
-    "site",
-    "cli",
-    "deployment"
+    "use",
+    "host",
+    "build",
+    "about"
   ]
 }

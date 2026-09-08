@@ -1,0 +1,19 @@
+{
+  "title": "About Gryt",
+  "description": "How it works, what it promises, and how to help",
+  "pages": [
+    "index",
+    "why-gryt",
+    "architecture",
+    "security",
+    "roadmap",
+    "contributing",
+    "feature-requests",
+    "build-the-client",
+    "client-internals",
+    "website",
+    "blog",
+    "ai",
+    "licensing"
+  ]
+}

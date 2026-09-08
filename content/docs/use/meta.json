@@ -1,0 +1,18 @@
+{
+  "title": "Use Gryt",
+  "description": "Install it, and find your way around",
+  "pages": [
+    "index",
+    "installation",
+    "updates",
+    "accounts",
+    "interface",
+    "voice",
+    "audio",
+    "roles",
+    "emojis",
+    "accessibility",
+    "faq",
+    "troubleshooting"
+  ]
+}
