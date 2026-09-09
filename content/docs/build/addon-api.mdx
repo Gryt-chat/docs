@@ -66,8 +66,8 @@ says which is missing.
 | `styles?` | `string[]` | Theme-only: CSS files to inject |
 | `main?` | `string` | Plugin-only: JS entry point |
 | `requiresReloadOnDisable?` | `boolean` | Plugin-only: if true, disabling the addon reloads the client |
-| `capabilities?` | `string[]` | Plugin-only: what it says it needs to do (GRYT-928). Declared here and agreed to per addon before `window.gryt` will answer. **Not a sandbox** — see `capabilities.ts` for what this does and does not buy. A plugin runs in the app's own page and could go around it. Unknown names are dropped rather than refused, so a manifest written against a newer Gryt still loads on an older one. |
-| `repository?` | `string` | Where the addon is published, as `owner/repo` on GitHub. Optional. An addon without it never reports an update, which is the right default for one somebody wrote for themselves and dropped in the folder. Not free-form: this string decides what gets fetched, so a manifest whose repository is anything other than two plain path segments is rejected when it is read rather than when it is used. |
+| `capabilities?` | `string[]` | Plugin-only: what it says it needs to do. Agreed to per addon before `window.gryt` will answer; unknown names are dropped, not refused (GRYT-928). |
+| `repository?` | `string` | Where the addon is published, as `owner/repo` on GitHub. Optional, and not free-form: anything but two plain path segments is rejected when it is read. |
 
 ## `gryt`
 
@@ -89,12 +89,8 @@ theme: ThemeInfo
 on(event: "themeChange" | "cleanup", handler: (payload: ThemeInfo | undefined) => void): () => void
 ```
 
-Hear about something.
-
-`themeChange` when the app's appearance or accent changes, and `cleanup`
-when this plugin is being turned off — which is the only chance it gets to
-clear a status or stop a timer. Whatever it does not finish quickly enough
-happens anyway: the worker is terminated shortly after, from outside.
+Hear about something. `themeChange` when appearance changes, `cleanup` when
+this plugin is turned off — the worker is terminated shortly after.
 
 ### `setActivity()`
 
@@ -104,11 +100,8 @@ setActivity(activity: string): Promise<unknown>
 
 Needs `status`.
 
-Say what the person running this is doing.
-
-An empty string clears it. Rejects if the capability was not granted,
-rather than resolving quietly — a status that never appears is harder to
-work out than an error.
+Say what the person running this is doing. An empty string
+clears it, and it rejects rather than resolving quietly when not granted.
 
 ### `gryt.messaging`
 
@@ -151,15 +144,7 @@ running(): Promise<string[]>
 Needs `processes`.
 
 Which of the programs the person listed are running.
-
-Their list, not their machine. Somebody who has written down two games
-gets an answer about those two games and nothing about the other two
-hundred things they have open — which is what makes the capability's
-wording true rather than a euphemism.
-
-Empty in a browser, and empty on the desktop until somebody lists
-something. Both look the same from here on purpose: a plugin should
-degrade rather than tell people to go and configure Gryt.
+Their list, not their machine. Empty in a browser and until one is listed.
 
 #### `on()`
 
@@ -179,14 +164,8 @@ panel(panel: { title: string; rows: { label: string; value?: string }[] }): Prom
 
 Needs `display`.
 
-Draw a panel beside the member list.
-
-A title and rows of text, and nothing else — no markup, no colours, no
-node handed over. The app renders it with its own components, which is
-what lets a plugin be seen at all from inside a worker with no DOM.
-
-Calling it again replaces what is there. There is one panel per plugin,
-so a plugin does not have to track handles or clean up more than one.
+Draw a panel beside the member list. A title and rows of
+text, nothing else; calling it again replaces the one panel per plugin.
 
 #### `clear()`
 
