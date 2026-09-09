@@ -6,6 +6,7 @@ name: Discord CI notification
 on:
   workflow_run:
     workflows:
+      - API reference
       - CI
       - CI self-test
       - Discord release notification
