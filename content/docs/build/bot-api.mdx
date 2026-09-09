@@ -28,25 +28,8 @@ import { GrytBot, parseCommand, splitArgs, createIdentity, loadIdentity, PERMISS
 
 ### `GrytBot`
 
-A bot on one Gryt server.
-
-It joins like any other client and is a member like any other: no bot account
-type, no bot token, no bypass. What it may do is what its role says.
-
-So the interesting failure is a permission failure. `can()` answers from what
-the server said, and sending without the permission throws here with the
-permission's name rather than surfacing as a `server:error` later.
-
-```ts
-const bot = new GrytBot({ host: "localhost:5001", nickname: "Helper" });
-
-bot.command("ping", async (ctx) => ctx.reply("pong"), {
-  description: "Check I am alive",
-  requires: ["send_messages"],
-});
-
-await bot.start();
-```
+A bot on one Gryt server. It joins like any other client and is a member like any other:
+no bot account type and no bypass, so what it may do is what its role says.
 
 #### `can()`
 
@@ -54,9 +37,8 @@ await bot.start();
 can(permission: Permission): boolean
 ```
 
-False before `ready`: a bot acting on what it assumes it may do finds out
-over the wire. True for a permission the server's catalogue does not have —
-that is a server older than the permission, not a refusal.
+False before `ready`. True for a permission the server's catalogue does not have — that
+is a server older than the permission, not a refusal.
 #### `command()`
 
 ```ts
@@ -70,11 +52,8 @@ Register a command. Later registrations of the same name replace earlier.
 start(): Promise<ServerInfo>
 ```
 
-Connect, join, and resolve once the server has said who this bot is.
-
-On a first run against a server that has not approved it, this does not
-resolve — the bot is waiting at the door, which is a state and not a
-failure. Listen for `waiting`, and for `ready` when somebody answers.
+Connect, join, and resolve once the server has said who this bot is. On a first run it
+does not resolve: the bot is waiting at the door. Listen for `waiting`, then `ready`.
 #### `stop()`
 
 ```ts
@@ -88,11 +67,8 @@ Leave, and stop reconnecting.
 send(conversationId: string, text: string): Promise<void>
 ```
 
-Post in a channel.
-
-Throws before sending anything if the bot lacks `send_messages`, naming
-the permission. The server would refuse it anyway; failing here means the
-stack trace points at the call rather than at a socket handler.
+Post in a channel. Throws before sending if the bot lacks `send_messages`, naming the
+permission, so the stack trace points at the call rather than a socket handler.
 #### `react()`
 
 ```ts
@@ -105,11 +81,8 @@ react(conversationId: string, messageId: string, reactionSrc: string): Promise<v
 delete(conversationId: string, messageId: string, opts: { own?: boolean } = {}): Promise<void>
 ```
 
-Delete a message.
-
-Its own is `delete_own_messages`; anybody else's is `manage_messages`. The
-caller says which it is, because the bot does not necessarily know who sent
-a message it was handed.
+Delete a message. Its own is `delete_own_messages`; anybody else's is `manage_messages`,
+and the caller says which, because the bot may not know who sent it.
 #### `fetch()`
 
 ```ts
@@ -137,19 +110,17 @@ Ask for the last N messages in a channel. Answered on the `message` event.
 | `nickname?` | `string` | What the member list will call it. |
 | `identityPath?` | `string` | Where the key lives. The file *is* the bot — see identity.ts. |
 | `identity?` | `BotIdentity` | An already-loaded identity, if you keep the key somewhere of your own. |
-| `wants?` | `string[]` | Sent once, the first time it turns up, and shown to whoever approves it. Ask for the least that works. **Fixed from then on.** A later run declaring more gets the answer to the question the first one asked — the run asking for more may not be yours. |
+| `wants?` | `string[]` | Sent once, the first time it turns up, and shown to whoever approves it. Fixed from then on: a later run declaring more gets the answer to the question the first one asked. |
 | `description?` | `string` | One line, shown beside the ask. Say what the bot is for. |
-| `botToken?` | `string` | A token from a registration an operator set up in advance. The unattended path: no approval to wait for, because the approving already happened. Single-use — the first bot to present it becomes that registration. |
+| `botToken?` | `string` | A token from a registration an operator set up in advance: no approval to wait for. Single-use — the first bot to present it becomes that registration. |
 | `prefix?` | `string` | The command prefix. Set to "" to turn the router off entirely. |
 | `helpCommand?` | `boolean` | Whether to answer `help` with a listing. On by default. |
 | `secure?` | `boolean` | Force http/https rather than guessing from the host. |
 
 ### `parseCommand`
 
-Which command a message invokes, if any.
-
-Case-insensitive on the command word, because somebody will type `!Help` and
-being right about it helps nobody.
+Which command a message invokes, if any. Case-insensitive on the command word, because
+somebody will type `!Help` and being right about it helps nobody.
 
 ```ts
 parseCommand(text: string, prefix: string): { name: string; rest: string } | null
@@ -174,7 +145,7 @@ splitArgs(rest: string): string[]
 | Field | Type | What it is |
 | --- | --- | --- |
 | `description?` | `string` | One line, for the help listing. |
-| `requires?` | `Permission[]` | Permissions the *bot* needs before this command is worth offering. Checked before the handler runs, so a command that replies is skipped outright on a server where the bot may not post — rather than running, failing at the socket, and leaving whoever typed it watching nothing happen. This is about the bot, not about the person who typed it: what *they* may do is the server's business and it is already enforcing it. |
+| `requires?` | `Permission[]` | Permissions the bot needs before this command is worth offering, checked before the handler runs. About the bot, not the person: what they may do is the server's business. |
 
 ### `RegisteredCommand`
 
@@ -192,20 +163,16 @@ createIdentity(): Promise<{ identity: BotIdentity; privateJwk: JWK; }>
 ```
 ### `loadIdentity`
 
-The second run must be the same bot: same id, same role, same history. A key
-generated per start arrives as a new member every time.
-
-Written `0o600` — anyone who can read this file can be this bot.
+The second run must be the same bot: same id, same role, same history. Written `0o600` —
+anyone who can read this file can be this bot.
 
 ```ts
 loadIdentity(path: string): Promise<BotIdentity>
 ```
 ### `PERMISSIONS_BEFORE_CATALOGUE`
 
-Stands in for the catalogue on a server too old to publish one, so an absent
-permission is not read as a refusal.
-
-**Frozen.** It describes a release that has already happened, and never grows.
+Stands in for the catalogue on a server too old to publish one, so an absent permission is
+not read as a refusal. Frozen: it describes a release that has already happened.
 
 ```ts
 PERMISSIONS_BEFORE_CATALOGUE: readonly Permission[] = [ "send_messages", "attach_files", "add_reactions", "join_voice", "speak", "share_video", "share_screen", "change_nickname", "change_avatar", "create_invite", "manage_invites", "manage_messages", "kick_members", "ban_members", "mute_members", "manage_reports", "manage_join_requests", "manage_channels", "manage_emojis", "manage_webhooks", "manage_roles", "manage_server", "view_audit_log", ]
@@ -240,11 +207,8 @@ PERMISSIONS_BEFORE_CATALOGUE: readonly Permission[] = [ "send_messages", "attach
 
 ### `ServerRefusal`
 
-Why the server refused something.
-
-The machine-readable half is `error`, which is what the server actually
-sends; `code` is accepted too because it is the name half of this SDK reached
-for first and getting it wrong turned "waiting to be approved" into a crash.
+Why the server refused something. The machine-readable half is `error`; `code` is accepted
+too, because this SDK reached for that name first and the mistake read as a crash.
 
 | Field | Type | What it is |
 | --- | --- | --- |
