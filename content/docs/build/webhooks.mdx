@@ -4,7 +4,6 @@ description: Post messages and cards into a Gryt channel with one HTTP request, 
 icon: Webhook
 ---
 
-import { Callout } from 'fumadocs-ui/components/callout';
 import { WebhookPreview } from '@/components/webhooks/preview-loader';
 import { PayloadTable, CodeTable } from '@/components/webhooks/reference';
 
@@ -211,15 +210,14 @@ problem:
 | 400 | `{"error": "empty_message"}` | No `text` (or only spaces) and no cards |
 | 400 | `{"error": "message_too_long"}` | `text` is over 4,000 characters |
 | 400 | `{"error": "no_channel"}` | The webhook has no channel set |
+| 400 | `{"error": "invalid_json"}` | The body isn't valid JSON |
 | 404 | `{"error": "not_found"}` | No webhook with that ID and token |
+| 413 | `{"error": "body_too_large"}` | The body is over 256 KB |
 | 429 | `{"error": "rate_limited", "retry_after_ms": 59988}` | See [Rate limits](#rate-limits) |
 
-<Callout type="warn" title="Bad JSON and huge bodies">
-JSON that doesn't parse gets a `500` with `"error": "internal_error"` and the
-parser's message today. So does a body over 2 MB. Both should really be 4xx
-answers and will probably change. Don't match on them. Treat a 5xx as "check
-the request, then try again later".
-</Callout>
+Older servers answer bad JSON with a `500` and `"error": "internal_error"`
+instead, and let bodies up to 2 MB through before doing the same. If you have to
+handle those, treat a 5xx as "check the request, then try again later".
 
 ### Warnings
 
@@ -248,9 +246,9 @@ Each webhook gets a burst of 15 requests, then about one every 2 seconds, or 30
 a minute. Go over and that webhook gets `429` for 60 seconds, with
 `retry_after_ms` saying how long is left.
 
-It counts every request to the webhook's URL, including refused ones, and it's
-per webhook rather than per caller, so two scripts sharing a URL share the
-limit. The counter lives in the server's memory and resets when it restarts.
+It counts every request to the webhook's URL, including refused payloads, and
+it's per webhook rather than per caller, so two scripts sharing a URL share the
+limit. Bad JSON and bodies over 256 KB are turned away before they're counted. The counter lives in the server's memory and resets when it restarts.
 [Rate limiting](/docs/host/rate-limiting) has the server's other limits.
 
 ## Recipes
