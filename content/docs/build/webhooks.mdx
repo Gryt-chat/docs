@@ -148,6 +148,8 @@ original URL afterwards changes nothing in Gryt.
 - Private and local addresses are refused, and so is a chain of more than 5
   redirects
 - The same URL used twice in a message is downloaded once
+- `avatar_url` is resized to 256 px, the same as any other avatar. Card pictures
+  keep their size
 
 A picture that fails doesn't stop the message. It posts without that picture,
 and the reply lists what went wrong under `warnings`. Because of the downloads,
