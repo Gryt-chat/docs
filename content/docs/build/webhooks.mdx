@@ -1,0 +1,349 @@
+---
+title: Webhooks
+description: Post messages and cards into a Gryt channel with one HTTP request, and try a card before you send it.
+icon: Webhook
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { WebhookPreview } from '@/components/webhooks/preview-loader';
+import { PayloadTable, CodeTable } from '@/components/webhooks/reference';
+
+A webhook is a URL that posts into one channel. Anything that can send an HTTP
+request can use it: a CI job, a cron script, a monitoring tool. There's no SDK,
+no login and no socket to keep open. You POST some JSON and a message shows up.
+
+A webhook can only post. It can't read the channel, reply to anyone or react to
+messages. If you need any of that, write a [bot](/docs/build/bots) instead.
+
+## Make one
+
+You need the **Manage webhooks** permission on the server.
+
+1. Open the server menu (the three dots next to the server name) and pick **Server settings**
+2. Go to **Webhooks** and press **Create webhook**
+3. Give it a name, pick the channel it posts to, and click the avatar to give it a picture
+4. Use the copy button to copy its URL
+
+![The Webhooks tab in server settings, with one webhook called New Webhook posting to #General](/webhooks/create-webhook.png)
+
+Name, channel and picture save as you change them. The trash button deletes the
+webhook, and its URL stops working straight away.
+
+## The URL
+
+```text
+https://<your server>/api/webhooks/<webhook id>/<token>
+```
+
+The token is the whole of the security. Anyone who has the URL can post as the
+webhook, so keep it out of public repositories and logs. There's no way to
+rotate a token. If a URL leaks, delete the webhook and make a new one.
+
+## Send a message
+
+```bash
+curl -X POST 'https://gryt.example.com/api/webhooks/WEBHOOK_ID/TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{"text": "Hello from curl"}'
+```
+
+That's a whole message. `text` takes the same markdown as the chat box.
+Add `cards` for something with a title, colour, fields and pictures:
+
+```bash
+curl -X POST 'https://gryt.example.com/api/webhooks/WEBHOOK_ID/TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "display_name": "Backups",
+    "cards": [{
+      "title": "Backup finished",
+      "description": "All 3 volumes copied in 2m 41s.",
+      "color": "#3fb27f"
+    }]
+  }'
+```
+
+The server answers once the message is posted:
+
+```json
+{
+  "message_id": "7999e063-ccdb-46d3-8cd3-b1decc35dfd6",
+  "conversation_id": "general",
+  "warnings": []
+}
+```
+
+## Try a card
+
+Edit the JSON and the card on the right redraws. It's drawn with the same
+`WebhookCard` component from [`@gryt/ui`](/docs/build/ui) that the app uses,
+and the checks under the editor follow the server's rules, so a payload that
+passes here passes there. **Copy as curl** gives you a command with a
+placeholder URL to swap for yours.
+
+<WebhookPreview />
+
+Two things differ from the app. The preview loads pictures straight from the
+URLs you type, from your own browser. Gryt doesn't: the server downloads them
+once when the message is posted (see [Pictures](#pictures)). And the preview
+only does bold, italics, strikethrough, inline code and links. The app's
+markdown also does code blocks, lists, emoji and mentions.
+
+## Payload
+
+This reference is read from the server's own OpenAPI document,
+[`openapi/webhooks.json`](https://github.com/Gryt-chat/server/blob/main/openapi/webhooks.json),
+which is generated from the schema the route checks payloads with. A check in
+CI fails when this page and that file disagree.
+
+### Message
+
+<PayloadTable object="message" />
+
+A message needs `text`, at least one card, or both. `display_name` and
+`avatar_url` only change this one message. The webhook's own name and picture
+stay as they are.
+
+### Card
+
+<PayloadTable object="card" />
+
+A card needs at least one of `title`, `description`, `fields`, `image_url` or
+`author`. The title, description, author name, footer text and every field's
+name and value count towards a limit of 6000 characters, added up across all
+the cards in the message.
+
+Timestamps show in each reader's own time zone.
+
+### Author
+
+<PayloadTable object="author" />
+
+### Field
+
+<PayloadTable object="field" />
+
+Inline fields sit side by side as long as there's room. A field that isn't
+inline gets a row to itself.
+
+### Footer
+
+<PayloadTable object="footer" />
+
+## Pictures
+
+`avatar_url`, `image_url`, `thumbnail_url` and both `icon_url`s are downloaded
+by the Gryt server when the message is posted. It stores a copy and the message
+points at that copy. People reading the channel load the picture from your Gryt
+server and never contact the host it came from, so that host can't see who
+read the message or when.
+
+That also means the picture is fixed at post time. Changing the file at the
+original URL afterwards changes nothing in Gryt.
+
+- PNG, JPEG, WebP and GIF. SVG is refused. The server checks the file's bytes,
+  not its name or `Content-Type`
+- Up to 8 MB for `image_url` and `thumbnail_url`, 1 MB for `avatar_url` and the
+  icons, and 32 MB for all the pictures in one message
+- 12 seconds to download all of them
+- Private and local addresses are refused, and so is a chain of more than 5
+  redirects
+- The same URL used twice in a message is downloaded once
+
+A picture that fails doesn't stop the message. It posts without that picture,
+and the reply lists what went wrong under `warnings`. Because of the downloads,
+a message with pictures can take a few seconds to answer.
+
+## Mentions
+
+Only `text` can notify anyone. A mention is a markdown link to `mention:` and
+the member's ID:
+
+```json
+{ "text": "Deploy failed, [@Sivert](mention:user_166ad0aa-aef6-494d-8475-9c842fbc29b2) can you look?" }
+```
+
+To get an ID, right-click the member in the member list and pick **Copy ID**.
+
+Mentions inside cards draw like mentions but never notify, so a card listing
+ten commit authors doesn't ping all ten.
+
+## Older clients
+
+A client that can't draw cards shows a single line instead. When a message has
+cards and no `text`, the server writes that line itself: the first card's
+title, or its author's name if it has no title, plus a count like "(+2 more)"
+when there are more cards. When the first card has neither, it says "Posted a
+card", or "Posted 3 cards".
+
+Mentions and links are broken on purpose in that line, so it can't ping anyone
+or unfurl. Clients that do draw cards hide it. If you send `text` as well,
+older clients show your `text` and nothing else.
+
+## When it goes wrong
+
+A refused payload posts nothing. Every problem comes back at once, up to 20,
+each with a `path` into your JSON:
+
+```json
+{
+  "error": "invalid_payload",
+  "message": "The payload has 3 problems.",
+  "problems": [
+    { "path": "cards[0].color", "code": "invalid_color", "message": "Use #rrggbb or an integer from 0 to 16777215." },
+    { "path": "cards[0].timestamp", "code": "invalid_timestamp", "message": "Invalid ISO datetime" },
+    { "path": "cards[0]", "code": "empty_card", "message": "A card needs a title, description, fields, image_url or author." }
+  ]
+}
+```
+
+`limit` is there too when the problem is a limit. Match on `code`, since
+`message` is for people and can change.
+
+<CodeTable list="problems" />
+
+Some answers have no `problems` list. The first two are from before cards
+existed, and they come back instead of `invalid_payload` when they're the only
+problem:
+
+| Status | Body | When |
+|---|---|---|
+| 400 | `{"error": "empty_message"}` | No `text` (or only spaces) and no cards |
+| 400 | `{"error": "message_too_long"}` | `text` is over 4,000 characters |
+| 400 | `{"error": "no_channel"}` | The webhook has no channel set |
+| 404 | `{"error": "not_found"}` | No webhook with that ID and token |
+| 429 | `{"error": "rate_limited", "retry_after_ms": 59988}` | See [Rate limits](#rate-limits) |
+
+<Callout type="warn" title="Bad JSON and huge bodies">
+JSON that doesn't parse gets a `500` with `"error": "internal_error"` and the
+parser's message today. So does a body over 2 MB. Both should really be 4xx
+answers and will probably change. Don't match on them. Treat a 5xx as "check
+the request, then try again later".
+</Callout>
+
+### Warnings
+
+A message that posts can still come back with `warnings`:
+
+```json
+{
+  "message_id": "7999e063-ccdb-46d3-8cd3-b1decc35dfd6",
+  "conversation_id": "general",
+  "warnings": [
+    { "path": "embeds", "code": "unknown_key", "message": "embeds isn't part of a webhook message and was ignored." },
+    { "path": "cards[0].image_url", "code": "blocked", "message": "That address isn't allowed, so the picture was left out." }
+  ]
+}
+```
+
+Keys Gryt doesn't know are ignored rather than refused, so a payload written for
+another chat app mostly works. Log `warnings` from anything automated, or a
+missing picture goes unnoticed.
+
+<CodeTable list="warnings" />
+
+## Rate limits
+
+Each webhook gets a burst of 15 requests, then about one every 2 seconds, or 30
+a minute. Go over and that webhook gets `429` for 60 seconds, with
+`retry_after_ms` saying how long is left.
+
+It counts every request to the webhook's URL, including refused ones, and it's
+per webhook rather than per caller, so two scripts sharing a URL share the
+limit. The counter lives in the server's memory and resets when it restarts.
+[Rate limiting](/docs/host/rate-limiting) has the server's other limits.
+
+## Recipes
+
+### Deploy notice from GitHub Actions
+
+Save the webhook URL as a repository secret called `GRYT_WEBHOOK_URL`, then add
+a step at the end of the deploy job:
+
+```yaml
+- name: Tell Gryt
+  if: always()
+  env:
+    GRYT_WEBHOOK_URL: ${{ secrets.GRYT_WEBHOOK_URL }}
+    STATUS: ${{ job.status }}
+  run: |
+    if [ "$STATUS" = "success" ]; then color="#3fb27f"; else color="#e5484d"; fi
+    jq -n \
+      --arg status "$STATUS" --arg color "$color" \
+      --arg repo "$GITHUB_REPOSITORY" --arg sha "${GITHUB_SHA::7}" \
+      --arg actor "$GITHUB_ACTOR" \
+      --arg url "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
+      '{
+        display_name: "Deploys",
+        cards: [{
+          title: "Deploy \($status): \($repo)",
+          url: $url,
+          color: $color,
+          fields: [
+            { name: "Commit", value: $sha, inline: true },
+            { name: "By", value: $actor, inline: true }
+          ],
+          timestamp: (now | todate)
+        }]
+      }' |
+    curl -fsS -X POST "$GRYT_WEBHOOK_URL" \
+      -H 'Content-Type: application/json' --data-binary @-
+```
+
+`jq` is already on GitHub's runners. It builds the JSON for you, so a quote in
+a name can't break the payload.
+
+### Uptime alert from cron
+
+A script that checks a URL and posts only when the answer changes, so a site
+that's down all night sends two messages instead of 500:
+
+```bash
+#!/bin/sh
+# Run from cron every minute: * * * * * /usr/local/bin/check-api.sh
+WEBHOOK_URL="https://gryt.example.com/api/webhooks/WEBHOOK_ID/TOKEN"
+TARGET="https://api.example.com/health"
+STATE=/var/tmp/check-api.state
+
+code=$(curl -s -o /dev/null -m 10 -w '%{http_code}' "$TARGET")
+[ "$code" = "200" ] && now=up || now=down
+[ "$(cat "$STATE" 2>/dev/null)" = "$now" ] && exit 0
+echo "$now" > "$STATE"
+
+if [ "$now" = "down" ]; then
+  title="$TARGET is down"; color="#e5484d"
+else
+  title="$TARGET is back"; color="#3fb27f"
+fi
+
+jq -n --arg title "$title" --arg color "$color" --arg code "$code" '{
+  display_name: "Uptime",
+  cards: [{
+    title: $title,
+    color: $color,
+    fields: [{ name: "Status", value: $code, inline: true }],
+    timestamp: (now | todate)
+  }]
+}' | curl -fsS -X POST "$WEBHOOK_URL" -H 'Content-Type: application/json' --data-binary @-
+```
+
+### Plain text from any script
+
+No `jq`, no cards. Fine for a quick "it's done":
+
+```bash
+curl -fsS -X POST "$WEBHOOK_URL" \
+  -H 'Content-Type: application/json' \
+  -d "{\"text\": \"Backup on $(hostname) finished at $(date -u +%H:%M) UTC\"}"
+```
+
+Keep anything you didn't write yourself out of a string like that. A file name
+with a quote in it breaks the JSON. Use `jq -n --arg` like the recipes above
+when the text comes from somewhere else.
+
+## Managing webhooks over the API
+
+The Webhooks tab uses these, and so can you, with a member's access token that
+has **Manage webhooks**. They're listed in [Server API](/docs/build/server-api#webhooks),
+and the request and response shapes are in the same
+[`openapi/webhooks.json`](https://github.com/Gryt-chat/server/blob/main/openapi/webhooks.json).

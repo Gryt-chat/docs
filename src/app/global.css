@@ -5,6 +5,11 @@
 /* Gryt's tokens, unprocessed. Dark on :root, and .light swaps the scales. */
 @import '@gryt/ui/theme.css';
 
+/* The one @gryt/ui component the docs draw, on the Webhooks page. Its focus ring lives in a shared
+   file full of other components' classes, so that one is listed instead of scanned. */
+@source '../../node_modules/@gryt/ui/dist/components/WebhookCard';
+@source inline('focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gryt-accent-light');
+
 @theme {
   --font-sans: var(--font-atkinson), sans-serif;
   --font-mono: var(--font-atkinson-mono), monospace;
