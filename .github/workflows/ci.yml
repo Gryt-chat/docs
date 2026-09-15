@@ -22,6 +22,10 @@ jobs:
       # to be swept, and that list only ever shrinks.
       - run: yarn test:comment-length
 
+      # The Webhooks page reads server main's openapi/webhooks.json, and its preview
+      # mirrors the payload rules. This fails when either drifts from the server.
+      - run: yarn test:webhook-spec
+
       # `next build` type-checks as part of building and there is no separate
       # typecheck script, so this is both.
       - run: yarn build
