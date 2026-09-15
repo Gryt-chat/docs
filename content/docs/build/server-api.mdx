@@ -181,9 +181,15 @@ password.
 | `server:info` | client → server | — |
 | `server:join` | client → server | `{ nickname?, inviteCode? }` |
 | `server:challenge` | server → client | A nonce to sign |
-| `server:verify` | client → server | `{ certificate, assertion }` |
-| `server:joined` | server → client | Success, with tokens |
+| `server:verify` | client → server | `{ certificate, assertion, link? }` |
+| `server:joined` | server → client | Success, with tokens, and `identityClaim` if a `link` came with the join |
 | `server:setup_required` | server → client | Nothing has claimed ownership yet |
+
+A signed-in client that used to be a guest on this server can send `link`, a
+proof signed with the guest's key. The server moves the guest's membership to
+the account. If the account is already a member, it merges the guest into the
+account's membership instead. `identityClaim` on `server:joined` says what
+happened: `carried`, `merged`, `no_prior_membership` or `failed`.
 
 The server also proves itself, over `server:identify`, as a connection-level
 exchange rather than part of the join. A client reconnecting with a saved token
@@ -193,7 +199,7 @@ handing a bearer token to a server nobody authenticated.
 Refusals come back on `server:error` with a reason: `invite_required`,
 `invalid_invite`, `invite_rate_limited`, `identity_tier_refused`,
 `identity_verification_failed`, `challenge_expired`, `nonce_mismatch`,
-`account_already_member`, `approval_pending`, `auth_required`, `auth_disabled`,
+`approval_pending`, `auth_required`, `auth_disabled`,
 `auth_misconfigured`, `join_refused`, `join_failed`, `invalid_nickname`.
 
 ### Sessions and tokens
@@ -216,6 +222,7 @@ Refusals come back on `server:error` with a reason: `invite_required`,
 | `chat:new`, `chat:edited`, `chat:deleted`, `chat:reaction` | server → client | |
 | `chat:history` | server → client | Answer to `chat:fetch` |
 | `chat:purge_user` | server → client | Everything from one member is gone |
+| `chat:merge_user` | server → client | A guest was merged into an account: `{ from_server_user_id, to_server_user_id }` |
 | `chat:error` | server → client | |
 
 ### Direct messages
