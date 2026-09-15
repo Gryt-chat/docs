@@ -9,6 +9,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 /** @type {import('next').NextConfig} */
 const config = {
   reactStrictMode: true,
+  // Next 16.3 dev otherwise writes AGENTS.md and CLAUDE.md into the repo root.
+  agentRules: false,
   output: 'standalone',
   turbopack: {
     root: __dirname,

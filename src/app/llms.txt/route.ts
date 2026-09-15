@@ -1,5 +1,4 @@
-import { BASE_URL, SITE_SUMMARY } from '@/lib/llms';
-import { source } from '@/lib/source';
+import { BASE_URL, SITE_SUMMARY, llmsIndex } from '@/lib/llms';
 
 /**
  * An index of the documentation, for language models: every page with its description and
@@ -7,9 +6,9 @@ import { source } from '@/lib/source';
  */
 export const dynamic = 'force-static';
 
-export function GET(): Response {
-  const pages = source.getPages();
-
+export async function GET(): Promise<Response> {
+  // Swap the helper's own heading for the site's name and summary.
+  const tree = (await llmsIndex()).replace(/^# .*\n+/, '');
   const lines = [
     '# Gryt',
     '',
@@ -20,14 +19,8 @@ export function GET(): Response {
     '',
     '## Documentation',
     '',
+    tree,
   ];
-
-  for (const page of pages) {
-    const description = page.data.description
-      ? `: ${page.data.description}`
-      : '';
-    lines.push(`- [${page.data.title}](${BASE_URL}${page.url}.md)${description}`);
-  }
 
   return new Response(`${lines.join('\n')}\n`, {
     headers: {

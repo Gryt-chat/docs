@@ -5,7 +5,6 @@ icon: Download
 ---
 
 import { Callout } from 'fumadocs-ui/components/callout';
-import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
 
 The Gryt desktop client is available for Windows, macOS, and Linux.
 
@@ -27,8 +26,7 @@ Beta builds may not behave correctly with stable servers. Use a matching beta
 client when testing a beta server, and keep the stable installer available if
 you need to switch back.
 
-<Tabs items={["Windows", "macOS", "Linux"]}>
-<Tab value="Windows">
+## Windows
 
 ### Download
 
@@ -54,8 +52,7 @@ The app installs to `C:\Users\<user>\AppData\Local\Programs\gryt-chat\` and auto
 
 Go to **Settings → Apps → Gryt Chat → Uninstall**, or run the uninstaller from the install directory.
 
-</Tab>
-<Tab value="macOS">
+## macOS
 
 ### Download
 
@@ -81,8 +78,7 @@ malicious software, that's worth reporting rather than working around.
 
 Drag **Gryt Chat.app** from Applications to the Trash.
 
-</Tab>
-<Tab value="Linux">
+## Linux
 
 ### Snap Store (recommended)
 
@@ -144,9 +140,6 @@ sudo apt remove gryt-chat
 # AppImage — just delete the file
 rm Gryt-Chat-*.AppImage
 ```
-
-</Tab>
-</Tabs>
 
 ## Connecting to a server
 

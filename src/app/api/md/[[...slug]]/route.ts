@@ -1,4 +1,4 @@
-import { pageToMarkdown } from '@/lib/llms';
+import { docsLlms } from '@/lib/llms';
 import { source } from '@/lib/source';
 import { notFound } from 'next/navigation';
 
@@ -16,7 +16,7 @@ export async function GET(
   const page = source.getPage(slug);
   if (!page) notFound();
 
-  return new Response(`${await pageToMarkdown(page)}\n`, {
+  return new Response(`${await docsLlms.page(page)}\n`, {
     headers: {
       'Content-Type': 'text/markdown; charset=utf-8',
       'Cache-Control': 'public, max-age=3600',
