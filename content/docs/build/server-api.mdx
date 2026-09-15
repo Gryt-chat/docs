@@ -75,6 +75,7 @@ Sending is `chat:send` over the socket. There's no POST here.
 | POST | `/api/uploads/avatar` | Bearer | multipart |
 | DELETE | `/api/uploads/avatar` | Bearer | |
 | POST | `/api/uploads/group-icon` | Bearer | multipart `file`, a group's picture. Returns `fileId` for `dm:group:update` and doesn't change your avatar |
+| POST | `/api/uploads/webhook-avatar` | Bearer | multipart `file`, a webhook's avatar. Needs Manage webhooks. Returns `fileId` for the webhook's `avatar_file_id` and doesn't change your avatar |
 | GET | `/api/uploads/files/:fileId` | — | `?thumb=1` for the thumbnail, `?download=1` for an attachment header |
 
 ### Server
