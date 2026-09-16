@@ -61,11 +61,19 @@ Every variable the SFU reads. There are no others.
 | Variable | Default | What it does |
 |----------|---------|--------------|
 | `SFU_PORT` | `5005` | HTTP and WebSocket port. `PORT` is read as a fallback |
+| `SFU_CONTROL_PORT` | `9092` | Where Gryt servers register. Don't publish it or forward it |
+| `SFU_CONTROL_HOST` | every address | The address `SFU_CONTROL_PORT` listens on. Set `127.0.0.1` when the SFU and its server run straight on one machine, as in the desktop app or a self-hosted bundle. Has to be an IP |
+| `SFU_METRICS_PORT` | `9091` | Prometheus metrics. `0` stops serving them |
+| `SFU_METRICS_HOST` | every address | The address `SFU_METRICS_PORT` listens on. Has to be an IP |
 | `ICE_UDP_MUX_PORT` | `3478` | The one UDP port all media flows over |
 | `STUN_SERVERS` | `stun:stun.l.google.com:19302` | Comma-separated, used both for ICE and for the startup readiness probe |
 | `DISABLE_STUN` | `false` | Stop discovering server-reflexive candidates |
 | `ICE_ADVERTISE_IP` | — | Comma-separated IPs to advertise as host candidates instead of the ones found on the interfaces |
 | `MAX_PEERS` | `200` | How many peers may be connected at once, across all rooms |
+| `SFU_REQUIRE_CLIENT_TOKEN` | `true` | Refuse joins without a signed token. `false` still lets a client in with the old shared server password |
+| `SFU_PING_INTERVAL` | `30` | Seconds between pings on a quiet connection. `0` turns liveness checks off |
+| `SFU_PONG_TIMEOUT` | `90` | Seconds a peer can stay silent before it's dropped. Raised to two ping intervals if set lower |
+| `SFU_CALL_ALONE_TIMEOUT` | `120` | Seconds one person can be alone in a call before the SFU ends it. `0` turns it off |
 | `DEBUG` | `true` | Room, connection and signaling logging. On unless explicitly set to `false` |
 | `VERBOSE_LOG` | `false` | Per-packet RTP forwarding detail |
 
@@ -114,9 +122,9 @@ single server's voice channels. The SFU's cap covers every server sharing it.
 | Endpoint | What it does |
 |----------|--------------|
 | `GET /health` | `{"status":"healthy","service":"sfu","version":…,"timestamp":…}` |
-| `GET /metrics` | Prometheus |
+| `GET /metrics` | Prometheus, on `SFU_METRICS_PORT` rather than the main port |
 | `GET /` | WebSocket upgrade. Anything else gets 400 and a sentence saying so |
-| `WS /server` | The Gryt server's control connection |
+| `WS /server` | The Gryt server's control connection, on `SFU_CONTROL_PORT`. The main port answers 403 and names the control port |
 | `WS /client` | A participant's connection |
 
 ### Health has a starting state
