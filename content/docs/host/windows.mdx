@@ -72,8 +72,11 @@ set `SFU_PUBLIC_HOST` and `EXTERNAL_HOST` to your public IP or domain:
 ```bash
 EXTERNAL_HOST=http://your-public-ip:5000
 SFU_PUBLIC_HOST=your-public-ip:5005
-SFU_WS_HOST=ws://your-public-ip:5005
 ```
+
+Leave `SFU_WS_HOST` at `ws://127.0.0.1:5005`, even for internet users. It's how the server
+reaches the SFU on this machine. The SFU only takes registration on `127.0.0.1`, so if you
+point it at your public IP, voice stops working.
 
 See the [Configuration](/docs/host/configuration) page for all available options.
 
@@ -137,9 +140,24 @@ All settings are in `config.env`. Key options:
 | `SFU_PORT` | `5005` | SFU media server port |
 | `SFU_WS_HOST` | `ws://127.0.0.1:5005` | SFU WebSocket URL (used by the server internally) |
 | `SFU_PUBLIC_HOST` | `127.0.0.1:5005` | SFU address given to clients |
+| `SFU_CONTROL_HOST` | `127.0.0.1` | Address the SFU takes server registration on, port 9092 |
+| `SFU_METRICS_HOST` | `127.0.0.1` | Address the SFU serves its metrics on, port 9091 |
+| `METRICS_PORT` | `0` | The server's own metrics port. `0` turns them off |
 | `DATA_DIR` | `./data` | Where SQLite database and file uploads are stored |
 | `STORAGE_BACKEND` | `filesystem` | File storage mode (`filesystem` for self-hosted) |
 | `JWT_SECRET` | *(auto-generated)* | Session token secret — set a strong value for production |
+
+### Using this SFU from another machine
+
+The SFU takes server registration on port 9092 and serves metrics on 9091. With
+`SFU_CONTROL_HOST` and `SFU_METRICS_HOST` set to `127.0.0.1`, both only listen on this
+machine, so nobody else on your network can register a server with your SFU or read its
+metrics. The bundle's own server is on the same machine, so it can still register.
+
+If a Gryt server on a different machine should use this SFU, set `SFU_CONTROL_HOST` to this
+machine's address on that network, or leave it empty to listen on every address. Point that
+server's `SFU_WS_HOST` at `ws://this-machine:5005`. Don't forward port 9092 on your router,
+or anyone on the internet can register a server with your SFU.
 
 ## Stopping the server
 
@@ -151,6 +169,24 @@ To kill background processes from a previous run that didn't shut down cleanly:
 taskkill /IM gryt_sfu.exe /F
 taskkill /IM node.exe /F
 ```
+
+## Updating
+
+Stop the server, download the new zip and unpack it. Move your `config.env` and your `data`
+folder into the new folder, then start it again.
+
+Your old `config.env` won't have settings that newer bundles added. Check it for these three
+lines, and add any that are missing:
+
+```bash
+SFU_CONTROL_HOST=127.0.0.1
+SFU_METRICS_HOST=127.0.0.1
+METRICS_PORT=0
+```
+
+Without the first two, anyone on your network can register a server with your SFU and read
+its metrics. The third turns the server's own metrics off. Left on, they can end up on port
+9091 for anyone on your network to read.
 
 ## Data and backups
 
