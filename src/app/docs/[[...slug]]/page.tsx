@@ -58,6 +58,8 @@ export async function generateMetadata(
     title: page.data.title,
     description: page.data.description,
     alternates: {
+      // Resolved against metadataBase, and the same path sitemap.ts lists.
+      canonical: page.url,
       // Tells anything reading the HTML that a markdown copy exists, so it can
       // fetch that instead of stripping tags out of the rendered page.
       types: {
