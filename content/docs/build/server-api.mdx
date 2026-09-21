@@ -335,6 +335,10 @@ here sit on top of the thread events above.
 | `server:settings` | server → client | |
 | `server:channels:list`, `:upsert`, `:delete`, `:reorder` | client → server | |
 | `server:channels` | server → client | |
+| `server:channels:scope:get`, `server:channels:scope:set` | client → server | Who can use a channel: Everyone, a template or its own rules |
+| `server:channels:scope` | server → client | |
+| `server:permissions:templates:list`, `server:permissions:template:save`, `server:permissions:template:delete` | client → server | Named sets of channel permissions that several channels can share |
+| `server:permissions:templates` | server → client | |
 | `server:sidebar:list`, `:item:upsert`, `:item:delete`, `:reorder` | client → server | |
 | `server:sidebar` | server → client | |
 | `server:roles:list`, `server:roles:set` | client → server | |
