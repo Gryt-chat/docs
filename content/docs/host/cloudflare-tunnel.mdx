@@ -57,6 +57,10 @@ the tunnel's address instead of their own. They all share one rate-limit bucket,
 and the per-IP invite lockout applies to everyone at once — one person tripping a
 limit throttles the server.
 
+It also fixes the webhook URL the server hands out. The tunnel talks plain http
+to the server, so at `0` a copied webhook URL starts `http://`, and posting to
+it gets a 301 to https that most senders won't follow.
+
 `1` is right here. Cloudflare appends the visitor's address to the right of
 `x-forwarded-for`, the tunnel adds nothing after it, and the server counts from
 that end. Anything a client puts in the header stays to the left, where it is

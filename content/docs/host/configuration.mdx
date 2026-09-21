@@ -178,6 +178,12 @@ A server behind a reverse proxy or a tunnel has to set this. Without it every
 client arrives wearing the proxy's address and shares a single rate-limit bucket,
 so one noisy visitor locks out everybody.
 
+The same setting decides the scheme of the webhook URL the server hands out.
+Behind a tunnel the socket is plain http, so at `0` the URL you copy from
+Server settings → Webhooks starts `http://`, and a post to it gets a redirect
+most webhook senders won't follow. With hops set, the server reads
+`x-forwarded-proto` from the same end of the chain.
+
 One for a single reverse proxy. More only if you genuinely chained them.
 
 ## Object storage
