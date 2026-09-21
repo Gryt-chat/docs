@@ -7,6 +7,8 @@ import type { BaseLayoutProps } from 'fumadocs-ui/layouts/shared';
 export function baseOptions(): BaseLayoutProps {
   return {
     nav: {
+      // The root only redirects to /docs, so the title on every page links there directly.
+      url: '/docs',
       title: (
         <>
           <img src="/favicon.svg" alt="" width={24} height={24} className="rounded-md" />

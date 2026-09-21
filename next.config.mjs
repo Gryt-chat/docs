@@ -76,6 +76,12 @@ const config = {
       { source: '/docs/voice/getting-started', destination: '/docs/build/voice-getting-started', permanent: true },
       { source: '/docs/voice/hooks', destination: '/docs/build/voice-hooks', permanent: true },
       { source: '/docs/voice/seams', destination: '/docs/build/voice-seams', permanent: true },
+      // Reported as 404s by Search Console on 2026-09-21. The first two are server endpoints
+      // named on the API page; the last two are an older layout's client section.
+      { source: '/api/uploads', destination: '/docs/build/server-api#uploads', permanent: true },
+      { source: '/api/emojis', destination: '/docs/build/server-api#emojis', permanent: true },
+      { source: '/docs/category/client', destination: '/docs/use', permanent: true },
+      { source: '/client', destination: '/docs/use', permanent: true },
     ];
   },
 
