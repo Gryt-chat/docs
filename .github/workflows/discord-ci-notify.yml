@@ -9,7 +9,8 @@ on:
       - API reference
       - CI
       - CI self-test
-      - Discord release notification
+      - Gryt Git notification
+      - Release notification
       - Sync Vikunja task
     types: [completed]
 
