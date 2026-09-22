@@ -89,9 +89,9 @@ The channel covers two things at once. `gryt update` follows it, so the CLI
 itself moves to beta builds. Servers you start also run the `latest-beta`
 images rather than `latest`, for the server, the SFU and the image worker.
 
-Existing servers keep the image they already pulled until you restart them, so
-switching the channel changes nothing that's already up. Restart a server to
-move it.
+Existing servers keep the image they already pulled, and restarting alone
+doesn't move them to the new channel's image — see [Which version a server
+runs](#which-version-a-server-runs) for how to actually pull a newer one.
 
 ## Features
 
@@ -316,9 +316,12 @@ newer one exists it shows both:
   1.4.6 → 1.5.0   restart to pull it
 ```
 
-Restarting is what pulls the newer image. The version is read off the container
-rather than asked of the server, so it works on images built long before the
-server had any way to report it.
+Restarting doesn't pull the newer image — `docker compose restart` reruns the
+container you already have. Pull the image yourself first
+(`docker pull ghcr.io/gryt-chat/server:latest`, or `latest-beta` on the beta
+channel), then stop and start the server with `x` and `s`. The version is
+read off the container rather than asked of the server, so it works on images
+built long before the server had any way to report it.
 
 ## Commands
 
