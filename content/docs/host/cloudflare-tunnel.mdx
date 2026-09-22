@@ -109,9 +109,25 @@ ingress:
   - service: http_status:404
 ```
 
+## Running cloudflared over HTTP/2
+
+cloudflared defaults to QUIC, which needs outbound UDP to Cloudflare's edge. If UDP is blocked on the host network, or the tunnel keeps dropping overnight, switch it to HTTP/2 instead.
+
+Set the environment variable:
+
+```bash
+TUNNEL_TRANSPORT_PROTOCOL=http2
+```
+
+or pass the flag on the command line:
+
+```bash
+cloudflared tunnel --protocol http2 run
+```
+
 ## WebSocket connection stability
 
-Cloudflare Tunnel may occasionally reset long-lived WebSocket connections during edge server rotation or tunnel reconnection. Gryt handles this automatically: the signaling server preserves voice state for up to 15 seconds during transient disconnects, and the client will recover without tearing down the SFU media connection if it's still alive. Users may briefly see a "Reconnecting" toast but voice/screenshare should continue uninterrupted.
+Cloudflare Tunnel may occasionally reset long-lived WebSocket connections during edge server rotation or tunnel reconnection. Gryt handles this automatically: the signaling server preserves voice state for up to 15 seconds during transient disconnects. From app version 1.11.34 (voice#65), the client recovers without tearing down the SFU media connection if it's still alive. On older versions the SFU socket doesn't survive the reset. Users may briefly see a "Reconnecting" toast but voice/screenshare should continue uninterrupted on 1.11.34+.
 
 The `originRequest` settings above help reduce spurious disconnects:
 
