@@ -89,9 +89,13 @@ The channel covers two things at once. `gryt update` follows it, so the CLI
 itself moves to beta builds. Servers you start also run the `latest-beta`
 images rather than `latest`, for the server, the SFU and the image worker.
 
-Existing servers keep the image they already pulled, and restarting alone
-doesn't move them to the new channel's image — see [Which version a server
-runs](#which-version-a-server-runs) for how to actually pull a newer one.
+Servers already running keep the image they have. `gryt pull <server>` moves
+one of them onto the channel you're on now, and says so when it does:
+
+```
+Pivert CLI Server runs ghcr.io/gryt-chat/server:latest, and this machine
+follows beta now. Pulling the latest-beta images.
+```
 
 ## Features
 
@@ -101,6 +105,7 @@ runs](#which-version-a-server-runs) for how to actually pull a newer one.
 - **Ports that don't collide**: it offers the first port nothing else holds
 - **`gryt doctor`**: says what is wrong with Docker, the config directory, or a port something else has taken
 - **Updates itself**: `gryt update`, or `u` when the dashboard says one is available
+- **Updates your servers**: `gryt pull <server>` fetches the newer image and recreates the container
 - **Private by default**: profiles and generated `.env` files are readable only by you
 
 ## Using the manager
@@ -313,15 +318,55 @@ newer one exists it shows both:
 
 ```
   Version
-  1.4.6 → 1.5.0   restart to pull it
+  1.4.6 → 1.5.0   gryt pull pivert-cli-server
 ```
 
-Restarting doesn't pull the newer image — `docker compose restart` reruns the
-container you already have. Pull the image yourself first
-(`docker pull ghcr.io/gryt-chat/server:latest`, or `latest-beta` on the beta
-channel), then stop and start the server with `x` and `s`. The version is
-read off the container rather than asked of the server, so it works on images
-built long before the server had any way to report it.
+The version is read off the container rather than asked of the server, so it
+works on images built long before the server had any way to report it.
+
+Restarting doesn't pull anything. `docker compose restart` reruns the container
+you already have, which is why the line names a command instead:
+
+```bash
+gryt pull pivert-cli-server
+```
+
+That pulls the image the channel points at, recreates the server and its image
+worker, and prints the version it was on next to the version it's on now:
+
+```
+Pivert CLI Server runs 1.10.14. The newest release is 1.10.21.
+
+Pulling the latest images for the server and its image worker.
+ Image ghcr.io/gryt-chat/server:latest Pulled
+
+Recreating Pivert CLI Server.
+
+Pivert CLI Server: 1.10.14 → 1.10.21.
+```
+
+It stops before doing anything when the server isn't running, or when the
+server already runs the newest release. `--force` pulls without asking GitHub
+what's newest, which is the way through when you can't reach it.
+
+It fetches every image before it replaces any container. A pull that dies
+halfway leaves the server up on the image it already had, and says so. Running
+it again is safe. The images that did arrive are still there, so the second run
+is quicker.
+
+### The voice server and the object store
+
+Those two are a compose project of their own, shared by every server on the
+machine. `gryt pull <server>` leaves them alone, and says it did. Move them
+yourself:
+
+```bash
+gryt pull --shared
+```
+
+Recreating them interrupts voice and uploads for every server on the machine.
+That's why it's a separate command, rather than something one server's update
+does on the way past.
 
 ## Commands
 
@@ -334,6 +379,8 @@ built long before the server had any way to report it.
 | `gryt channel` | Print the release channel this machine follows |
 | `gryt channel beta` | Follow beta, for this CLI and for the images its servers run |
 | `gryt update` | Replace this binary with the newest release |
+| `gryt pull <server>` | Pull the newest images for one server and recreate it. `--force` skips the check for a newer release |
+| `gryt pull --shared` | Pull the voice server and object store every server here shares |
 | `gryt version` | Print the CLI version |
 
 `gryt doctor` checks that Docker is installed, that the Compose plugin is there,
