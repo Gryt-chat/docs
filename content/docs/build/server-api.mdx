@@ -329,14 +329,23 @@ here sit on top of the thread events above.
 
 ### Administration
 
+A channel inside a folder follows the folder's permission scope for as long as
+it has none of its own — set one with `server:channels:scope:set` and it
+sticks, even Everyone. Pull the channel out of the folder, or delete the
+folder, and it keeps whatever scope it was reading at that moment as its own
+rather than falling back to Everyone.
+
 | Event | Direction | Notes |
 |-------|-----------|-------|
 | `server:settings:get`, `server:settings:update` | client → server | The database-backed settings |
 | `server:settings` | server → client | |
 | `server:channels:list`, `:upsert`, `:delete`, `:reorder` | client → server | |
 | `server:channels` | server → client | |
-| `server:channels:scope:get`, `server:channels:scope:set` | client → server | Who can use a channel: Everyone, a template or its own rules |
-| `server:channels:scope` | server → client | |
+| `server:channels:scope:get`, `server:channels:scope:set` | client → server | Needs `manage_channels`. Who can use a channel: Everyone, a template or its own rules |
+| `server:channels:scope:follow` | client → server | Needs `manage_channels`. Drops the channel's own rules and goes back to following its folder |
+| `server:channels:scope` | server → client | Answer to all three above. Carries `followsFolder` and, when it's following one, the folder's id and name |
+| `server:folders:scope:get`, `server:folders:scope:set` | client → server | Needs `manage_channels`. Same, for a folder — applies to every channel inside it that has no rules of its own |
+| `server:folders:scope` | server → client | Answer to both above. Carries `channelCount`, how many channels are following the folder |
 | `server:permissions:templates:list`, `server:permissions:template:save`, `server:permissions:template:delete` | client → server | Named sets of channel permissions that several channels can share |
 | `server:permissions:templates` | server → client | |
 | `server:sidebar:list`, `:item:upsert`, `:item:delete`, `:reorder` | client → server | |
