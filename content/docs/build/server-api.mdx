@@ -230,18 +230,20 @@ Refusals come back on `server:error` with a reason: `invite_required`,
 A conversation between two people, or a group. `dm:open` is idempotent — asking
 twice for the same pair returns the conversation that already exists.
 
+Hiding a conversation happens on the device, so there's no event for it. The
+server lists every conversation you're in and leaves the drawing to the client.
+
 | Event | Direction | Notes |
 |-------|-----------|-------|
 | `dm:open` | client → server | `{ accessToken, targetServerUserId }` |
 | `dm:list` | both | Request takes `{ accessToken }`; the answer comes back under the same name |
-| `dm:setHidden` | client → server | `{ accessToken, conversationId, hidden }` — hides it from your list without leaving |
 | `dm:group:create` | client → server | `{ accessToken, memberIds, name?, iconFileId? }` |
 | `dm:group:add` | client → server | `{ accessToken, conversationId, targetServerUserId }` |
 | `dm:group:update` | client → server | `{ accessToken, conversationId, name?, iconFileId? }` — null clears |
 | `dm:group:leave` | client → server | `{ accessToken, conversationId }` |
 | `dm:key:publish` | client → server | `{ binding? }` — the key binding others need to write to you |
 | `dm:opened` | server → client | The conversation, whether it was new or already there |
-| `dm:hidden`, `dm:left` | server → client | |
+| `dm:left` | server → client | |
 | `dm:error` | server → client | |
 
 ### Calls
