@@ -3,6 +3,8 @@ FROM node:22-alpine AS builder
 WORKDIR /app
 
 COPY package.json yarn.lock ./
+# fumadocs-mdx's postinstall still imports vite unconditionally as of 15.4.3,
+# and this project has no vite dependency for it to find (GRYT-1194).
 RUN yarn install --frozen-lockfile --ignore-scripts --ignore-engines
 
 COPY . .
