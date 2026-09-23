@@ -106,6 +106,21 @@ and every other client checks that signature itself.
 hand it exactly the map Gryt is built not to hand anybody, so the design does without
 one — which also means guests get encrypted messages, not only account holders.
 
+### Carrying your identity to a second device
+
+That seed is 24 words, and it's what makes you the same person on every device
+you sign in on: every message key you'll ever have comes from it. A new device
+needs a copy before it can read anything encrypted for you.
+
+To get it there, you lock a copy of the 24 words under a password you choose.
+That locked copy is stored on your Keycloak account, so signing in on a second
+device fetches it and unlocks it with the same password.
+
+The password itself is never sent anywhere or stored anywhere — it only ever
+unlocks the copy on your own device. That also means nobody at Gryt can reset
+it for you. Forget it, and with no other device already signed in to unlock
+from, your messages stay locked.
+
 ### What it protects
 
 The words and the files, from the server and from anybody who ends up with its disk. A
