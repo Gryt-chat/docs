@@ -349,6 +349,46 @@ docker compose down
 docker compose down -v
 ```
 
+## Keeping your server up to date
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Gryt-chat/gryt/main/ops/deploy/auto-update/install.sh | sudo bash
+```
+
+Installs a systemd timer that checks GHCR once a night. It pulls whatever
+image your compose file already names for your channel — `latest` or
+`latest-beta`, whichever `docker-compose.yml` points at — and recreates
+only the containers whose image actually changed. It won't bring up a service
+you haven't started, and it won't touch anything outside `docker-compose.yml`.
+
+Calls in progress aren't cut. Recreating the SFU would drop them, so it waits
+until nobody is in voice — checked every night, applied the first time the
+channel empties. If it can't read the peer count, it defers too, rather than
+guess.
+
+See the log with:
+
+```bash
+journalctl -u gryt-auto-update -n 50
+```
+
+Turn it off with:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Gryt-chat/gryt/main/ops/deploy/auto-update/install.sh | sudo bash -s -- --uninstall
+```
+
+Prefer to update by hand? Skip the installer and stick with `docker compose
+pull && docker compose up -d` from [Managing the stack](#managing-the-stack)
+below.
+
+<Callout type="info" title="Already running the hand-rolled version?">
+If somebody set this up for you before this page existed, you're running the
+same script under the old names (`gryt-web-client-refresh`). The installer
+above picks up its settings automatically — same environment variables — and
+tells you how to retire the old timer once you've checked the new one works.
+</Callout>
+
 ## Health checks
 
 All services expose health endpoints. Check the stack health:
