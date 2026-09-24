@@ -17,11 +17,13 @@ GitHub Container Registry — no need to clone any repos or build anything.
 |---------|-------|---------|-----------|
 | **Server** | `ghcr.io/gryt-chat/server` | Signaling, chat, file uploads | Yes |
 | **SFU** | `ghcr.io/gryt-chat/sfu` | WebRTC media forwarding | Yes |
-| **MinIO** | `minio/minio` | S3-compatible file storage | Yes |
+| **MinIO** | `pgsty/minio` | S3-compatible file storage | Yes |
 | **Image Worker** | `ghcr.io/gryt-chat/image-worker` | Background image compression + thumbnailing | Optional (recommended) |
 | **Client** | `ghcr.io/gryt-chat/client` | Web UI (React + Nginx) | Dev / local only |
 | **Prometheus** | `prom/prometheus` | Metrics collection | Optional |
 | **Grafana** | `grafana/grafana` | Metrics dashboards | Optional |
+
+MinIO stopped publishing its own images, so Gryt uses Pigsty's community build of the same MinIO source instead.
 
 Most users connect via the [Gryt desktop app](https://github.com/Gryt-chat/gryt/releases) (available for Linux, macOS, and Windows).
 
