@@ -17,13 +17,13 @@ GitHub Container Registry — no need to clone any repos or build anything.
 |---------|-------|---------|-----------|
 | **Server** | `ghcr.io/gryt-chat/server` | Signaling, chat, file uploads | Yes |
 | **SFU** | `ghcr.io/gryt-chat/sfu` | WebRTC media forwarding | Yes |
-| **MinIO** | `pgsty/minio` | S3-compatible file storage | Yes |
 | **Image Worker** | `ghcr.io/gryt-chat/image-worker` | Background image compression + thumbnailing | Optional (recommended) |
 | **Client** | `ghcr.io/gryt-chat/client` | Web UI (React + Nginx) | Dev / local only |
 | **Prometheus** | `prom/prometheus` | Metrics collection | Optional |
 | **Grafana** | `grafana/grafana` | Metrics dashboards | Optional |
 
-MinIO stopped publishing its own images, so Gryt uses Pigsty's community build of the same MinIO source instead.
+Uploads are plain files in the server's data volume, next to its database, so
+there's no storage service to run or set up.
 
 Most users connect via the [Gryt desktop app](https://github.com/Gryt-chat/gryt/releases) (available for Linux, macOS, and Windows).
 
@@ -86,7 +86,7 @@ CORS_ORIGIN=http://127.0.0.1:15738,https://app.gryt.chat
 docker compose up -d
 ```
 
-This starts the core services: **Server**, **SFU**, and **MinIO**.
+This starts the **Server**, the **SFU** and the **Image Worker**.
 Connect with the [Gryt desktop app](https://github.com/Gryt-chat/gryt/releases) or
 the hosted web client at [app.gryt.chat](https://app.gryt.chat).
 
@@ -106,9 +106,8 @@ graph TD
   WebClient["app.gryt.chat"] --> Server
   subgraph Docker Network
     Server --> SFU
-    Server --> SQLite["SQLite (embedded)"]
-    Server --> MinIO["MinIO :9000"]
-    ImageWorker["Image Worker"] -->|"read/write images"| MinIO
+    Server --> Data["Data volume: gryt.db and uploads"]
+    ImageWorker["Image Worker"] -->|"reads jobs, writes thumbnails"| Data
   end
 ```
 
@@ -237,19 +236,17 @@ docker compose exec server node admin-setOwner.js --grytUserId <keycloak_sub>
 | `SFU_PUBLIC_HOST` | `ws://localhost:5005` | Public SFU URL(s) for browsers (comma-separated for multi-network) |
 | `ICE_ADVERTISE_IP` | *(auto)* | Public IP(s) to advertise in ICE candidates (comma-separated for multi-network) |
 
-### Storage
+### Uploads
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `MINIO_ROOT_USER` | `minioadmin` | MinIO admin username |
-| `MINIO_ROOT_PASSWORD` | `minioadmin` | MinIO admin password |
-| `S3_BUCKET` | `gryt` | Bucket for file uploads |
+There's nothing to set. The server keeps uploads in `/data/gryt`, in the
+`gryt-prod_gryt-prod-server-data` volume that also holds `gryt.db`. The image
+worker mounts the same volume to make thumbnails. Back up that one volume and
+you have everything. [Backups](/docs/host/backups) has the commands.
 
 ## Production checklist
 
 <Callout type="warn" title="Before going public">
 - [ ] Set a strong `JWT_SECRET` — generate with `openssl rand -base64 48`
-- [ ] Change `MINIO_ROOT_USER` and `MINIO_ROOT_PASSWORD`
 - [ ] Open `ICE_UDP_MUX_PORT` as **UDP** for the SFU
 - [ ] Set `ICE_ADVERTISE_IP` if behind NAT
 - [ ] Set `SFU_PUBLIC_HOST` to your public `wss://` URL
@@ -409,17 +406,14 @@ What each extra server needs:
 
 | Needs its own | Why |
 |---|---|
-| `DATA_DIR` volume | The SQLite database. This is the one that matters — two servers pointed at one `gryt.db` will corrupt each other's state. |
+| `DATA_DIR` volume | The SQLite database and the uploads. This is the one that matters — two servers pointed at one `gryt.db` will corrupt each other's state. |
 | `SERVER_NAME` | It's part of the server's identity on the SFU. See the warning below. |
 | Published port | One port per server on the host. |
 | Image worker | A worker reads exactly one `DATA_DIR`, so it serves exactly one server. |
 
-What they share, safely:
-
-- **One SFU.** Voice rooms are namespaced per server, so a single SFU serves all of them. This is how
-  gryt.chat itself runs — three servers, one SFU.
-- **One MinIO, one bucket.** Every stored object is keyed by a UUID, so two servers writing to the same
-  bucket can't collide. Give them separate buckets if you would rather keep the storage separable.
+They share one SFU. Voice rooms are namespaced per server, so a single SFU serves all of them. This is how
+gryt.chat itself runs — three servers, one SFU. Uploads aren't shared, because each server keeps its own in
+its data volume.
 
 <Callout type="warn">
 **Give every server a different `SERVER_NAME`.** A server identifies itself to the SFU as
@@ -442,14 +436,14 @@ services:
     network_mode: host
     extra_hosts:
       - "sfu:127.0.0.1"
-      - "minio:127.0.0.1"
     environment:
       PORT: 5010                      # a free port on the host
       SERVER_NAME: My Second Server   # must differ from the first
       DATA_DIR: /data                 # its own volume, mounted below
+      STORAGE_BACKEND: filesystem     # uploads go in /data/gryt
+      S3_BUCKET: gryt
       JWT_SECRET: ${JWT_SECRET_2:?Set JWT_SECRET_2 in .env}
       SFU_WS_HOST: ws://sfu:${SFU_PORT:-5005}   # the same SFU
-      S3_BUCKET: ${S3_BUCKET:-gryt}             # the same bucket
       IMAGE_WORKER_URL: http://127.0.0.1:8082
       # …every other variable copied from the first server
     volumes:
@@ -462,9 +456,8 @@ services:
       - "127.0.0.1:8082:8080"         # a different health port
     environment:
       DATA_DIR: /data
-      S3_ENDPOINT: http://minio:9000
-      S3_BUCKET: ${S3_BUCKET:-gryt}
-      # …credentials copied from the first worker
+      STORAGE_BACKEND: filesystem
+      S3_BUCKET: gryt
     volumes:
       - gryt-prod-server-2-data:/data # the same volume as its own server
 
@@ -489,19 +482,106 @@ discovery matters for both, put them on separate machines or move them to the br
 `/etc/avahi/services` mount.
 </Callout>
 
-## Using external S3
+## Moving off MinIO
 
-To use an external S3-compatible provider (AWS, Cloudflare R2, etc.) instead of the bundled MinIO, remove the
-`minio` and `minio-init` services from `docker-compose.yml` and set the appropriate environment variables on the
-`server` service directly:
+Older copies of this compose file ran MinIO for uploads. If yours does, it
+keeps working as it is. Moving copies every upload out of the MinIO
+volume into the server's data volume, checks each one, and leaves the MinIO
+volume alone, so you can go back to it if something's wrong.
 
-```yaml
-server:
-  environment:
-    S3_ENDPOINT: "https://<account-id>.r2.cloudflarestorage.com"
-    S3_REGION: auto
-    S3_ACCESS_KEY_ID: "<your-key>"
-    S3_SECRET_ACCESS_KEY: "<your-secret>"
-    S3_BUCKET: gryt
-    S3_FORCE_PATH_STYLE: "false"
+<Steps>
+
+<Step>
+### Back up both volumes
+
+With the stack stopped, so nothing changes under the copy:
+
+```bash
+docker compose down
+for v in gryt-prod_gryt-prod-server-data gryt-prod_gryt-prod-minio-data; do
+  docker run --rm -v "$v:/v:ro" -v "$PWD:/out" alpine tar czf "/out/$v-$(date +%F).tar.gz" -C /v .
+done
+```
+
+`down` without `-v`. With `-v` it deletes the volumes you're about to copy.
+
+</Step>
+
+<Step>
+### Download the new compose file and the migration
+
+In the same folder as your `.env`:
+
+```bash
+curl -Lo docker-compose.yml https://raw.githubusercontent.com/Gryt-chat/gryt/main/ops/deploy/compose/prod.yml
+curl -Lo migrate-minio.yml https://raw.githubusercontent.com/Gryt-chat/gryt/main/ops/deploy/compose/migrate-minio.yml
+```
+
+If you changed anything in your old `docker-compose.yml`, carry it over now.
+
+</Step>
+
+<Step>
+### Run the migration
+
+```bash
+docker compose -f migrate-minio.yml up --abort-on-container-exit --exit-code-from migrate
+docker compose -f migrate-minio.yml down
+```
+
+It starts a MinIO of its own on the old volume, read-only, and copies the
+bucket into `/data/gryt` in the server's volume. Then it reads every object
+back from both sides and compares the SHA-256. The last line tells you how it
+went:
+
+```
+Done. 9 objects copied, every SHA-256 matches, 9 content types written.
+```
+
+It reads `S3_BUCKET` from your `.env`, so a bucket with another name is picked
+up. It refuses to run if `/data/gryt` already has files in it. If a run fails
+partway, delete that folder and run it again:
+
+```bash
+docker run --rm -v gryt-prod_gryt-prod-server-data:/data alpine rm -rf /data/gryt
+```
+
+</Step>
+
+<Step>
+### Start the stack
+
+```bash
+docker compose up -d
+```
+
+Open an old message with a picture in it, and check the server icon still
+shows.
+
+</Step>
+
+<Step>
+### Tidy up, when you're happy
+
+The MinIO volume is still there, untouched. Delete it once a backup has run
+from the new setup:
+
+```bash
+docker volume rm gryt-prod_gryt-prod-minio-data
+```
+
+The `MINIO_*` and `S3_*` lines in `.env` don't do anything any more, and can go.
+
+</Step>
+
+</Steps>
+
+The volume names above are the ones `prod.yml` makes. For `beta.yml` they're
+`gryt-beta_gryt-beta-server-data` and `gryt-beta_gryt-beta-minio-data`, and
+the bucket was `gryt-beta`. For anything else, `docker volume ls` shows yours.
+Pass them in when you run the migration:
+
+```bash
+MINIO_VOLUME=gryt-beta_gryt-beta-minio-data DATA_VOLUME=gryt-beta_gryt-beta-server-data \
+  S3_BUCKET=gryt-beta docker compose -f migrate-minio.yml up --abort-on-container-exit --exit-code-from migrate
 ```

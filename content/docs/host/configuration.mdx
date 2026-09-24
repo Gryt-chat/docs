@@ -186,28 +186,23 @@ most webhook senders won't follow. With hops set, the server reads
 
 One for a single reverse proxy. More only if you genuinely chained them.
 
-## Object storage
+## Uploads
 
-`STORAGE_BACKEND` is `s3` by default. Point it at any S3-compatible store:
+Uploads are files under `DATA_DIR`, in a folder named by `S3_BUCKET`. The
+compose files and the `gryt` CLI set both of these:
 
 ```bash
-STORAGE_BACKEND=s3
-S3_ENDPOINT=http://minio:9000
+STORAGE_BACKEND=filesystem
 S3_BUCKET=gryt
-S3_REGION=us-east-1
-S3_ACCESS_KEY_ID=...
-S3_SECRET_ACCESS_KEY=...
-S3_FORCE_PATH_STYLE=true
 ```
 
-`S3_FORCE_PATH_STYLE=true` is what MinIO and most self-hosted stores want.
+The server still defaults to `STORAGE_BACKEND=s3` when it's unset, so set it if
+you run the server some other way. The folder's setting is called `S3_BUCKET`
+because it used to name a bucket.
 
-`STORAGE_BACKEND=filesystem` puts uploads under `DATA_DIR` instead. No extra
-containers, and no thumbnails, because those come from the image worker.
-
-Object keys are flat, `uploads/<uuid>.<ext>`, with nothing naming the server in
-them. Several servers can share one bucket: nothing ever lists it, and every
-delete uses a key stored in that server's own database.
+Keys look like `uploads/<uuid>.<ext>`, and each file has a `.meta` file beside
+it holding its content type. The image worker reads and writes the same folder,
+so it has to mount the same `DATA_DIR`.
 
 ## Settings that aren't environment variables
 
@@ -234,8 +229,8 @@ through the [management API](/docs/host/server#the-management-api), which is wha
 
 Direct messages between people whose clients have both published a key are
 encrypted before they reach the server. The server stores the envelope and has
-never had the text. Files sent in one are encrypted too, so what lands in your
-bucket is bytes with no name and no type.
+never had the text. Files sent in one are encrypted too, so what lands on your
+disk is bytes with no name and no type.
 
 That is worth knowing before you need it, because five things you have on
 channels you do not have on those messages:

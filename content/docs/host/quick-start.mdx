@@ -28,9 +28,9 @@ curl -fsSL https://get.gryt.chat | sh
 gryt
 ```
 
-`n` makes a server. It asks eight questions with sensible defaults, writes the
-Compose files, picks ports nothing else is holding, and starts a shared SFU and
-object store the first time. After that the same screen starts, stops, restarts
+`n` makes a server. It asks seven questions with sensible defaults, writes the
+Compose files, picks ports nothing else is holding, and starts a shared SFU the
+first time. After that the same screen starts, stops, restarts
 and follows the logs of every server on the machine, and `c` changes the
 settings that live in a running server's database.
 
@@ -91,8 +91,9 @@ only with a direct, port-preserving path out: host networking, bare metal, or a
 docker compose up -d
 ```
 
-That brings up the server, the SFU and MinIO. The database is SQLite inside the
-server's data directory, so there's no database container.
+That brings up the server, the SFU and the image worker. The database is SQLite
+inside the server's data directory, and uploads are files next to it, so
+there's no database or storage container.
 
 To serve the web client too:
 

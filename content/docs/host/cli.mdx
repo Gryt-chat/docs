@@ -101,7 +101,7 @@ follows beta now. Pulling the latest-beta images.
 
 - **Live dashboard**: every server on one screen, refreshing itself, with the address you hand people rather than the address it binds to
 - **A wizard that asks answerable questions**: which of this machine's addresses people will reach it on, not what a WebSocket URL should be
-- **Voice and uploads without configuration**: one SFU and one object store per machine, shared by every server on it
+- **Voice and uploads without configuration**: one SFU per machine, shared by every server on it, and uploads in each server's own folder
 - **Ports that don't collide**: it offers the first port nothing else holds
 - **`gryt doctor`**: says what is wrong with Docker, the config directory, or a port something else has taken
 - **Updates itself**: `gryt update`, or `u` when the dashboard says one is available
@@ -120,18 +120,21 @@ Every server, its live state, and the address to hand out:
 gryt  server manager                          3 servers · voice ready
   NAME                         STATUS     ADDRESS               VOICE    UPLOADS
 
-  Archive                      ○ stopped  192.168.1.42:5003   —        here
-› Pivert CLI Server            ● running  192.168.1.42:5001   ready    here
-  Staging                      ○ stopped  192.168.1.42:5002   —        here
+  Archive                      ○ stopped  192.168.1.42:5003   —        folder
+› Pivert CLI Server            ● running  192.168.1.42:5001   ready    folder
+  Staging                      ○ stopped  192.168.1.42:5002   —        folder
 
   SHARED  one of each, used by every server above
   Voice (SFU)                  ● running  carries voice for every server here
-  Object store                 ● running  holds uploads for every server here
 ```
 
-The two rows under **SHARED** are the pieces this machine runs one of. `l`
-follows their output, which is where to look when voice stops working. `x` on
-one of them stops it for every server at once, and says so.
+The row under **SHARED** is the SFU, which this machine runs one of. `l`
+follows its output, which is where to look when voice stops working. `x` stops
+it for every server at once, and says so.
+
+A machine with servers made by an older version of `gryt` has a second row,
+**Object store**. That's the MinIO those servers keep their uploads in, and it
+stays for as long as one of them uses it.
 
 An image worker runs beside each server rather than being shared, because it
 reads that server's own database. It has no row: `l` on the server already
@@ -195,8 +198,7 @@ machine first.
 `n` for a new server, `e` to edit one. `enter` advances and saves on the last
 step, `shift+tab` goes back, `esc` cancels.
 
-Eight questions, and the count moves as you answer: ticking "a domain" adds one,
-choosing external S3 adds six.
+Seven questions, and ticking "a domain" adds an eighth.
 
 | Step | Question | Default |
 |------|----------|---------|
@@ -207,7 +209,6 @@ choosing external S3 adds six.
 | 5 | Voice seats | `0`, no limit |
 | 6 | Trusted proxy hops | `0` |
 | 7 | Where will people connect from | this machine, ticked |
-| 8 | Where do uploads go | `shared` |
 
 Every default is a placeholder rather than text you have to delete: type and it
 replaces, leave it and you get the default.
@@ -232,13 +233,12 @@ answers fastest, so a server reachable over a LAN and over the internet is both.
 Ticking the last option adds a step to type a domain, for a server behind a
 reverse proxy with TLS.
 
-### Where do uploads go
+### Uploads
 
-| Answer | What happens |
-|--------|--------------|
-| `shared` | The object store on this machine, with thumbnails and compression. Needs nothing from you |
-| `filesystem` | Straight into the server's own folder. No extra containers, no thumbnails |
-| `s3` | A storage service you already have. Adds six steps for the endpoint, bucket, region, keys and path-style setting |
+There's no question about them. Each server keeps its uploads in its own
+`data/gryt` folder, with an image worker beside it for thumbnails and
+compression. A server made by an older version keeps the storage it was set up
+with, and editing it in the wizard doesn't change that.
 
 ### Security levels
 
@@ -354,11 +354,11 @@ halfway leaves the server up on the image it already had, and says so. Running
 it again is safe. The images that did arrive are still there, so the second run
 is quicker.
 
-### The voice server and the object store
+### The voice server
 
-Those two are a compose project of their own, shared by every server on the
-machine. `gryt pull <server>` leaves them alone, and says it did. Move them
-yourself:
+The SFU is a compose project of its own, shared by every server on the
+machine. So is the object store, on a machine that still runs one.
+`gryt pull <server>` leaves them alone, and says it did. Move them yourself:
 
 ```bash
 gryt pull --shared
@@ -380,7 +380,7 @@ does on the way past.
 | `gryt channel beta` | Follow beta, for this CLI and for the images its servers run |
 | `gryt update` | Replace this binary with the newest release |
 | `gryt pull <server>` | Pull the newest images for one server and recreate it. `--force` skips the check for a newer release |
-| `gryt pull --shared` | Pull the voice server and object store every server here shares |
+| `gryt pull --shared` | Pull the voice server every server here shares, and the object store if there is one |
 | `gryt version` | Print the CLI version |
 
 `gryt doctor` checks that Docker is installed, that the Compose plugin is there,
@@ -412,9 +412,9 @@ Set `GRYT_CONFIG_DIR` to put them somewhere else.
 
 Each server directory holds `profile.json`, a generated `.env`, a generated
 `compose.yaml`, and a `data/` directory mounted into the container. Beside them
-is `shared/`, holding the compose project every server uses and the credentials
-for the object store. Both are created readable only by your user, because they
-hold secrets.
+is `shared/`, holding the compose project every server uses, and the credentials
+for the object store on a machine that still runs one. Both are created readable
+only by your user, because they hold secrets.
 
 Generated files carry a header saying they're managed by `gryt`. Editing them
 by hand works, but the next save overwrites them.
@@ -424,13 +424,13 @@ by hand works, but the next save overwrites them.
 Two compose projects, on a shared Docker network named `gryt`.
 
 **`shared/`** holds the pieces there's one of per machine: the SFU that carries
-voice for every server here, and, when any server uses shared storage, the
-object store and its bucket. Starting any server brings it up first.
+voice for every server here, and the object store while a server made by an
+older version still uses it. Starting any server brings it up first.
 
 **Each server** gets its own project: the Gryt server itself, and an image
-worker beside it when that server uses object storage. The worker is per-server
-rather than shared because it reads the job queue out of that server's own
-database.
+worker beside it. Uploads go in the server's `data/gryt` folder, which both of
+them mount. The worker is per-server rather than shared because it reads the
+job queue out of that server's own database.
 
 So voice and uploads work on a server made with the defaults, with nothing to
 configure and no external service.

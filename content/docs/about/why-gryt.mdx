@@ -43,7 +43,7 @@ Most of Gryt fits into four boxes:
 - **Client**: UI + audio processing + WebRTC
 - **Server**: chat, rooms, permissions, uploads, coordination
 - **SFU**: routes voice media to everyone in a channel
-- **Storage**: database + object storage
+- **Storage**: the database and uploaded files, side by side on the server's disk
 
 ```mermaid
 graph TB
@@ -51,7 +51,7 @@ graph TB
   client -->|WSS_signaling| server[Signaling_server]
   client -->|UDP_media| sfu[SFU]
   server --> db[Database]
-  server --> s3[Object_storage]
+  server --> files[Uploaded_files]
   client -->|OIDC_login| auth[Identity_provider]
   client -->|Certificate| identity[Identity_service]
   server -->|JWKS_verify| identity

@@ -19,8 +19,10 @@ that directory. There's one trap in the way, and it's the reason this page exist
 
 ## What to back up
 
-`DATA_DIR` — `/data` inside the container, the `gryt-prod-server-data` volume
-under Compose, and `./data` if you're running the server directly.
+`DATA_DIR`. That's `/data` inside the container, the
+`gryt-prod_gryt-prod-server-data` volume under Compose, and `./data` if you're
+running the server directly. It holds the uploads too, so this one directory is
+the whole server.
 
 ```
 <DATA_DIR>/
@@ -28,7 +30,7 @@ under Compose, and `./data` if you're running the server directly.
 ├── gryt.db-wal                writes that have not been folded in yet
 ├── gryt.db-shm                shared-memory index for the WAL
 ├── server-identity-key.json   the key clients pinned you by
-└── <bucket>/                  uploads, if you're on filesystem storage
+└── gryt/                      uploads, thumbnails, avatars and emoji
 ```
 
 **`server-identity-key.json` is who your server is.** Clients pin it the first
@@ -40,9 +42,16 @@ you can't regenerate.
 **The `-wal` file is part of the database.** It isn't a temporary file you can
 skip.
 
-If your uploads go to MinIO or another S3-compatible store rather than to the
-filesystem, that's a separate volume, `gryt-prod-minio-data` under Compose, and
-it needs its own copy.
+Compose adds the project name to the front of a volume's name, so it's
+`gryt-prod_gryt-prod-server-data` and not `gryt-prod-server-data`. Give
+`docker run -v` the short name and Docker makes a new, empty volume under it,
+and the backup comes out empty without an error. `docker volume ls` shows the
+real names.
+
+If your stack still runs MinIO, the uploads are in a second volume,
+`gryt-prod_gryt-prod-minio-data`, which needs its own copy.
+[Moving off MinIO](/docs/host/docker-compose#moving-off-minio) moves them into
+`DATA_DIR`.
 
 ## Stop, copy, start
 
@@ -51,7 +60,7 @@ The simplest correct backup, and the one to use unless downtime is a problem.
 ```bash
 docker compose stop server image-worker
 docker run --rm \
-  -v gryt-prod-server-data:/data:ro \
+  -v gryt-prod_gryt-prod-server-data:/data:ro \
   -v "$PWD:/out" \
   alpine tar czf /out/gryt-backup-$(date +%F).tar.gz -C /data .
 docker compose start server image-worker
@@ -104,7 +113,7 @@ Stop everything, put the directory back, start it again.
 ```bash
 docker compose down
 docker run --rm \
-  -v gryt-prod-server-data:/data \
+  -v gryt-prod_gryt-prod-server-data:/data \
   -v "$PWD:/in" \
   alpine sh -c "rm -rf /data/* && tar xzf /in/gryt-backup-2026-08-28.tar.gz -C /data"
 docker compose up -d
