@@ -484,10 +484,8 @@ discovery matters for both, put them on separate machines or move them to the br
 
 ## Moving off MinIO
 
-Older copies of this compose file ran MinIO for uploads. If yours does, it
-keeps working as it is. Moving copies every upload out of the MinIO
-volume into the server's data volume, checks each one, and leaves the MinIO
-volume alone, so you can go back to it if something's wrong.
+Older copies of this compose file ran MinIO for uploads. The new one moves them
+out by itself the first time it starts, so upgrading is the usual pull and up.
 
 <Steps>
 
@@ -508,51 +506,32 @@ done
 </Step>
 
 <Step>
-### Download the new compose file and the migration
+### Download the new compose file and start it
 
 In the same folder as your `.env`:
 
 ```bash
 curl -Lo docker-compose.yml https://raw.githubusercontent.com/Gryt-chat/gryt/main/ops/deploy/compose/prod.yml
-curl -Lo migrate-minio.yml https://raw.githubusercontent.com/Gryt-chat/gryt/main/ops/deploy/compose/migrate-minio.yml
+docker compose up -d --remove-orphans
 ```
 
-If you changed anything in your old `docker-compose.yml`, carry it over now.
+If you changed anything in your old `docker-compose.yml`, carry it over before
+the `up`. `--remove-orphans` takes away the old MinIO containers. Their volume
+stays.
 
 </Step>
 
 <Step>
-### Run the migration
+### Check it worked
 
 ```bash
-docker compose -f migrate-minio.yml up --abort-on-container-exit --exit-code-from migrate
-docker compose -f migrate-minio.yml down
+docker compose logs storage-migrate
 ```
 
-It starts a MinIO of its own on the old volume, read-only, and copies the
-bucket into `/data/gryt` in the server's volume. Then it reads every object
-back from both sides and compares the SHA-256. The last line tells you how it
-went:
+The last line says how it went:
 
 ```
-Done. 9 objects copied, every SHA-256 matches, 9 content types written.
-```
-
-It reads `S3_BUCKET` from your `.env`, so a bucket with another name is picked
-up. It refuses to run if `/data/gryt` already has files in it. If a run fails
-partway, delete that folder and run it again:
-
-```bash
-docker run --rm -v gryt-prod_gryt-prod-server-data:/data alpine rm -rf /data/gryt
-```
-
-</Step>
-
-<Step>
-### Start the stack
-
-```bash
-docker compose up -d
+storage-migrate: Done in 8s: 205 objects and 153 MB copied, every SHA-256 matches.
 ```
 
 Open an old message with a picture in it, and check the server icon still
@@ -570,18 +549,59 @@ from the new setup:
 docker volume rm gryt-prod_gryt-prod-minio-data
 ```
 
-The `MINIO_*` and `S3_*` lines in `.env` don't do anything any more, and can go.
+The `MINIO_*` and `S3_*` lines in `.env` can go too.
 
 </Step>
 
 </Steps>
 
-The volume names above are the ones `prod.yml` makes. For `beta.yml` they're
-`gryt-beta_gryt-beta-server-data` and `gryt-beta_gryt-beta-minio-data`, and
-the bucket was `gryt-beta`. For anything else, `docker volume ls` shows yours.
-Pass them in when you run the migration:
+### What `storage-migrate` does
+
+It's a one-shot container that runs before the server and the image worker
+every time the stack starts. They wait for it, and they don't start if it
+fails. It checks these in order:
+
+1. `/data/gryt` has a `.migrated-from-minio` file. It's done already, so it
+   exits. That's every start after the first.
+2. The old MinIO volume is empty, which it is on a new install. It writes the
+   marker and exits.
+3. `/data/gryt` already has files but no marker. It stops rather than guess
+   which copy is right, and the server stays down. See below.
+4. Otherwise it starts the old MinIO read-only and copies your bucket into
+   `/data/gryt`. It reads every file back and compares its SHA-256 with the
+   original, then writes the marker. If anything doesn't match, it stops
+   without the marker, and the server stays down.
+
+It never changes or deletes anything in the MinIO volume. It logs in with
+`MINIO_ROOT_USER` and `MINIO_ROOT_PASSWORD` from your `.env`, and uses MinIO's
+default if they aren't there. It copies the bucket named by `S3_BUCKET`, which
+defaults to `gryt`, or `gryt-beta` in `beta.yml`. The copy takes about the same
+room again on disk, and it checks there's enough before it starts.
+
+A 150 MB bucket took about 8 seconds on an SSD. A Raspberry Pi on a USB disk
+will be slower.
+
+### If it stops
+
+The log says why. The usual reason is files left in `/data/gryt` by a run that
+failed partway. Delete that folder and start the stack again:
 
 ```bash
-MINIO_VOLUME=gryt-beta_gryt-beta-minio-data DATA_VOLUME=gryt-beta_gryt-beta-server-data \
-  S3_BUCKET=gryt-beta docker compose -f migrate-minio.yml up --abort-on-container-exit --exit-code-from migrate
+docker run --rm -v gryt-prod_gryt-prod-server-data:/data alpine rm -rf /data/gryt
+docker compose up -d
 ```
+
+If you copied the uploads over yourself and want to keep that copy, create the
+marker instead, and it'll leave them alone:
+
+```bash
+docker run --rm -v gryt-prod_gryt-prod-server-data:/data alpine touch /data/gryt/.migrated-from-minio
+```
+
+The volume names above are the ones `prod.yml` makes. For `beta.yml` they're
+`gryt-beta_gryt-beta-server-data` and `gryt-beta_gryt-beta-minio-data`.
+`docker volume ls` shows yours.
+
+A second server that shared the first one's MinIO bucket needs a copy of its
+own. `prod.yml` has a commented `storage-migrate-2` beside the commented
+`server-2`. Uncomment it along with the server.
