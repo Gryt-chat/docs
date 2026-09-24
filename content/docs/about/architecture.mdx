@@ -17,7 +17,7 @@ graph TB
   S["Server<br/>chat, identity, permissions"]
   SFU["SFU<br/>audio, video, screen"]
   IW["Image worker"]
-  OS["Object storage"]
+  OS["Uploads<br/>files beside the database"]
   K["Keycloak"]
   ID["Identity service"]
 
@@ -132,13 +132,13 @@ image-worker/
 ├── src/
 │   ├── index.ts         # polling loop, health server
 │   ├── processImage.ts  # compression and AVIF thumbnails
-│   ├── storage.ts       # object storage
+│   ├── storage.ts       # reads and writes uploads
 │   └── db.ts            # the job queue
 └── Dockerfile
 ```
 
-It polls `image_jobs` for queued rows. Each job pulls the raw upload out of
-object storage, compresses it to AVIF when it's over the size limit, makes a
+It polls `image_jobs` for queued rows. Each job reads the raw upload out of the
+server's uploads folder, compresses it to AVIF when it's over the size limit, makes a
 320 px thumbnail, writes both back, and updates the file record.
 
 One worker runs per server rather than one per machine, because it reads that
@@ -203,12 +203,13 @@ first working proves nothing about the second.
 |-------|------|-----|
 | CLI-generated | `~/.config/gryt` or the platform equivalent | A machine you administer |
 | Production | `ops/deploy/compose/prod.yml` | Behind a reverse proxy |
-| Tunnel | `ops/deploy/host/compose.yml` | Cloudflare Tunnel, with storage |
+| Tunnel | `ops/deploy/host/compose.yml` | Cloudflare Tunnel |
 | Dev | `ops/deploy/compose/dev.yml` | Working on Gryt |
 | Kubernetes | `ops/helm/gryt/` | Helm |
 
-The CLI writes two Compose projects: one shared per machine, holding the SFU and
-the object store, and one per server holding the server and its image worker.
+The CLI writes two Compose projects: one shared per machine, holding the SFU,
+and one per server holding the server and its image worker. Uploads go in that
+server's own data folder.
 
 ## Scaling
 

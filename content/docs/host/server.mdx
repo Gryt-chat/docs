@@ -15,14 +15,13 @@ SQLite through `node:sqlite` for storage. One process per community.
 
 ## What runs alongside it
 
-A working server is usually three or four containers:
+A working server is usually three containers:
 
 | Piece | Why it's there |
 |-------|-----------------|
 | The server | Chat, identity, permissions, invites, the database |
 | The SFU | Voice and video. One per machine, shared by every server on it |
 | An image worker | Thumbnails and compression. One per server, because it reads that server's job queue |
-| Object storage | Uploads, when `STORAGE_BACKEND=s3` |
 
 The image worker is per-server rather than shared for a specific reason: it
 pulls jobs out of the server's own SQLite database rather than being handed
@@ -72,22 +71,17 @@ that covers every server sharing it.
 
 | Variable | Default | What it does |
 |----------|---------|--------------|
-| `STORAGE_BACKEND` | `s3` | `s3` or `filesystem` |
-| `S3_ENDPOINT` | — | Object store endpoint |
-| `S3_BUCKET` | — | Bucket name |
-| `S3_REGION` | — | Region |
-| `S3_ACCESS_KEY_ID` / `S3_SECRET_ACCESS_KEY` | — | Credentials |
-| `S3_FORCE_PATH_STYLE` | — | Needed by MinIO and most self-hosted stores |
-| `DISABLE_S3` | — | Turn object storage off entirely |
+| `STORAGE_BACKEND` | `s3` | Set it to `filesystem`. The compose files and the CLI do |
+| `S3_BUCKET` | — | The folder under `DATA_DIR` that uploads go in, `gryt` in the compose files |
+| `DISABLE_S3` | — | Turn uploads off entirely |
 | `IMAGE_WORKER_URL` | — | Where the image worker listens |
 | `MEDIA_SWEEP_INTERVAL_MS` | `600000` | How often orphaned media is swept |
 | `MEDIA_SWEEP_GRACE_MS` | `1800000` | How long an orphan is left alone first |
 | `EMOJI_QUEUE_CONCURRENCY` | `1` | Emoji jobs at once, clamped to 1–4 |
 | `EMOJI_QUEUE_POLL_MS` | `750` | Queue poll interval, clamped to 250–5000 |
 
-Object keys are flat: `uploads/<uuid>.<ext>`. Several servers can share one
-bucket safely, because nothing ever lists the bucket and every delete works
-from a key stored in that server's own database.
+Keys are flat, `uploads/<uuid>.<ext>`, under `DATA_DIR/<S3_BUCKET>`. The image
+worker has to mount the same `DATA_DIR`, because it writes thumbnails there.
 
 ### Identity
 
