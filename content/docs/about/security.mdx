@@ -116,10 +116,42 @@ To get it there, you lock a copy of the 24 words under a password you choose.
 That locked copy is stored on your Keycloak account, so signing in on a second
 device fetches it and unlocks it with the same password.
 
-The password itself is never sent anywhere or stored anywhere — it only ever
+The password itself is never sent anywhere or stored anywhere. It only ever
 unlocks the copy on your own device. That also means nobody at Gryt can reset
-it for you. Forget it, and with no other device already signed in to unlock
-from, your messages stay locked.
+it, recover it, or read your messages without it. If you forget it and have no
+other device signed in and no recovery key, the messages you've already received
+stay locked for good. The app tells you this when you set the password.
+
+#### What somebody with the Keycloak database could do
+
+They'd have your locked copy, and they could try passwords against it on their
+own hardware, as fast as it lets them, with nothing to stop or log them. So the
+lock makes each guess expensive: Argon2id with 64 MiB of memory and three
+passes, which is roughly 1,000 guesses a second on a good graphics card.
+
+How long that takes depends on the password. The default is six random words,
+about 66 bits, which is billions of years for one card and 233,000 years for
+10,000 of them. A password you type yourself has to be at least 12 characters.
+One somebody made up is closer to 35 bits, and one card gets through that in
+about a year.
+
+#### The recovery key
+
+When you set the password, Gryt also offers a recovery key. It's 52 characters,
+shown once, and it opens the locked copy on its own, so it's the way back if you
+lose the password and every device. You can skip it, but that takes an extra
+click. A password manager is a good place for both.
+
+#### Copies locked before Argon2id
+
+Those used PBKDF2, which is about twenty times cheaper to guess against. They
+still open. The next time you unlock yours on a new device, it's locked again
+the new way, with the same password. Settings tells you if yours hasn't moved
+over yet, and changing the password there moves it too.
+
+None of that reaches copies already in Keycloak's backups, which are kept for
+31 days. If you used a short password before, the only complete fix is starting
+again with a new key in Settings, and that loses the old conversations.
 
 ### What it protects
 
@@ -382,6 +414,7 @@ and it works.
 | Server identity | Long-lived server keypair, pinned by the client on first join |
 | Safe recovery when a server moves | Pins are filed under the key, not the address |
 | Direct messages the server can't read | A key per message, wrapped once per member; private keys never leave the device |
+| The copy of your words on your account resists guessing | Argon2id at 64 MiB, and six generated words by default |
 | No central party learns where you are | Message keys are published per server and signed by the key that joined it |
 | A swapped message key is caught | Peers are pinned on first sight; a change is refused and shown |
 | The first exchange can be checked | A sixty-digit code, compared somewhere the server isn't |
