@@ -20,6 +20,9 @@ export async function GET(
     headers: {
       'Content-Type': 'text/markdown; charset=utf-8',
       'Cache-Control': 'public, max-age=3600',
+      // Crawlable so an LLM can still fetch it, but not indexed: it's a copy of
+      // the page at .../docs/<path> rather than a page of its own (GRYT-1431).
+      'X-Robots-Tag': 'noindex',
     },
   });
 }

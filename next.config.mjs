@@ -12,6 +12,9 @@ const config = {
   // Next 16.3 dev otherwise writes AGENTS.md and CLAUDE.md into the repo root.
   agentRules: false,
   output: 'standalone',
+  // Already the default; pinned so it can't drift. This is what 308s /docs/
+  // to /docs, the duplicate Search Console found (GRYT-1431).
+  trailingSlash: false,
   turbopack: {
     root: __dirname,
   },
