@@ -17,14 +17,24 @@ turns into **restart and update now** when it finishes. Taking it restarts Gryt
 straight away, which will drop you out of a call. Ignoring it's fine. The
 update installs when you quit anyway.
 
+On Windows the install took 10 to 35 seconds on a test machine, depending on
+the build and on whether Defender was scanning. A small Gryt Chat Setup window
+with a progress bar stays up the whole time, and Gryt opens again by itself when
+it's done. If you start Gryt while an update is installing, a message says so
+and Gryt leaves the installer to finish.
+
+On Windows, quitting means **Quit** in the tray icon's menu. Closing the window
+leaves Gryt running in the tray, so nothing installs.
+
 If you're on the beta channel it looks at prereleases too.
 
 A release you already have downloaded isn't downloaded again, so the second
 attempt at the same version is quick even if the first one was interrupted.
 
-Gryt downloads only the parts of the app that changed, which is usually about a
-third of it. When it can't work out the difference it downloads the whole app
-instead.
+On Windows and macOS Gryt downloads only the parts of the app that changed.
+Going from 1.11.44 to 1.11.45 that was 25 MB of 133 MB on Windows and 30 MB of
+142 MB on a Mac. When it can't work out the difference it downloads the whole
+app instead. The Linux AppImage is always downloaded in full.
 
 ## Turning automatic updates off
 
