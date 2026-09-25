@@ -1,15 +1,8 @@
 import { ImageResponse } from 'next/og';
-import { readFileSync } from 'fs';
-import { join } from 'path';
 import { type NextRequest } from 'next/server';
+import { OG_FONT_FAMILY, OwlGlyph, OwlMark, loadOgFonts } from '@/lib/og';
 
 export const runtime = 'nodejs';
-
-const svgContent = readFileSync(
-  join(process.cwd(), 'public', 'favicon.svg'),
-  'utf-8',
-);
-const logoSrc = `data:image/svg+xml;base64,${Buffer.from(svgContent).toString('base64')}`;
 
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
@@ -28,6 +21,7 @@ export async function GET(request: NextRequest) {
           padding: '60px 80px',
           flexDirection: 'column',
           justifyContent: 'space-between',
+          fontFamily: OG_FONT_FAMILY,
         }}
       >
         <div
@@ -39,11 +33,11 @@ export async function GET(request: NextRequest) {
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <img src={logoSrc} width={52} height={52} />
+            <OwlMark size={52} />
             <span
               style={{
                 fontSize: 28,
-                fontWeight: 700,
+                fontWeight: 800,
                 color: '#968FF8',
               }}
             >
@@ -68,6 +62,7 @@ export async function GET(request: NextRequest) {
             <span
               style={{
                 fontSize: 26,
+                fontWeight: 400,
                 color: '#a5a5b0',
                 lineHeight: 1.4,
                 marginTop: '8px',
@@ -81,19 +76,20 @@ export async function GET(request: NextRequest) {
         </div>
 
         <div style={{ display: 'flex' }}>
-          <span style={{ fontSize: 18, color: '#666' }}>docs.gryt.chat</span>
+          <span style={{ fontSize: 18, fontWeight: 400, color: '#666' }}>
+            docs.gryt.chat
+          </span>
         </div>
 
         <div
           style={{
             display: 'flex',
             position: 'absolute',
-            right: '-40px',
-            bottom: '-60px',
-            opacity: 0.05,
+            right: '-140px',
+            bottom: '-160px',
           }}
         >
-          <img src={logoSrc} width={450} height={450} />
+          <OwlGlyph size={620} ear="#232838" body="#1E222C" eye="#333947" />
         </div>
 
         <div
@@ -110,6 +106,6 @@ export async function GET(request: NextRequest) {
         />
       </div>
     ),
-    { width: 1200, height: 630 },
+    { width: 1200, height: 630, fonts: loadOgFonts() },
   );
 }

@@ -1,18 +1,11 @@
 import { ImageResponse } from 'next/og';
-import { readFileSync } from 'fs';
-import { join } from 'path';
+import { OG_FONT_FAMILY, OwlGlyph, OwlMark, loadOgFonts } from '@/lib/og';
 
 export const alt = 'Gryt - Modern WebRTC Voice Chat Platform';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
 export default async function Image() {
-  const svgContent = readFileSync(
-    join(process.cwd(), 'public', 'favicon.svg'),
-    'utf-8',
-  );
-  const logoSrc = `data:image/svg+xml;base64,${Buffer.from(svgContent).toString('base64')}`;
-
   return new ImageResponse(
     (
       <div
@@ -24,6 +17,7 @@ export default async function Image() {
           padding: '60px 80px',
           alignItems: 'center',
           justifyContent: 'space-between',
+          fontFamily: OG_FONT_FAMILY,
         }}
       >
         <div
@@ -35,7 +29,7 @@ export default async function Image() {
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-            <img src={logoSrc} width={90} height={90} />
+            <OwlMark size={90} />
             <span
               style={{
                 fontSize: 72,
@@ -50,6 +44,7 @@ export default async function Image() {
           <span
             style={{
               fontSize: 32,
+              fontWeight: 400,
               color: '#a5a5b0',
               lineHeight: 1.4,
             }}
@@ -68,6 +63,7 @@ export default async function Image() {
                 key={tag}
                 style={{
                   fontSize: 18,
+                  fontWeight: 400,
                   color: '#968FF8',
                   border: '1.5px solid #968FF8',
                   borderRadius: '999px',
@@ -84,12 +80,11 @@ export default async function Image() {
           style={{
             display: 'flex',
             position: 'absolute',
-            right: '-40px',
-            bottom: '-60px',
-            opacity: 0.08,
+            right: '-140px',
+            bottom: '-160px',
           }}
         >
-          <img src={logoSrc} width={500} height={500} />
+          <OwlGlyph size={620} ear="#232838" body="#1E222C" eye="#333947" />
         </div>
 
         <div
@@ -105,6 +100,6 @@ export default async function Image() {
         />
       </div>
     ),
-    { ...size },
+    { ...size, fonts: loadOgFonts() },
   );
 }
