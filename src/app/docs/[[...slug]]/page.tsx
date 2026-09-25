@@ -1,4 +1,5 @@
 import { source } from '@/lib/source';
+import { OG_IMAGE_VERSION } from '@/lib/og';
 import {
   DocsBody,
   DocsDescription,
@@ -52,6 +53,9 @@ export async function generateMetadata(
   if (page.data.description) {
     ogParams.set('description', page.data.description);
   }
+  // Discord (and others) cache the embed by URL, so a design change needs a
+  // version bump here to be seen rather than served from that cache.
+  ogParams.set('v', OG_IMAGE_VERSION);
   const ogImage = `/api/og?${ogParams.toString()}`;
 
   return {
