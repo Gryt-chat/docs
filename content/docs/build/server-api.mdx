@@ -246,6 +246,40 @@ server lists every conversation you're in and leaves the drawing to the client.
 | `dm:left` | server → client | |
 | `dm:error` | server → client | |
 
+### Encrypted direct messages (MLS)
+
+The server is the delivery service for MLS ([RFC 9420](https://www.rfc-editor.org/rfc/rfc9420)).
+It keeps KeyPackages and Welcomes, puts commits in order and passes messages on.
+It never gets a key. The only parts of a message it reads are the group id, the
+epoch and what kind of message it is. Only one-to-one DMs use it so far.
+
+A server that has it says so in `server:info`, as
+`mls: { version, ciphersuites, retentionDays }`. A client shouldn't use any of
+this on a server that doesn't.
+
+Every request takes `accessToken` and answers through the Socket.IO
+acknowledgement, with `{ ok: true, ... }` or `{ ok: false, error, message }`.
+MLS bytes go as binary both ways.
+
+| Event | Direction | Notes |
+|-------|-----------|-------|
+| `mls:keypackages:publish` | client → server | `{ deviceId, keyPackages, lastResort? }`. The first publish registers the device. Five devices per member |
+| `mls:keypackages:claim` | client → server | `{ conversationId, deviceId, devices? }`. One KeyPackage for each device, and each is handed out once |
+| `mls:devices` | client → server | `{ conversationId? }`. Your own devices, or everybody's in the conversation |
+| `mls:device:remove` | client → server | `{ deviceId }`, one of your own |
+| `mls:group:create` | client → server | `{ conversationId, groupId }`. The first group for a conversation wins, and the other side gets `group_exists` |
+| `mls:commit` | client → server | `{ conversationId, deviceId, commit, welcome? }`. One commit per epoch. A commit for any other epoch gets `stale_epoch` with the current one |
+| `mls:send` | client → server | `{ conversationId, deviceId, message }`. Application messages and proposals |
+| `mls:log:fetch` | client → server | `{ conversationId, after, limit? }`. The log after a cursor. `gap` means some of what you missed has already been dropped |
+| `mls:sync` | client → server | `{ deviceId }`. Your groups, your waiting Welcomes, and how many KeyPackages you have left |
+| `mls:welcome:ack` | client → server | `{ deviceId, welcomeIds }`, once a Welcome is saved |
+| `mls:message` | server → client | A new entry in a group's log |
+| `mls:welcome` | server → client | A Welcome for one of your devices |
+| `mls:devices:changed` | server → client | `{ serverUserId }`. Somebody you share a DM with added or removed a device |
+
+The server keeps the log for 30 days, or fewer if whoever runs it sets
+`MLS_RETENTION_DAYS`.
+
 ### Calls
 
 Ringing only. The call itself is voice, and goes through the events above.
