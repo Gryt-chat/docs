@@ -262,6 +262,17 @@ Messages in the clear are unaffected — a conversation where somebody has not
 updated their client yet still arrives as text, and the client says so on the
 composer rather than letting anybody assume otherwise.
 
+#### How long they're kept
+
+The server keeps 30 days of encrypted DM history by default. `MLS_RETENTION_DAYS`
+can shorten that, but not lengthen it. Set it above 30, or to anything that
+isn't a whole number, and the server ignores the value and keeps 30.
+
+A device that's been offline for longer than the retention window has missed
+messages the server has already deleted. There's no way to get them back for
+that device. Other devices that stayed connected within the window still have
+them.
+
 ## Administrative commands
 
 Run inside the server container, or beside a built server:

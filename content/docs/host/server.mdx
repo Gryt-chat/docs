@@ -63,9 +63,16 @@ startup. Set `HOST=0.0.0.0` for a server other machines should reach.
 | `GRYT_SERVER_ICON_MAX_MB` | `25` | Server icon upload ceiling. `SERVER_ICON_MAX_MB` also works |
 | `MESSAGE_CACHE_TTL_MS` | `30000` | How long a message page stays cached |
 | `REFRESH_TOKEN_TTL_DAYS` | `7` | Refresh token lifetime |
+| `MLS_RETENTION_DAYS` | `30` | How long encrypted DM history is kept. Only shortens it — see below |
 
 `VOICE_MAX_USERS` is the server's own cap. The SFU has a separate `MAX_PEERS`
 that covers every server sharing it.
+
+`MLS_RETENTION_DAYS` can only make retention shorter than 30 days, never
+longer: anything above 30, anything that isn't a whole number, or anything
+unset falls back to 30. See [Direct messages are
+encrypted](/docs/host/configuration#direct-messages-are-encrypted-and-what-that-costs-you)
+for what a shorter window costs a device that's been offline.
 
 ### Storage
 
