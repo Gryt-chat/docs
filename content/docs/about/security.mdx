@@ -82,25 +82,48 @@ If everything checks out, the server issues a **server-scoped access token** (a 
 | Your Keycloak token | **No** — never sent to community servers |
 | Your private key | **No** — never leaves your device |
 | Messages you send in a channel | Yes — that's how server-hosted chat works |
-| Direct messages | **No**, once both clients have published a key |
+| Direct messages | **No**, once both of you have a device that supports it — MLS, or the DM key before it |
 | Who you send them to, and when | Yes — it delivers them |
 | Uploads, including in a direct message | Yes — attachments aren't encrypted yet |
 
 ## Direct messages are encrypted
 
 A direct message is encrypted on the device that sends it and decrypted on the
-devices that receive it. The server stores an envelope and has never had the text.
+devices that receive it. The server stores ciphertext and has never had the text.
 
 This page said the opposite until recently, and the change is worth stating plainly
 rather than quietly editing: direct messages used to be stored as text, in the
 server's database, readable by whoever ran it. Anything sent before your server and
 both clients were updated still is.
 
+### New DMs run on MLS
+
+A new direct message goes over MLS ([RFC 9420](https://www.rfc-editor.org/rfc/rfc9420),
+suite 1: X25519, Ed25519, AES-128-GCM) once both of you have a device that supports it.
+Every message gets its own key, and the key is deleted once it's used — so a copy of
+the server's disk, or a key from a later message, doesn't open anything that came
+before it. That's forward secrecy, and it's new: the old scheme sealed everything with
+one key that didn't change.
+
+A DM sent before your server and both clients supported MLS still opens the old way,
+with the 24 words. That code isn't going anywhere — the 24 words keep reading it for as
+long as the server keeps it.
+
+An app that hasn't caught up to MLS can't read the new messages. It shows a line in the
+conversation instead: "Update Gryt to read it."
+
+The server's job is to pass MLS messages along, not to read them. It keeps them for 30
+days — a host can shorten that — so a device that's been offline a while can still catch
+up. It sees who's in a DM and when a message goes out, same as before, and for a file it
+learns only which of a message's uploads belong to it, not what's in them.
+
 ### Nothing is asked of anybody central
 
-Each device works out a message key per server from the same seed its identity comes
-from, publishes the public half signed by the identity key it joined that server with,
-and every other client checks that signature itself.
+Every one of your devices is its own participant in a DM, not just your account. What
+ties them together is a **person key** — one per server, worked out from the same 24
+words your DM key already came from — which signs a small certificate for each device
+you add. Peers pin your person key the way they already pin your DM key, and the
+sixty-digit comparison code below covers it too.
 
 `id.gryt.chat` is not involved. A certificate saying which servers you are on would
 hand it exactly the map Gryt is built not to hand anybody, so the design does without
@@ -153,20 +176,50 @@ None of that reaches copies already in Keycloak's backups, which are kept for
 31 days. If you used a short password before, the only complete fix is starting
 again with a new key in Settings, and that loses the old conversations.
 
+A new device gets your person key this same way, so it can prove which devices are
+yours right away. What it doesn't get yet is the messages your other devices have
+already decrypted — carrying that across, and backing it up, is planned but not built.
+Until then, a new device starts an MLS conversation with nothing from before it joined.
+
 ### What it protects
 
 The words and the files, from the server and from anybody who ends up with its disk. A
 stolen backup, a resold drive, a compromised host, an order served on an operator: all
 of them get ciphertext.
 
-Every message gets its own key, wrapped once for each member. Somebody added to a group
-later has no key for anything sent before they arrived. Nothing enforces that. There is
-nothing there for them to open.
+Under MLS, every message gets its own key, and the key is deleted once your device has
+used it — that's forward secrecy. Somebody added to the conversation later has no key
+for anything sent before they arrived, and neither does anyone who gets hold of the
+server afterwards. In an old sealed DM, one key that doesn't change covers the whole
+conversation, wrapped once for each member. That's what a DM sent before the switch
+still opens with.
 
 An attachment gets its own key too, and it travels inside the message. So a picture is
 encrypted before it leaves your device, and the server stores it without knowing what it
 is called, what type it is, or how big the picture is — only how many bytes it was
-handed and when.
+handed and when, and, for an MLS DM, which message it belongs to.
+
+### History lives on your device
+
+Because MLS keys are deleted after use, nobody can hand you your history back — not
+even the server, and not even you on a different device, unless that device already
+decrypted it. So each device keeps what it's read:
+
+- the desktop app keeps it locally, sealed the way your identity is
+- the phone keeps it in its own encrypted storage
+- the web client keeps it in the browser's storage — clear that browser's site data and
+  it's gone, with no copy anywhere else yet
+
+### Not covered yet
+
+MLS DMs are the first piece. Still to come:
+
+- **Group DMs and private channels.** Both are planned; neither is encrypted this way
+  yet, and a private channel today is just a channel with a smaller member list.
+- **Reactions and reports on an MLS message.** The server has no copy of the message to
+  attach a reaction to, or to hand a moderator.
+- **Link previews**, which are off in an MLS DM. Making one today means telling the
+  server the link.
 
 ### What it does not
 
@@ -184,10 +237,10 @@ handed and when.
 
 ### Trust on first use, again
 
-Your client records the key it first sees for somebody and refuses a change, exactly as
-it does for [a server's identity key](#trust-on-first-use). A server that swaps a key
-later is caught the moment it does, and the client says so instead of quietly
-encrypting to the new one.
+Your client records the keys it first sees for somebody — the DM key, and now the
+person key too — and refuses a change, exactly as it does for
+[a server's identity key](#trust-on-first-use). A server that swaps one later is caught
+the moment it does, and the client says so instead of quietly encrypting to the new one.
 
 What that cannot catch is a server that swapped it from the very first message, because
 the server is what introduced the two of you. Every system where somebody else does the
@@ -204,9 +257,14 @@ perfectly, so it is worth doing on a call where you recognise the voice.
 
 ### A conversation that cannot be encrypted says so
 
-Both people need a client new enough to publish a key, and a server new enough to carry
+Both people need a client new enough to support it, and a server new enough to carry
 it. Until then the conversation is text, and the composer says which member is holding
 it up rather than letting anybody assume.
+
+That's different from one of your peer's older devices falling behind after the
+conversation has already moved to MLS. That device just can't read the new messages —
+see [New DMs run on MLS](#new-dms-run-on-mls) — while the rest of the conversation
+keeps going.
 
 ### The web client is weaker than the desktop one here
 
@@ -285,8 +343,8 @@ Even if a server operator captures everything sent during the join flow:
 - **Can't forge new assertions.** They don't have your private key.
 - **Can't use your certificate alone.** A certificate isn't a bearer token — it only links a public key to an identity. Without the corresponding private key, it's useless.
 - **Can't pose as a server you already trust.** Servers are pinned by their identity key, so answering at a known address with a different key gets refused before anything is sent. See [Authenticating the server](#authenticating-the-server).
-- **Can't read a direct message** between two people whose clients have both published a key. It stores an envelope it has no key for.
-- **Can't swap somebody's message key unnoticed.** Clients pin the key they first saw and refuse a change; two people comparing a code catch even the first one.
+- **Can't read a direct message** between two people whose clients both support encryption. It stores ciphertext it has no key for.
+- **Can't swap somebody's key unnoticed.** Clients pin the keys they first saw and refuse a change; two people comparing a code catch even the first one.
 
 ## Authenticating the server
 
@@ -414,9 +472,10 @@ and it works.
 | Server identity | Long-lived server keypair, pinned by the client on first join |
 | Safe recovery when a server moves | Pins are filed under the key, not the address |
 | Direct messages the server can't read | A key per message, wrapped once per member; private keys never leave the device |
+| Old messages stay unreadable after a compromise | New DMs run on MLS: each message's key is deleted once it's used |
 | The copy of your words on your account resists guessing | Argon2id at 64 MiB, and six generated words by default |
-| No central party learns where you are | Message keys are published per server and signed by the key that joined it |
-| A swapped message key is caught | Peers are pinned on first sight; a change is refused and shown |
+| No central party learns where you are | Your DM key and person key are published per server and signed by the identity that joined it |
+| A swapped key is caught | Peers are pinned on first sight; a change is refused and shown |
 | The first exchange can be checked | A sixty-digit code, compared somewhere the server isn't |
 | Message contents | **Not protected from the server** — see [Direct messages](#direct-messages-are-not-private-from-the-server) |
 
