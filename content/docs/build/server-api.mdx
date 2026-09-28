@@ -270,7 +270,7 @@ last resort included, and the replies below that could run longer are paged.
 | `mls:keypackages:publish` | client → server | `{ deviceId, keyPackages, lastResort? }`. The first publish registers the device. Five devices per member. See [KeyPackages](#keypackages) for what gets refused |
 | `mls:keypackages:claim` | client → server | `{ conversationId, deviceId, devices? }`. One KeyPackage for each device, and each is handed out once. Expired ones never are. Nine devices a reply at most, and `more` lists the rest to name in `devices` next time |
 | `mls:devices` | client → server | `{ conversationId? }`. Your own devices, or everybody's in the conversation |
-| `mls:device:remove` | client → server | `{ deviceId }`, one of your own |
+| `mls:device:remove` | client → server | `{ deviceId }`, one of your own. That id can't come back: see [Removed devices](#removed-devices) |
 | `mls:group:create` | client → server | `{ conversationId, groupId }`. The first group for a conversation wins, and the other side gets `group_exists` |
 | `mls:commit` | client → server | `{ conversationId, deviceId, commit, welcome? }`. One commit per epoch. A commit for any other epoch gets `stale_epoch` with the current one |
 | `mls:send` | client → server | `{ conversationId, deviceId, message, placeholder?, attachmentIds? }`. Application messages and proposals. Pass `placeholder: false` for anything that isn't a message, like a reaction, an edit or a delete (see [Apps from before MLS](#apps-from-before-mls)). `attachmentIds` lists the uploads the message carries (see [Files](#files)) |
@@ -293,6 +293,19 @@ acknowledgement, the person key can occasionally land first. Retry once.
 Once it's stored, the binding shows up as `personKeyBinding` on your row in
 `members:list`, next to `dmKeyBinding`. It's `null` for anybody who hasn't
 published one.
+
+#### Removed devices
+
+Once you remove a device, the server remembers its id for good. Anything
+that device sends afterwards gets `device_removed`, whatever the event: sync,
+publish, claim, commit, send or a Welcome ack. It can't publish KeyPackages
+under that id again, so nobody can add it back to a DM.
+
+An app that gets `device_removed` should stop using MLS on that server and
+delete its MLS state there. The Gryt apps also delete the encrypted DMs they
+hold from that server. They won't set up a new device there until you sign in
+again, or restore your identity from its recovery key if you don't have an
+account. A new device gets a new id, and that registers as usual.
 
 #### KeyPackages
 
