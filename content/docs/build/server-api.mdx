@@ -263,6 +263,7 @@ MLS bytes go as binary both ways.
 
 | Event | Direction | Notes |
 |-------|-----------|-------|
+| `mls:person:publish` | client → server | `{ binding }`. Your person key binding, or `null` to take it back. Send `dm:key:publish` first |
 | `mls:keypackages:publish` | client → server | `{ deviceId, keyPackages, lastResort? }`. The first publish registers the device. Five devices per member. See [KeyPackages](#keypackages) for what gets refused |
 | `mls:keypackages:claim` | client → server | `{ conversationId, deviceId, devices? }`. One KeyPackage for each device, and each is handed out once. Expired ones never are |
 | `mls:devices` | client → server | `{ conversationId? }`. Your own devices, or everybody's in the conversation |
@@ -279,6 +280,16 @@ MLS bytes go as binary both ways.
 
 The server keeps the log for 30 days, or fewer if whoever runs it sets
 `MLS_RETENTION_DAYS`.
+
+A person key binding has to be signed by the same identity key, for the same
+scope, as the DM key binding you published. That's the key people have already
+pinned for you. Anything else gets `wrong_identity`. If there's no DM key
+binding yet you get `no_dm_key`, and since `dm:key:publish` has no
+acknowledgement, the person key can occasionally land first. Retry once.
+
+Once it's stored, the binding shows up as `personKeyBinding` on your row in
+`members:list`, next to `dmKeyBinding`. It's `null` for anybody who hasn't
+published one.
 
 #### KeyPackages
 
