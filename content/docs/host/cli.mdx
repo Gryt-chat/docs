@@ -272,6 +272,54 @@ A cap is about the machine running the SFU rather than about ports. Every
 participant's media shares one UDP port, so there's no per-person port to run
 out of. What runs out first is CPU and upload bandwidth.
 
+## Creating and starting a server from a script
+
+The wizard and the manager are a terminal-only thing, so scripting a server's
+setup meant driving them through something like `tmux`. `gryt create` and
+`gryt start` take flags instead:
+
+```bash
+gryt create --name my-server --port 5000 --yes
+gryt start my-server
+```
+
+`gryt create` takes a flag for each question the wizard asks:
+
+| Flag | Same as | Default |
+|------|---------|---------|
+| `--name` | Server name | required |
+| `--host` | Bind address | `0.0.0.0` |
+| `--port` | Port | the first port nothing else on this machine holds |
+| `--security` | Security level (`strict`, `balanced` or `community`) | `balanced` |
+| `--voice-seats` | Voice seats | `0`, no limit |
+| `--proxy-hops` | Trusted proxy hops | `0` |
+| `--domain` | The typed address in "Where will people connect from" | none |
+| `--lan` | Ticking this machine's own addresses in that same question | off |
+
+`--domain` takes a `ws://` or `wss://` address, and can be repeated or given
+as a comma-separated list. Without `--domain` or `--lan`, the server is only
+reachable at `ws://localhost:5005` — the same as leaving every box but "This
+machine only" unticked.
+
+Without `--yes`, `gryt create` only previews what it would write:
+
+```
+My Server (my-server)
+  listening on 0.0.0.0:5000
+  security: balanced, voice seats: unlimited, proxy hops: 0
+  reachable at: ws://localhost:5005
+
+Nothing created. Re-run with --yes to write it.
+```
+
+It refuses a name that's already in use, either way, rather than overwriting
+that server's secrets.
+
+`gryt start <server>` brings up the shared voice server, then the named one —
+the same two steps behind the manager's `s` key. Both commands exit non-zero
+on any failure, so a script can chain them with the existing `gryt pull` and
+`gryt remove` without checking anything but the exit code.
+
 ## Settings a server keeps itself
 
 Some of a server's configuration lives in its own database rather than in the
@@ -441,6 +489,8 @@ off the timer's list.
 | Command | What it does |
 |---------|--------------|
 | `gryt` | Open the manager |
+| `gryt create --name <name> [flags] --yes` | Create a server without the wizard. Previews what it would write until `--yes` is added |
+| `gryt start <server>` | Start a server created with `gryt create` or the wizard |
 | `gryt doctor` | Check Docker, the config directory and the ports. Exits non-zero when something is wrong |
 | `gryt list` | Print each server's ID, address and name |
 | `gryt env <server>` | Print the settings, each marked `live` or `restart`. Secrets are masked |
