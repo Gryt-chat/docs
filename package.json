@@ -9,6 +9,7 @@
     "start": "next start",
     "test:comment-length": "node scripts/check-comment-length.mjs",
     "test:webhook-spec": "node scripts/check-webhook-spec.mjs",
+    "test:owl-mark": "node scripts/check-owl-mark.mjs",
     "postinstall": "fumadocs-mdx"
   },
   "dependencies": {
