@@ -76,7 +76,35 @@ Sending is `chat:send` over the socket. There's no POST here.
 | DELETE | `/api/uploads/avatar` | Bearer | |
 | POST | `/api/uploads/group-icon` | Bearer | multipart `file`, a group's picture. Returns `fileId` for `dm:group:update` and doesn't change your avatar |
 | POST | `/api/uploads/webhook-avatar` | Bearer | multipart `file`, a webhook's avatar. Needs Manage webhooks. Returns `fileId` for the webhook's `avatar_file_id` and doesn't change your avatar |
-| GET | `/api/uploads/files/:fileId` | — | `?thumb=1` for the thumbnail, `?download=1` for an attachment header |
+| GET | `/api/uploads/files/:fileId` | Signed link | `?thumb=1` for the thumbnail, `?download=1` for an attachment header |
+
+A file URL can't carry a header, because most of them end up in an `<img src>`.
+So each one is signed for one file, and it stops working after a few minutes.
+The server hands out the key it's signed with in `fileKey`, on `server:joined`,
+`token:refreshed` and `file:key`:
+
+```json
+{ "key": "<base64url, 32 bytes>", "user": "<serverUserId>", "until": 1790043200, "now": 1790000000000 }
+```
+
+`until` is when the key expires, in seconds. `now` is the server's clock in
+milliseconds, so you can sign against its time rather than yours. To sign a URL:
+
+1. Pick `expires`, in seconds. It can be at most ten minutes ahead of the
+   server's clock, and no later than `until`.
+2. Sign `file-url`, the file id, `thumb` or `full`, and `expires`, joined with
+   `\n`, using HMAC-SHA256 with the decoded key.
+3. Add `u` (the `user`), `k` (`until`), `e` (`expires`) and `s` (the signature,
+   base64url with no padding) to the query string.
+
+```
+/api/uploads/files/<fileId>?thumb=1&u=<user>&k=<until>&e=<expires>&s=<signature>
+```
+
+A link for one file won't open another, and a thumbnail link won't give you the
+full file. When the server's or the member's token version moves, every link
+signed with the old key stops working too. The server still takes the older
+`?t=<fileToken>` for now, and will stop in a later release.
 
 ### Server
 
@@ -209,6 +237,10 @@ Refusals come back on `server:error` with a reason: `invite_required`,
 | `session:restore` | client → server |
 | `token:refresh` | client → server |
 | `token:refreshed`, `token:invalid`, `token:revoked`, `token:error` | server → client |
+| `file:key` | server → client |
+
+A restored session gets no `token:refreshed`, so `file:key` brings it the key for
+signing file links. It's the same shape as `fileKey` above.
 
 ### Chat
 
