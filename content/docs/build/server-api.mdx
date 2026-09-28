@@ -273,7 +273,7 @@ last resort included, and the replies below that could run longer are paged.
 | `mls:device:remove` | client → server | `{ deviceId }`, one of your own |
 | `mls:group:create` | client → server | `{ conversationId, groupId }`. The first group for a conversation wins, and the other side gets `group_exists` |
 | `mls:commit` | client → server | `{ conversationId, deviceId, commit, welcome? }`. One commit per epoch. A commit for any other epoch gets `stale_epoch` with the current one |
-| `mls:send` | client → server | `{ conversationId, deviceId, message, placeholder? }`. Application messages and proposals. Pass `placeholder: false` for anything that isn't a message, like a reaction, an edit or a delete (see [Apps from before MLS](#apps-from-before-mls)) |
+| `mls:send` | client → server | `{ conversationId, deviceId, message, placeholder?, attachmentIds? }`. Application messages and proposals. Pass `placeholder: false` for anything that isn't a message, like a reaction, an edit or a delete (see [Apps from before MLS](#apps-from-before-mls)). `attachmentIds` lists the uploads the message carries (see [Files](#files)) |
 | `mls:log:fetch` | client → server | `{ conversationId, after, limit? }`. The log after a cursor, ten entries a page at most. `gap` means some of what you missed has already been dropped |
 | `mls:sync` | client → server | `{ deviceId }`. Your groups, your oldest nine waiting Welcomes, and how many KeyPackages you have left. `moreWelcomes` says there are more. Ack the ones you've joined and sync again for the next nine |
 | `mls:welcome:ack` | client → server | `{ deviceId, welcomeIds }`, once a Welcome is saved |
@@ -319,6 +319,28 @@ Expired packages are pruned every hour.
 
 For now the server also takes ts-mls's default lifetime (0 to 2^63-1), which
 @gryt/crypto 0.6.0 and older write. It keeps those for 30 days from upload.
+
+#### Files
+
+A file in an MLS DM is uploaded the usual way, encrypted by the sender's app
+first. The key goes inside the message, where the server can't see it. What
+the server does need is to know the message holds the upload. Otherwise the
+media sweep deletes it 30 minutes after it went up, like any upload nothing
+references.
+
+So `mls:send` takes `attachmentIds`, the upload ids the message carries. Only
+an application message can have them, and `placeholder: false` doesn't matter.
+They're checked the way a sealed DM's attachments are:
+
+- the sender needs `attach_files` here (`forbidden`)
+- ten at most (`too_many_attachments`)
+- each one a file the sender can already read (`attachment_not_found`)
+- each one under the server's upload cap (`attachment_too_large`)
+
+After that the other person can fetch them, and the media sweep leaves them
+alone. They go when the log entry goes: after the retention window, or with
+the conversation. Then any of them nothing else holds gets deleted, the same
+as a deleted message's files.
 
 #### Apps from before MLS
 
