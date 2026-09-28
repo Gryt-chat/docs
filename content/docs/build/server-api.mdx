@@ -263,13 +263,13 @@ MLS bytes go as binary both ways.
 
 | Event | Direction | Notes |
 |-------|-----------|-------|
-| `mls:keypackages:publish` | client → server | `{ deviceId, keyPackages, lastResort? }`. The first publish registers the device. Five devices per member |
-| `mls:keypackages:claim` | client → server | `{ conversationId, deviceId, devices? }`. One KeyPackage for each device, and each is handed out once |
+| `mls:keypackages:publish` | client → server | `{ deviceId, keyPackages, lastResort? }`. The first publish registers the device. Five devices per member. See [KeyPackages](#keypackages) for what gets refused |
+| `mls:keypackages:claim` | client → server | `{ conversationId, deviceId, devices? }`. One KeyPackage for each device, and each is handed out once. Expired ones never are |
 | `mls:devices` | client → server | `{ conversationId? }`. Your own devices, or everybody's in the conversation |
 | `mls:device:remove` | client → server | `{ deviceId }`, one of your own |
 | `mls:group:create` | client → server | `{ conversationId, groupId }`. The first group for a conversation wins, and the other side gets `group_exists` |
 | `mls:commit` | client → server | `{ conversationId, deviceId, commit, welcome? }`. One commit per epoch. A commit for any other epoch gets `stale_epoch` with the current one |
-| `mls:send` | client → server | `{ conversationId, deviceId, message }`. Application messages and proposals |
+| `mls:send` | client → server | `{ conversationId, deviceId, message, placeholder? }`. Application messages and proposals. Pass `placeholder: false` for anything that isn't a message, like a reaction, an edit or a delete (see [Apps from before MLS](#apps-from-before-mls)) |
 | `mls:log:fetch` | client → server | `{ conversationId, after, limit? }`. The log after a cursor. `gap` means some of what you missed has already been dropped |
 | `mls:sync` | client → server | `{ deviceId }`. Your groups, your waiting Welcomes, and how many KeyPackages you have left |
 | `mls:welcome:ack` | client → server | `{ deviceId, welcomeIds }`, once a Welcome is saved |
@@ -279,6 +279,54 @@ MLS bytes go as binary both ways.
 
 The server keeps the log for 30 days, or fewer if whoever runs it sets
 `MLS_RETENTION_DAYS`.
+
+#### KeyPackages
+
+A KeyPackage lasts 30 days, from `notBefore` to `notAfter`, and both ends count.
+The server checks that against its own clock. On upload it refuses a package that:
+
+- isn't signed by its own leaf key (`invalid_key_package`)
+- doesn't carry a device certificate its person key signed for that leaf key
+  (`invalid_device_certificate`)
+- has a certificate naming a different device from the `deviceId` it's uploaded
+  under (`device_mismatch`)
+- claims more than 30 days (`key_package_lifetime`), has expired
+  (`key_package_expired`), or hasn't started yet (`key_package_not_yet_valid`)
+
+The three lifetime refusals include `serverTime`, in seconds, so a device whose
+clock is off can make its packages again against the server's time.
+
+The server doesn't check the certificate's scope, or whose person key signed it.
+Clients check both.
+
+A claim only hands out a package with at least an hour left, and the count in
+`mls:sync` leaves out the ones that don't qualify, so a device knows to top up.
+Expired packages are pruned every hour.
+
+For now the server also takes ts-mls's default lifetime (0 to 2^63-1), which
+@gryt/crypto 0.6.0 and older write. It keeps those for 30 days from upload.
+
+#### Apps from before MLS
+
+An app from before MLS doesn't know `mls:message`. So for every application
+message, the server also writes a line into the DM for those apps, from the
+`system` sender:
+
+> @Kari sent an end-to-end encrypted message. Update Gryt to read it.
+
+It arrives as an ordinary `chat:new`, and it's in the history, with one extra
+field:
+
+```ts
+mls_placeholder: { seq: number; sender_server_id: string }
+```
+
+`seq` is the entry in the group's log that the line stands in for, and
+`sender_server_id` is who really sent it. An app that reads MLS should drop any
+message with `mls_placeholder`, and count unread from `mls:message` instead.
+
+The sender's own sockets don't get the line live. Their older apps see it in
+the history. Nobody who blocked the sender gets it.
 
 ### Calls
 
