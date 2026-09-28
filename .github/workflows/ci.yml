@@ -26,6 +26,9 @@ jobs:
       # mirrors the payload rules. This fails when either drifts from the server.
       - run: yarn test:webhook-spec
 
+      # The retired owl mark keeps resurfacing. This catches its exact geometry.
+      - run: yarn test:owl-mark
+
       # `next build` type-checks as part of building and there is no separate
       # typecheck script, so this is both.
       - run: yarn build
