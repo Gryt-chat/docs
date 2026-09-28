@@ -259,20 +259,23 @@ this on a server that doesn't.
 
 Every request takes `accessToken` and answers through the Socket.IO
 acknowledgement, with `{ ok: true, ... }` or `{ ok: false, error, message }`.
-MLS bytes go as binary both ways.
+MLS bytes go as binary both ways. socket.io closes the connection on a packet
+with more than ten binary parts, so keep what you send to ten, and the server
+keeps its replies to ten too. So a publish carries ten KeyPackages at most,
+last resort included, and the replies below that could run longer are paged.
 
 | Event | Direction | Notes |
 |-------|-----------|-------|
 | `mls:person:publish` | client → server | `{ binding }`. Your person key binding, or `null` to take it back. Send `dm:key:publish` first |
 | `mls:keypackages:publish` | client → server | `{ deviceId, keyPackages, lastResort? }`. The first publish registers the device. Five devices per member. See [KeyPackages](#keypackages) for what gets refused |
-| `mls:keypackages:claim` | client → server | `{ conversationId, deviceId, devices? }`. One KeyPackage for each device, and each is handed out once. Expired ones never are |
+| `mls:keypackages:claim` | client → server | `{ conversationId, deviceId, devices? }`. One KeyPackage for each device, and each is handed out once. Expired ones never are. Nine devices a reply at most, and `more` lists the rest to name in `devices` next time |
 | `mls:devices` | client → server | `{ conversationId? }`. Your own devices, or everybody's in the conversation |
 | `mls:device:remove` | client → server | `{ deviceId }`, one of your own |
 | `mls:group:create` | client → server | `{ conversationId, groupId }`. The first group for a conversation wins, and the other side gets `group_exists` |
 | `mls:commit` | client → server | `{ conversationId, deviceId, commit, welcome? }`. One commit per epoch. A commit for any other epoch gets `stale_epoch` with the current one |
 | `mls:send` | client → server | `{ conversationId, deviceId, message, placeholder? }`. Application messages and proposals. Pass `placeholder: false` for anything that isn't a message, like a reaction, an edit or a delete (see [Apps from before MLS](#apps-from-before-mls)) |
-| `mls:log:fetch` | client → server | `{ conversationId, after, limit? }`. The log after a cursor. `gap` means some of what you missed has already been dropped |
-| `mls:sync` | client → server | `{ deviceId }`. Your groups, your waiting Welcomes, and how many KeyPackages you have left |
+| `mls:log:fetch` | client → server | `{ conversationId, after, limit? }`. The log after a cursor, ten entries a page at most. `gap` means some of what you missed has already been dropped |
+| `mls:sync` | client → server | `{ deviceId }`. Your groups, your oldest nine waiting Welcomes, and how many KeyPackages you have left. `moreWelcomes` says there are more. Ack the ones you've joined and sync again for the next nine |
 | `mls:welcome:ack` | client → server | `{ deviceId, welcomeIds }`, once a Welcome is saved |
 | `mls:message` | server → client | A new entry in a group's log |
 | `mls:welcome` | server → client | A Welcome for one of your devices |
