@@ -217,7 +217,7 @@ Refusals come back on `server:error` with a reason: `invite_required`,
 | `chat:send` | client → server | |
 | `chat:fetch` | client → server | |
 | `chat:edit`, `chat:delete`, `chat:react` | client → server | |
-| `chat:report` | client → server | |
+| `chat:report` | client → server | `{ accessToken, conversationId, messageId, mls? }`. `mls` is for an MLS message, see [Reports](#reports) |
 | `chat:typing`, `chat:stop_typing` | both | |
 | `chat:new`, `chat:edited`, `chat:deleted`, `chat:reaction` | server → client | |
 | `chat:history` | server → client | Answer to `chat:fetch` |
@@ -254,8 +254,9 @@ It never gets a key. The only parts of a message it reads are the group id, the
 epoch and what kind of message it is. Only one-to-one DMs use it so far.
 
 A server that has it says so in `server:info`, as
-`mls: { version, ciphersuites, retentionDays }`. A client shouldn't use any of
-this on a server that doesn't.
+`mls: { version, ciphersuites, retentionDays, reports }`. A client shouldn't use
+any of this on a server that doesn't. `reports` is `true` once the server takes a
+[report](#reports) of an MLS message.
 
 Every request takes `accessToken` and answers through the Socket.IO
 acknowledgement, with `{ ok: true, ... }` or `{ ok: false, error, message }`.
@@ -354,6 +355,32 @@ After that the other person can fetch them, and the media sweep leaves them
 alone. They go when the log entry goes: after the retention window, or with
 the conversation. Then any of them nothing else holds gets deleted, the same
 as a deleted message's files.
+
+#### Reports
+
+The server never has an MLS message, so it can't hand a moderator the one being
+reported. The reporter's app sends its own copy instead, as `mls` on
+`chat:report`:
+
+```ts
+mls: { senderServerUserId: string; text: string }
+```
+
+`messageId` is the id inside the message. The server can't check the copy, so it
+goes into the queue marked `unverified: true` in `reports:list`, and a client
+should say so on the card. It does check that:
+
+- the reporter and `senderServerUserId` are both in the conversation, and aren't
+  the same person. Anything else gets "Message not found", the same answer as a
+  conversation that doesn't exist
+- the reporter has `report_messages`, and hasn't already reported that message
+- `text` is at most 32,000 characters and `messageId` at most 64
+
+It's rate-limited like any other report. Files in the message aren't sent.
+
+Resolving one with `delete` closes the report and deletes nothing, since there's
+nothing on the server to delete. `delete_all_and_ban` still deletes what the
+sender has on the server and bans them.
 
 #### Apps from before MLS
 

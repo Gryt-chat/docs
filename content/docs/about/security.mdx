@@ -183,9 +183,9 @@ Until then, a new device starts an MLS conversation with nothing from before it 
 
 ### What it protects
 
-The words and the files, from the server and from anybody who ends up with its disk. A
-stolen backup, a resold drive, a compromised host, an order served on an operator: all
-of them get ciphertext.
+The words, the files and the reactions, from the server and from anybody who ends up
+with its disk. A stolen backup, a resold drive, a compromised host, an order served on an
+operator: all of them get ciphertext.
 
 Under MLS, every message gets its own key, and the key is deleted once your device has
 used it — that's forward secrecy. Somebody added to the conversation later has no key
@@ -210,14 +210,23 @@ decrypted it. So each device keeps what it's read:
 - the web client keeps it in the browser's storage — clear that browser's site data and
   it's gone, with no copy anywhere else yet
 
+### Reporting a message
+
+The server can't read an MLS DM, so it can't show a moderator the message you're
+reporting. Your app sends its own copy of it instead, and the server passes that on
+marked as the reporter's copy, unverified. It checks that you're both in the
+conversation and that it isn't your own message. It can't check that the words are the
+ones that were sent, and the moderator is told that. Files in the message aren't sent.
+
+Each MLS message is signed by the sender's device, so a report could one day come with
+proof of who wrote it. That's planned, not built.
+
 ### Not covered yet
 
 MLS DMs are the first piece. Still to come:
 
 - **Group DMs and private channels.** Both are planned; neither is encrypted this way
   yet, and a private channel today is just a channel with a smaller member list.
-- **Reactions and reports on an MLS message.** The server has no copy of the message to
-  attach a reaction to, or to hand a moderator.
 - **Link previews**, which are off in an MLS DM. Making one today means telling the
   server the link.
 
