@@ -105,7 +105,8 @@ follows beta now. Pulling the latest-beta images.
 - **Ports that don't collide**: it offers the first port nothing else holds
 - **`gryt doctor`**: says what is wrong with Docker, the config directory, or a port something else has taken
 - **Updates itself**: `gryt update`, or `u` when the dashboard says one is available
-- **Updates your servers**: `gryt pull <server>` fetches the newer image and recreates the container
+- **Updates your servers**: `gryt pull <server>` fetches the newer image and recreates the container, and `gryt pull --auto on` does it every night on Linux
+- **Cleans up after itself**: `gryt remove <server>` deletes a server and everything it made
 - **Private by default**: profiles and generated `.env` files are readable only by you
 
 ## Using the manager
@@ -152,6 +153,7 @@ you asking. `l` follows a server's log rather than showing a snapshot.
 | `c` | Change the settings the server keeps in its own database |
 | `s` `x` `r` | Start · stop · restart |
 | `l` | Follow the log |
+| `D` | Remove the server, once you've typed its id |
 | `g` | Refresh now |
 | `u` | Update, when one is available |
 | `q` | Quit |
@@ -368,6 +370,72 @@ Recreating them interrupts voice and uploads for every server on the machine.
 That's why it's a separate command, rather than something one server's update
 does on the way past.
 
+### Updating every night
+
+On Linux, `gryt pull --auto on` installs a systemd timer that checks for newer
+images once a night, so you don't have to remember to run `gryt pull`:
+
+```bash
+gryt pull --auto on       # install the timer, or refresh its list of servers
+gryt pull --auto status   # says whether it's on
+gryt pull --auto off      # remove the timer and its settings
+```
+
+It's the same timer the [Docker Compose guide](/docs/host/docker-compose#keeping-your-server-up-to-date)
+installs, pointed at the containers this machine's servers run in: each
+server, its image worker, and the shared voice server. It asks for `sudo`,
+because the timer and its settings live under `/etc`.
+
+Some time between 03:00 and 06:00 it pulls whatever tag your channel names, and
+recreates only the containers whose image changed. The voice server waits until
+nobody's in a call, so nobody gets cut off halfway through one.
+
+The list of containers is written when you run `on`. Make a new server and
+you'll need to run `gryt pull --auto on` again, or the timer won't know about
+it. The log is at `journalctl -u gryt-auto-update -n 50`.
+
+If you turned it on with gryt 0.7.1 or older, run `on` again. Those versions
+left the timer recreating servers without their management token, so `c`
+stopped working after the timer's first run, and the voice server was never
+updated at all.
+
+It needs systemd, so it's Linux only. On macOS and Windows, run `gryt pull`
+yourself.
+
+## Removing a server
+
+```bash
+gryt remove pivert-cli-server
+```
+
+It says what's going, then asks you to type the server's id:
+
+```
+This deletes Pivert CLI Server for good:
+  its containers, gryt-pivert-cli-server and gryt-pivert-cli-server-image-worker
+  /home/you/.config/gryt/servers/pivert-cli-server, which holds its database, its uploads and its settings
+
+Type pivert-cli-server to delete it:
+```
+
+There's no undo. The database and every upload go with it, so copy `data/`
+somewhere first if you might want it back.
+
+When it's the last server on the machine, the shared services go too: the voice
+server, the `gryt` network and the `shared/` folder, plus the object store and
+its uploads on a machine that still runs one. The images stay, in case you make
+another server. It prints the `docker image rm` line that frees the space.
+
+`--yes` skips the question, for scripts. `D` in the manager does the same job
+and asks the same way.
+
+On Linux the server's files belong to uid 1001, the user it runs as inside its
+container, so you can't delete them yourself without `sudo`. `gryt remove`
+deletes them through a container instead.
+
+If the nightly update timer is on, it tells you what to run to take the server
+off the timer's list.
+
 ## Commands
 
 | Command | What it does |
@@ -381,6 +449,10 @@ does on the way past.
 | `gryt update` | Replace this binary with the newest release |
 | `gryt pull <server>` | Pull the newest images for one server and recreate it. `--force` skips the check for a newer release |
 | `gryt pull --shared` | Pull the voice server every server here shares, and the object store if there is one |
+| `gryt pull --auto on` | Check for new images every night, on Linux. Run it again after making a server |
+| `gryt pull --auto off` | Remove the nightly timer |
+| `gryt pull --auto status` | Say whether the nightly timer is on |
+| `gryt remove <server>` | Delete a server, its containers and its data, after you type its id. `--yes` skips the question |
 | `gryt version` | Print the CLI version |
 
 `gryt doctor` checks that Docker is installed, that the Compose plugin is there,
@@ -415,6 +487,15 @@ Each server directory holds `profile.json`, a generated `.env`, a generated
 is `shared/`, holding the compose project every server uses, and the credentials
 for the object store on a machine that still runs one. Both are created readable
 only by your user, because they hold secrets.
+
+`admin.env` sits beside `.env` and holds the token the manager uses for `c`.
+It's a file of its own so `.env` stays safe to paste into a bug report.
+
+On Linux, `data/` belongs to uid 1001, which is the user the server runs as
+inside its container. A short-lived `data-init` container hands the folder over
+each time the server starts, so reading it from your own account needs `sudo`.
+A server made on Linux by gryt 0.7.1 or older couldn't write this folder at all.
+Stop it with `x` and start it with `s`, and it picks up the fix.
 
 Generated files carry a header saying they're managed by `gryt`. Editing them
 by hand works, but the next save overwrites them.
