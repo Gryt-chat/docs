@@ -49,6 +49,8 @@ says which is missing.
 | `messaging` | Exchange its own messages with the servers you are on |
 | `display` | Show its own panel beside the member list |
 | `processes` | See which of your listed programs are running |
+| `media` | See what your computer's media controls say is playing |
+| `activity` | Put a card on your profile, like "Listening to", on every server you are on |
 
 ## The manifest
 
@@ -153,6 +155,48 @@ on(handler: (running: string[]) => void): () => void
 ```
 
 Hear when that answer changes. Needs `processes`.
+
+### `gryt.media`
+
+#### `current()`
+
+```ts
+current(): Promise<unknown>
+```
+
+Needs `media`.
+
+What the media controls say is playing, or null. Desktop only.
+
+#### `on()`
+
+```ts
+on(handler: (playing: unknown) => void): () => void
+```
+
+Hear when it changes, checked every fifteen seconds. Needs `media`.
+
+### `gryt.activity`
+
+#### `set()`
+
+```ts
+set(card: { type?: string; name: string; details?: string; state?: string; startedAt?: number }): Promise<unknown>
+```
+
+Needs `activity`.
+
+Put a card on your profile: `{ type: "listening", name, details, state, startedAt }`.
+
+#### `clear()`
+
+```ts
+clear(): Promise<unknown>
+```
+
+Needs `activity`.
+
+Take the card down.
 
 ### `gryt.ui`
 
