@@ -7,7 +7,7 @@ icon: Monitor
 import { Callout } from 'fumadocs-ui/components/callout';
 
 The Gryt desktop app has a full server inside it. Not a demo mode or a cut-down
-build — the same signalling server, SFU and image worker that a Docker
+build — the same signalling server, SFU and media worker that a Docker
 deployment runs. Open the app, create a server, and people on your network can
 join it.
 
@@ -111,10 +111,10 @@ running two of anything else:
 - **The SFU is shared.** One media process serves every server you host, because
   voice rooms are namespaced per server. Hosting a second server doesn't mean a
   second SFU.
-- **The image worker isn't.** Each server gets one, because a worker reads
+- **The media worker isn't.** Each server gets one, because a worker reads
   exactly one database.
 
-So server number two costs a server process and an image worker, not another
+So server number two costs a server process and a media worker, not another
 stack.
 
 <Callout type="info">
@@ -180,7 +180,7 @@ so the limits are the machine's:
 
 Uploads get the same treatment as on a Docker server: the app decodes and writes
 them out again in a locked-down window of its own before anyone sees them. See
-[Uploads and the image worker](/docs/host/uploads).
+[Uploads and the media worker](/docs/host/uploads).
 
 For something that should stay up without a person nearby, run it with
 [Docker Compose](/docs/host/docker-compose) instead — the same server,

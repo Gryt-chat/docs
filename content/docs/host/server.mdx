@@ -21,9 +21,9 @@ A working server is usually three containers:
 |-------|-----------------|
 | The server | Chat, identity, permissions, invites, the database |
 | The SFU | Voice and video. One per machine, shared by every server on it |
-| An image worker | Thumbnails and compression. One per server, because it reads that server's job queue |
+| A media worker | Checks every upload and writes it out again before anyone sees it: pictures, video, emoji. One per server, because it reads that server's job queue |
 
-The image worker is per-server rather than shared for a specific reason: it
+The media worker is per-server rather than shared for a specific reason: it
 pulls jobs out of the server's own SQLite database rather than being handed
 them over a network.
 
@@ -81,7 +81,7 @@ for what a shorter window costs a device that's been offline.
 | `STORAGE_BACKEND` | `s3` | Set it to `filesystem`. The compose files and the CLI do |
 | `S3_BUCKET` | — | The folder under `DATA_DIR` that uploads go in, `gryt` in the compose files |
 | `DISABLE_S3` | — | Turn uploads off entirely |
-| `IMAGE_WORKER_URL` | — | Where the image worker listens |
+| `IMAGE_WORKER_URL` | — | Where the media worker listens |
 | `MEDIA_SWEEP_INTERVAL_MS` | `600000` | How often orphaned media is swept |
 | `MEDIA_SWEEP_GRACE_MS` | `1800000` | How long an orphan is left alone first |
 | `EMOJI_QUEUE_CONCURRENCY` | `1` | Emoji jobs at once, clamped to 1–4 |

@@ -12,7 +12,7 @@ Gryt is a self-hosted voice, video and text chat platform. You run the server; i
 | **Client** | React + TypeScript, Electron on the desktop | Interface, audio processing, WebRTC |
 | **Server** | Node.js + TypeScript, SQLite | Chat, identity, permissions, invites |
 | **SFU** | Go + Pion WebRTC | Media forwarding. One per machine |
-| **Image worker** | Node.js + sharp | Thumbnails and compression, kept out of the server |
+| **Media worker** | Node.js, sharp and a jailed ffmpeg | Checks and rewrites every upload, kept out of the server |
 | **Keycloak** | Hosted at `auth.gryt.chat` | Signing in |
 | **Identity service** | Hosted at `id.gryt.chat` | Signs the certificate that binds your key to your account |
 | **CLI** | Go | Creates and runs servers from a terminal |

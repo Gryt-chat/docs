@@ -87,7 +87,7 @@ gryt channel stable    # go back
 
 The channel covers two things at once. `gryt update` follows it, so the CLI
 itself moves to beta builds. Servers you start also run the `latest-beta`
-images rather than `latest`, for the server, the SFU and the image worker.
+images rather than `latest`, for the server, the SFU and the media worker.
 
 Servers already running keep the image they have. `gryt pull <server>` moves
 one of them onto the channel you're on now, and says so when it does:
@@ -137,7 +137,7 @@ A machine with servers made by an older version of `gryt` has a second row,
 **Object store**. That's the MinIO those servers keep their uploads in, and it
 stays for as long as one of them uses it.
 
-An image worker runs beside each server rather than being shared, because it
+A media worker runs beside each server rather than being shared, because it
 reads that server's own database. It has no row: `l` on the server already
 carries its output too.
 
@@ -238,7 +238,7 @@ reverse proxy with TLS.
 ### Uploads
 
 There's no question about them. Each server keeps its uploads in its own
-`data/gryt` folder, with an image worker beside it for thumbnails and
+`data/gryt` folder, with a media worker beside it for thumbnails and
 compression. A server made by an older version keeps the storage it was set up
 with, and editing it in the wizard doesn't change that.
 
@@ -387,7 +387,7 @@ worker, and prints the version it was on next to the version it's on now:
 ```
 Pivert CLI Server runs 1.10.14. The newest release is 1.10.21.
 
-Pulling the latest images for the server and its image worker.
+Pulling the latest images for the server and its media worker.
  Image ghcr.io/gryt-chat/server:latest Pulled
 
 Recreating Pivert CLI Server.
@@ -431,7 +431,7 @@ gryt pull --auto off      # remove the timer and its settings
 
 It's the same timer the [Docker Compose guide](/docs/host/docker-compose#keeping-your-server-up-to-date)
 installs, pointed at the containers this machine's servers run in: each
-server, its image worker, and the shared voice server. It asks for `sudo`,
+server, its media worker, and the shared voice server. It asks for `sudo`,
 because the timer and its settings live under `/etc`.
 
 Some time between 03:00 and 06:00 it pulls whatever tag your channel names, and

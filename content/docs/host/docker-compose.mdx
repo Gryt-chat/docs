@@ -17,7 +17,7 @@ GitHub Container Registry — no need to clone any repos or build anything.
 |---------|-------|---------|-----------|
 | **Server** | `ghcr.io/gryt-chat/server` | Signaling, chat, file uploads | Yes |
 | **SFU** | `ghcr.io/gryt-chat/sfu` | WebRTC media forwarding | Yes |
-| **Image Worker** | `ghcr.io/gryt-chat/image-worker` | Background image compression + thumbnailing | Optional (recommended) |
+| **Media Worker** | `ghcr.io/gryt-chat/image-worker` | Checks and rewrites uploads before anyone sees them (pictures, video, emoji) | Optional (recommended) |
 | **Client** | `ghcr.io/gryt-chat/client` | Web UI (React + Nginx) | Dev / local only |
 | **Prometheus** | `prom/prometheus` | Metrics collection | Optional |
 | **Grafana** | `grafana/grafana` | Metrics dashboards | Optional |
@@ -86,7 +86,7 @@ CORS_ORIGIN=http://127.0.0.1:15738,https://app.gryt.chat
 docker compose up -d
 ```
 
-This starts the **Server**, the **SFU** and the **Image Worker**.
+This starts the **Server**, the **SFU** and the **Media Worker**.
 Connect with the [Gryt desktop app](https://github.com/Gryt-chat/gryt/releases) or
 the hosted web client at [app.gryt.chat](https://app.gryt.chat).
 
@@ -107,7 +107,7 @@ graph TD
   subgraph Docker Network
     Server --> SFU
     Server --> Data["Data volume: gryt.db and uploads"]
-    ImageWorker["Image Worker"] -->|"reads jobs, writes thumbnails"| Data
+    ImageWorker["Media Worker"] -->|"reads jobs, writes thumbnails"| Data
   end
 ```
 
@@ -127,7 +127,7 @@ Browse available tags at [github.com/orgs/gryt-chat/packages](https://github.com
 
 ### Beta channel
 
-The Gryt server, SFU, image worker, and web client publish a `latest-beta`
+The Gryt server, SFU, media worker, and web client publish a `latest-beta`
 image. To follow the beta channel, set the version variables in `.env`:
 
 ```bash
@@ -173,7 +173,7 @@ SERVER_NAME=My Gryt Server (Beta)
 SERVER_DESCRIPTION=Testing Gryt 1.2.3-beta.4
 ```
 
-### Image Worker
+### Media Worker
 
 | Variable | Default | Description |
 |----------|---------|-------------|
@@ -398,7 +398,7 @@ curl http://localhost:5000/health   # server
 curl http://localhost:5005/health   # sfu
 ```
 
-The image worker's health endpoint (`GET /` on port 8080) is internal-only — it's used by Docker's built-in healthcheck and isn't exposed to the host.
+The media worker's health endpoint (`GET /` on port 8080) is internal-only — it's used by Docker's built-in healthcheck and isn't exposed to the host.
 
 Or use `docker compose ps` to see the health status of all containers.
 
@@ -449,7 +449,7 @@ What each extra server needs:
 | `DATA_DIR` volume | The SQLite database and the uploads. This is the one that matters — two servers pointed at one `gryt.db` will corrupt each other's state. |
 | `SERVER_NAME` | It's part of the server's identity on the SFU. See the warning below. |
 | Published port | One port per server on the host. |
-| Image worker | A worker reads exactly one `DATA_DIR`, so it serves exactly one server. |
+| Media worker | A worker reads exactly one `DATA_DIR`, so it serves exactly one server. |
 
 They share one SFU. Voice rooms are namespaced per server, so a single SFU serves all of them. This is how
 gryt.chat itself runs — three servers, one SFU. Uploads aren't shared, because each server keeps its own in
@@ -509,7 +509,7 @@ volumes:
 writing it out.
 
 <Callout type="info">
-The image worker isn't on the critical path. Uploads succeed whether or not a worker is running — what you
+The media worker isn't on the critical path. Uploads succeed whether or not a worker is running — what you
 lose without one is thumbnails, recompression and the dominant colour used to tint voice tiles. If you don't
 care about those on a second server, you can leave its worker out entirely.
 </Callout>
@@ -597,7 +597,7 @@ The `MINIO_*` and `S3_*` lines in `.env` can go too.
 
 ### What `storage-migrate` does
 
-It's a one-shot container that runs before the server and the image worker
+It's a one-shot container that runs before the server and the media worker
 every time the stack starts. They wait for it, and they don't start if it
 fails. It checks these in order:
 
