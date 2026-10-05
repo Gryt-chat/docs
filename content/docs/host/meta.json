@@ -21,6 +21,7 @@
     "identity",
     "multi-server",
     "---Running it---",
+    "uploads",
     "rate-limiting",
     "backups",
     "monitoring",

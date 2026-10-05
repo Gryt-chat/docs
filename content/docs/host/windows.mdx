@@ -15,6 +15,10 @@ This is ideal for LAN parties, local teams, or anyone who wants a simple server 
 For production deployments on a VPS or cloud server, see the [Docker Compose guide](/docs/host/docker-compose).
 </Callout>
 
+<Callout type="warn" title="Uploads aren't checked in a sandbox here">
+  The bundle has no jail for decoding uploads, so members can't use video avatars or banners, and chat videos are stored as sent. Hosting [from the desktop app](/docs/host/from-the-app) on the same PC does check them. See [Uploads and the image worker](/docs/host/uploads).
+</Callout>
+
 ## Prerequisites
 
 - **Windows 10 or later** (x64)

@@ -1,0 +1,38 @@
+---
+title: Uploads and the image worker
+description: What happens to a picture or video before anyone sees it, on each way of hosting Gryt
+icon: Image
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+Anything a member uploads is a stranger's file, and picture and video decoders have a long history of bugs. So Gryt doesn't serve uploads as they were sent. Avatars, banners, emoji, server and group icons, webhook pictures, and pictures and videos in chat are decoded in a locked-down process and written out again as a fresh file. Only that copy is ever served, and the original is deleted.
+
+While that happens, the upload sits in quarantine. Nobody can download it, and the app shows a loader in its place. It usually takes well under a second. If the file can't be decoded, it's thrown away: an avatar or banner that fails leaves the old one in place and tells the uploader, and a chat attachment says it couldn't be processed.
+
+Other files, like zips and PDFs, can't be rewritten. They stay downloads, and are served in a way that stops a browser running anything in them.
+
+## What gets written
+
+| Upload | Becomes |
+| --- | --- |
+| Pictures | AVIF, or animated WebP for animations, capped at 300 frames |
+| Banner and avatar videos | AV1 in MP4, silent, at most 10 seconds, at the card's size |
+| Videos in chat | AV1 in MP4 with the sound kept, at most 1280 pixels on the long side and 30 frames a second |
+| Emoji | 128 pixels tall, up to 512 wide |
+
+Metadata like location, camera details and comments doesn't survive. A phone video's rotation is applied to the picture itself.
+
+## Depending on how you host
+
+**Docker or the CLI.** The image worker container runs every decode in a jail: its own user, an empty folder, no network, no access to your server's files or keys, and limits on memory and time. Everything above works.
+
+**From the desktop app.** There's no Docker, so the app does the same work in a locked-down window of its own, with no network and no access to your files. Everything above works here too, and pictures come out as WebP rather than AVIF.
+
+**The Windows zip, or running from source.** There's no jail and no app around it, so the server can't check uploads in a sandbox. Pictures are still shrunk and resized, but by the server itself. Members can't use video avatars or banners, and chat videos are stored as sent. If you'd like the full set, host from the desktop app or use Docker.
+
+You can see which of these applies in **Server settings → Overview → Uploads**. It says whether uploads are checked in a sandbox on your server, and it has the switch for video avatars and banners.
+
+<Callout type="info" title="Video previews outside Docker">
+  Without the jail, the image worker doesn't run the ffmpeg installed on your machine, so chat videos get no preview picture. They still play. If you accept the risk of a decoder bug in a stranger's video running as your own user, set `GRYT_ALLOW_HOST_FFMPEG=1` for the image worker.
+</Callout>

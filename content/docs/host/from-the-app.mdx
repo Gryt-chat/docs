@@ -178,6 +178,10 @@ so the limits are the machine's:
 - Only one hosted server can advertise itself over mDNS on Linux at a time. All
   of them still work by address.
 
+Uploads get the same treatment as on a Docker server: the app decodes and writes
+them out again in a locked-down window of its own before anyone sees them. See
+[Uploads and the image worker](/docs/host/uploads).
+
 For something that should stay up without a person nearby, run it with
 [Docker Compose](/docs/host/docker-compose) instead — the same server,
 pointed at a disk that isn't your laptop.
