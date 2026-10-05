@@ -1,5 +1,5 @@
 ---
-title: Uploads and the image worker
+title: Uploads and the media worker
 description: What happens to a picture or video before anyone sees it, on each way of hosting Gryt
 icon: Image
 ---
@@ -25,7 +25,7 @@ Metadata like location, camera details and comments doesn't survive. A phone vid
 
 ## Depending on how you host
 
-**Docker or the CLI.** The image worker container runs every decode in a jail: its own user, an empty folder, no network, no access to your server's files or keys, and limits on memory and time. Everything above works.
+**Docker or the CLI.** The media worker container runs every decode in a jail: its own user, an empty folder, no network, no access to your server's files or keys, and limits on memory and time. Everything above works.
 
 **From the desktop app.** There's no Docker, so the app does the same work in a locked-down window of its own, with no network and no access to your files. Everything above works here too, and pictures come out as WebP rather than AVIF.
 
@@ -34,5 +34,5 @@ Metadata like location, camera details and comments doesn't survive. A phone vid
 You can see which of these applies in **Server settings → Overview → Uploads**. It says whether uploads are checked in a sandbox on your server, and it has the switch for video avatars and banners.
 
 <Callout type="info" title="Video previews outside Docker">
-  Without the jail, the image worker doesn't run the ffmpeg installed on your machine, so chat videos get no preview picture. They still play. If you accept the risk of a decoder bug in a stranger's video running as your own user, set `GRYT_ALLOW_HOST_FFMPEG=1` for the image worker.
+  Without the jail, the media worker doesn't run the ffmpeg installed on your machine, so chat videos get no preview picture. They still play. If you accept the risk of a decoder bug in a stranger's video running as your own user, set `GRYT_ALLOW_HOST_FFMPEG=1` for the media worker.
 </Callout>

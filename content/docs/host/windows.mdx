@@ -8,7 +8,7 @@ import { Callout } from 'fumadocs-ui/components/callout';
 import { Step, Steps } from 'fumadocs-ui/components/steps';
 
 The Windows self-hosted bundle lets you run a Gryt server on any Windows machine without Docker.
-Everything is included in a single zip: the signaling server, SFU media server, and image worker.
+Everything is included in a single zip: the signaling server, SFU media server, and media worker.
 
 <Callout type="info">
 This is ideal for LAN parties, local teams, or anyone who wants a simple server on a Windows PC.
@@ -16,7 +16,7 @@ For production deployments on a VPS or cloud server, see the [Docker Compose gui
 </Callout>
 
 <Callout type="warn" title="Uploads aren't checked in a sandbox here">
-  The bundle has no jail for decoding uploads, so members can't use video avatars or banners, and chat videos are stored as sent. Hosting [from the desktop app](/docs/host/from-the-app) on the same PC does check them. See [Uploads and the image worker](/docs/host/uploads).
+  The bundle has no jail for decoding uploads, so members can't use video avatars or banners, and chat videos are stored as sent. Hosting [from the desktop app](/docs/host/from-the-app) on the same PC does check them. See [Uploads and the media worker](/docs/host/uploads).
 </Callout>
 
 ## Prerequisites

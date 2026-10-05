@@ -16,7 +16,7 @@ graph TB
   C["Client<br/>desktop, web, mobile"]
   S["Server<br/>chat, identity, permissions"]
   SFU["SFU<br/>audio, video, screen"]
-  IW["Image worker"]
+  IW["Media worker"]
   OS["Uploads<br/>files beside the database"]
   K["Keycloak"]
   ID["Identity service"]
@@ -121,7 +121,7 @@ information from transport-cc, which measures the sender's own link. Every
 receiver gets every temporal layer unless it asks for fewer, so the frame rate
 stays where it was configured. More on the [SFU page](/docs/host/sfu).
 
-## The image worker
+## The media worker
 
 A separate process so that `sharp` and the untrusted images it decodes can't
 take the server down with them. Image parsers have a long history of
@@ -208,7 +208,7 @@ first working proves nothing about the second.
 | Kubernetes | `ops/helm/gryt/` | Helm |
 
 The CLI writes two Compose projects: one shared per machine, holding the SFU,
-and one per server holding the server and its image worker. Uploads go in that
+and one per server holding the server and its media worker. Uploads go in that
 server's own data folder.
 
 ## Scaling
