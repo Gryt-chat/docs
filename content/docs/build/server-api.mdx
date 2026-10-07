@@ -527,6 +527,15 @@ here sit on top of the thread events above.
 | `presence:heartbeat` | client → server |
 | `presence:stale` | server → client |
 
+### Push notifications
+
+The phone gets a capability from the push relay at `push.gryt.chat` and hands it over with `push:register`. It only means something to the relay. The server never sees the Apple or Google token behind it. `push:presence` says whether the app is in the background, and the server only wakes a phone when nobody's at a screen. Both register calls answer through the acknowledgement, with `{ ok: true }` or `{ ok: false, error }`. A server with `GRYT_PUSH_RELAY_URL=off` answers `push_off`.
+
+| Event | Direction |
+|-------|-----------|
+| `push:register`, `push:unregister` | client → server |
+| `push:presence` | client → server |
+
 ### Moderation
 
 | Event | Direction |
