@@ -533,6 +533,8 @@ The phone gets a capability from the push relay at `push.gryt.chat` and hands it
 
 `push:register` also carries the phone's notification settings for that server, since the server decides what to send. `muted` and `all` are lists of conversation ids, and `everyone` says whether @everyone and @here get through. A DM pushes unless it's muted. A channel in `all` pushes for every message, any other channel only for a mention of you or one of your roles, and @everyone and @here only when `everyone` is true. A muted conversation never pushes. A phone that sends none of these gets DMs and direct mentions only.
 
+`previewKey` is 32 random bytes, base64url, that the phone made for this server. With it, each push carries a preview the relay can't read: the server seals `{"t": title, "s": subtitle, "b": body}` with AES-256-GCM, and sends `0x01`, a 12-byte nonce, the ciphertext and the 16-byte tag as base64url. The additional data is `gryt-push-1|` followed by the capability's tag, the first 16 hex characters of its SHA-256. Title is the sender, subtitle is `#channel · server` (just the server for a DM), and body is the first line. An MLS DM's body stays "New direct message", since the server can't read it.
+
 | Event | Direction |
 |-------|-----------|
 | `push:register`, `push:unregister` | client → server |
