@@ -531,6 +531,8 @@ here sit on top of the thread events above.
 
 The phone gets a capability from the push relay at `push.gryt.chat` and hands it over with `push:register`. It only means something to the relay. The server never sees the Apple or Google token behind it. `push:presence` says whether the app is in the background, and the server only wakes a phone when nobody's at a screen. Both register calls answer through the acknowledgement, with `{ ok: true }` or `{ ok: false, error }`. A server with `GRYT_PUSH_RELAY_URL=off` answers `push_off`.
 
+`push:register` also carries the phone's notification settings for that server, since the server decides what to send. `muted` and `all` are lists of conversation ids, and `everyone` says whether @everyone and @here get through. A DM pushes unless it's muted. A channel in `all` pushes for every message, any other channel only for a mention of you or one of your roles, and @everyone and @here only when `everyone` is true. A muted conversation never pushes. A phone that sends none of these gets DMs and direct mentions only.
+
 | Event | Direction |
 |-------|-----------|
 | `push:register`, `push:unregister` | client → server |
