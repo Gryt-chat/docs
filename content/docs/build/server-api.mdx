@@ -255,7 +255,28 @@ signing file links. It's the same shape as `fileKey` above.
 | `chat:history` | server → client | Answer to `chat:fetch` |
 | `chat:purge_user` | server → client | Everything from one member is gone |
 | `chat:merge_user` | server → client | A guest was merged into an account: `{ from_server_user_id, to_server_user_id }` |
+| `chat:pin` | client → server | `{ accessToken, conversationId, messageId, pinned }` |
+| `chat:pins` | both | Ask with `{ conversationId }`, and the answer comes back on the same name |
+| `chat:pinned` | server → client | A message was pinned or unpinned |
 | `chat:error` | server → client | |
+
+### Mentions
+
+| Event | Direction | Notes |
+|-------|-----------|-------|
+| `mentions:list`, `mentions:seen` | client → server | |
+| `mentions:list` | server → client | Answer to both, with the unseen mentions and counts per channel and thread |
+| `mention:new` | server → client | You were mentioned while connected |
+
+### Blocking, and who can reach you
+
+| Event | Direction | Notes |
+|-------|-----------|-------|
+| `user:block`, `user:unblock` | client → server | `{ accessToken, serverUserId }` |
+| `user:blocks:list` | client → server | |
+| `user:blocked`, `user:unblocked`, `user:blocks` | server → client | |
+| `contact:prefs:get`, `contact:prefs:set` | client → server | Who may message or call you, `everyone`, `friends` or `nobody` |
+| `contact:prefs` | server → client | Answer to both |
 
 ### Direct messages
 
