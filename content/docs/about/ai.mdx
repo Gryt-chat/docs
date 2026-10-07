@@ -29,9 +29,10 @@ Changes here always go through a pull request, with no direct pushes. I read eve
 | Client identity & keys | `packages/client/src/packages/common/src/auth/` | Where your keypair is generated and stored on your device. |
 | Image processing | `packages/image-worker` | Decodes untrusted uploads. Image parsing has a long history of memory-safety bugs. |
 | Bug reports and feedback | `packages/reports` | The service the in-app report forms post to. Anyone on the internet can POST to it, and it stores what they send. |
+| Push relay | `packages/push` | Wakes phones when a server has something for them. Anyone on the internet can POST to it, and it holds the Apple and Google keys that can put a notification on every phone with Gryt installed. |
 | Server data layer | `packages/server/src/db`, `src/storage` | Persistence and object storage. |
 
-The media worker probably looks out of place. It compresses avatars and generates thumbnails, which isn't high-stakes work. But it takes a file someone else uploaded and hands it to a decoder, so it handles untrusted input and I treat it like the rest. The report service is on the list for the same reason. It's the one endpoint in Gryt that anyone can post to without joining a server first, so what it accepts and what it keeps get read line by line.
+The media worker probably looks out of place. It compresses avatars and generates thumbnails, which isn't high-stakes work. But it takes a file someone else uploaded and hands it to a decoder, so it handles untrusted input and I treat it like the rest. The report service and the push relay are on the list for the same reason. They're the two endpoints in Gryt that anyone can post to without joining a server first, so what they accept and what they keep get read line by line. The relay also holds the keys that reach every phone with Gryt on it, so a mistake there reaches all of them.
 
 `packages/crypto` is the newest of these and the only one published as a package. The desktop app and the phone run the same code rather than two versions of it, which is deliberate — two implementations of one envelope means two clients that send each other messages nobody can read, and the sender sees the words they typed either way. It also means a mistake there is a mistake in both at once, and a published version can't be taken back the way a commit can.
 
