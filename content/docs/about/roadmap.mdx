@@ -4,7 +4,7 @@ description: What's shipped, what's in progress, and what's coming next
 icon: Map
 ---
 
-This page tracks every major feature across Gryt. Use it to see what's already available, what's actively being worked on, and what's planned for the future.
+This page tracks every major feature across Gryt. Use it to see what's already available, what's actively being worked on, and what's planned for the future. It was last checked against the [changelog](https://gryt.chat/changelog) on 12 October 2026.
 
 | Emoji | Meaning |
 |-------|---------|
@@ -64,6 +64,8 @@ Have a feature you'd like to see? Check the [feature requests](/docs/about/featu
 - 📋 Go-live / stream to channel
 - 📋 Video layout options (gallery, spotlight, sidebar)
 - 📋 Clips (save and share screen-share moments)
+- ✅ Screen shares wait until you click Watch, so nobody downloads video they didn't ask for
+- ✅ Video sent at the size viewers actually draw it, and paused when nobody is watching
 - 📋 End-to-end encryption (SFrame / insertable streams)
 
 ## Text chat
@@ -86,8 +88,10 @@ Have a feature you'd like to see? Check the [feature requests](/docs/about/featu
 - ✅ Code syntax highlighting in code blocks
 - ✅ Image skeleton previews (correctly-sized placeholders while images load)
 - ✅ Typing indicators
-- 📋 Threads (threaded replies)
-- 📋 Pinned messages
+- ✅ Threads (reply, edit and see unread inside a thread)
+- ✅ Pinned messages
+- ✅ Mentions for @everyone, @here, roles and #channels, with a per-server switch to suppress @everyone and @here
+- ✅ Jump to an old message from a pin or a reply, however far back it is
 - 📋 Message search
 - 📋 GIF picker (Tenor / Giphy)
 - 📋 Stickers
@@ -106,7 +110,7 @@ Have a feature you'd like to see? Check the [feature requests](/docs/about/featu
 - ✅ Server settings (name, description, icon)
 - ✅ Invite system (single-use, multi-use, expiration, revocation, custom invite codes)
 - ✅ Invite link previews (server icon, name, and description on invite pages)
-- ✅ Roles (owner, admin, mod, member)
+- ✅ Roles with their own permissions, including roles members earn over time
 - ✅ User identity replacement (owner can migrate a user's data to a new Gryt ID)
 - ✅ Audit log
 - ✅ Kick, ban, server mute/deafen
@@ -119,21 +123,30 @@ Have a feature you'd like to see? Check the [feature requests](/docs/about/featu
 - ✅ LAN open join (skip invite codes for LAN clients — ideal for LAN parties)
 - ✅ Embedded server (host a server directly from the desktop app — one-click create, auto-start, LAN party mode)
 - ✅ Webhooks
-- 📋 Channel categories / folders
-- 📋 Per-channel permissions / role overrides
-- 📋 Forum channels
+- ✅ Folders in the sidebar, with their own permissions
+- ✅ Per-channel permissions by role, with templates
+- ✅ Forum channels
+- ✅ Plugins a server can run, listed for anyone before they join
+- ✅ Import a Discord server's history (from a DiscordChatExporter export)
+- 🔨 A Gryt bot that imports a Discord server, and a bridge between the two
 - 📋 Announcement channels
 - 📋 Server templates
 - 📋 Server discovery / browser
+- ✅ Spam filter with a sensitivity setting
 - 📋 Auto-moderation rules
+- 📋 Slow mode
 - 📋 Events (scheduled events with name, description, date/time, and location)
 
 ## Direct messages and social
 
 - ✅ Direct messages (1:1, per server)
-- 📋 Group direct messages
-- 📋 Friend list / friend requests
-- 📋 User blocking
+- ✅ Group direct messages, and calls in them
+- ✅ Friends (requests, accept, decline, remove)
+- ✅ Blocking, which also stops their messages and calls
+- ✅ Who can message and call you, as a default and per server
+- ✅ End-to-end encrypted direct messages, using MLS so a key that leaks later can't open older messages
+- ✅ Link a new device from one you already use, by QR code or a short code
+- 📋 End-to-end encrypted private channels
 
 A direct message belongs to the server you opened it on. Messaging the same
 person on another server starts a separate conversation with its own history,
@@ -150,19 +163,19 @@ same as any channel. Server owners can turn direct messages off entirely.
 - ✅ AFK status
 - ✅ Online / in-voice / offline presence
 - 📋 Idle / don't disturb / invisible status
-- 📋 Custom status messages
+- ✅ Owl avatars you can dress up, generated from your name until you pick an outfit
 - 📋 Custom nickname fonts (Google Fonts — server can enable or disable)
-- 📋 Profile card (customizable banner, bio, and linked social accounts)
-- 📋 Per-server user bio / profile page
-- 📋 Activity / rich presence
+- ✅ Member cards (colours, patterns, banner, bio, pronouns and a status line)
+- ✅ Game activity and Rich Presence (games that report to Discord report to Gryt too)
+- 📋 Linked social accounts on the card
 
 ## Notifications
 
 - ✅ Toast notifications
 - ✅ Sound notifications
 - ✅ Unread badges
-- 📋 Push notifications (desktop / mobile)
-- 📋 Per-channel notification preferences
+- ✅ Push notifications on the phone, with message previews only your phone can read
+- ✅ Per-channel notification levels (all messages, mentions, nothing), with a default the server sets
 - 📋 Do-not-disturb mode
 
 ## Accessibility
@@ -193,8 +206,10 @@ same as any channel. Server owners can turn direct messages off entirely.
 - ✅ Code-signed and notarized macOS app
 - 📋 Mini mode (compact pop-out window with single channel)
 - 🔨 Mobile-responsive web layout
-- 🔨 iOS app
-- 🔨 Android app
+- 🔨 iOS app (in testing on TestFlight)
+- 🔨 Android app (in testing on Google Play)
+- ✅ Microsoft Store
+- 🔨 Mac App Store
 
 ## Authentication and security
 
@@ -203,8 +218,8 @@ same as any channel. Server owners can turn direct messages off entirely.
 - ✅ Identity certificates (challenge-response join — community servers never see your auth token)
 - ✅ Passkey / passwordless login (WebAuthn, Electron + web)
 - ✅ Security settings panel
-- 📋 Two-factor authentication (TOTP)
-- 📋 Account deletion self-service
+- ✅ Two-factor authentication with an authenticator app, and recovery codes
+- 🔨 Account deletion self-service
 
 ## Self-hosting and infrastructure
 
@@ -233,6 +248,7 @@ same as any channel. Server owners can turn direct messages off entirely.
 - ✅ Open source (AGPL-3.0)
 - ✅ Bot / integration API (`@gryt/bot`, with per-bot approval in Server Settings > Bots)
 - 📋 Slash commands
-- 📋 Plugin system
+- ✅ Plugin system (server plugins, and sandboxed add-ons in the app)
+- 📋 Rich Presence SDK, so games can talk to Gryt directly
 - 📋 Community browser (discover and install plugins, themes, and extensions from a public GitHub-backed registry)
 - 📋 OAuth2 applications
