@@ -527,6 +527,11 @@ discovery matters for both, put them on separate machines or move them to the br
 Older copies of this compose file ran MinIO for uploads. The new one moves them
 out by itself the first time it starts, so upgrading is the usual pull and up.
 
+If you only pull the new images and keep the old compose file, the server
+does the same copy itself on its first start on 1.11.0, through the MinIO that's
+still running. Either way the result is the same folder and the same
+`.migrated-from-minio` marker, so the other step sees it's done.
+
 <Steps>
 
 <Step>
