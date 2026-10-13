@@ -188,17 +188,18 @@ One for a single reverse proxy. More only if you genuinely chained them.
 
 ## Uploads
 
-Uploads are files under `DATA_DIR`, in a folder named by `S3_BUCKET`. The
-compose files and the `gryt` CLI set both of these:
+Uploads are files under `DATA_DIR`, in a folder named by `S3_BUCKET`, which is
+`gryt` if you leave it out. There's nothing else to choose: since 1.11.0 the
+server only stores files on disk. The setting is called `S3_BUCKET` because it
+used to name a bucket.
 
-```bash
-STORAGE_BACKEND=filesystem
-S3_BUCKET=gryt
-```
+A server that still has S3 settings (`S3_ENDPOINT`, an S3 key, or
+`STORAGE_BACKEND=s3`) copies its bucket into that folder on its first start on
+1.11.0, before it accepts connections. It checks each file's size, keeps each
+content type, and leaves the bucket alone. If the copy fails it doesn't start,
+and the log says why. Once it's done you can remove the S3 settings.
 
-The server still defaults to `STORAGE_BACKEND=s3` when it's unset, so set it if
-you run the server some other way. The folder's setting is called `S3_BUCKET`
-because it used to name a bucket.
+`DISABLE_UPLOADS=true` turns uploads off.
 
 Keys look like `uploads/<uuid>.<ext>`, and each file has a `.meta` file beside
 it holding its content type. The media worker reads and writes the same folder,

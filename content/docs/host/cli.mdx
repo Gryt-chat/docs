@@ -134,8 +134,10 @@ follows its output, which is where to look when voice stops working. `x` stops
 it for every server at once, and says so.
 
 A machine with servers made by an older version of `gryt` has a second row,
-**Object store**. That's the MinIO those servers keep their uploads in, and it
-stays for as long as one of them uses it.
+**Object store**. That's the MinIO those servers kept their uploads in. A
+server on 1.11.0 copies its uploads out of it on its first start, and the next
+`gryt start` or `gryt pull` switches that server over to disk. The row goes once
+the last one has moved. MinIO's volume stays until `gryt remove`.
 
 A media worker runs beside each server rather than being shared, because it
 reads that server's own database. It has no row: `l` on the server already
