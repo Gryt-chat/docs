@@ -35,6 +35,18 @@ The script installs dependencies for all packages and starts the client, server,
 4. Run lint and tests
 5. Submit a pull request
 
+## Before you open a pull request
+
+Gryt is maintained by one person, so everything that merges gets read by one person, and these rules come from that.
+
+- **Sign the CLA first.** See [License](#license) below.
+- **Keep it under about 300 changed lines.** Anything bigger needs an issue first, where we agree on the shape before any code. Lockfiles and generated files don't count toward the 300.
+- **No new dependencies or vendored code without an issue.** That covers npm packages, Go modules and code ported from other projects. Gryt builds what it reasonably can itself, so there are fewer outside projects that can break it, change their licence or go away. A new dependency needs a reason it can't be ours.
+- **One change per pull request.** A bug fix and a feature are two pull requests.
+- **Drafts that sit for 14 days get closed.** Reopen one whenever you pick it back up.
+
+A pull request over the limit without an issue gets closed with a pointer back here. It says nothing about the code, only about how much one person can review properly.
+
 ## Code style
 
 ### TypeScript
@@ -103,4 +115,4 @@ Some areas are audited more critically than others. The SFU, authentication and 
 
 ## License
 
-Contributions are licensed under the [AGPL-3.0](/docs/about/licensing). By submitting a pull request, you agree that your contributions will be licensed under the same terms.
+Gryt is licensed under the [AGPL-3.0](/docs/about/licensing). Before your first pull request can merge, you sign the [Contributor License Agreement](https://github.com/Gryt-chat/.github/blob/main/CLA.md). It lets the owner of Gryt use your contribution under any licence, including a different one later on. You keep your own copyright. To sign, comment `I have read the CLA Document and I hereby sign the CLA` on your pull request. A check on every pull request looks for it.
