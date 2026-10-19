@@ -1,0 +1,2 @@
+# PostCSS only reads a TypeScript config through extra packages, and this is four lines.
+postcss.config.mjs
