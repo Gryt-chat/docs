@@ -18,6 +18,9 @@ jobs:
           cache: yarn
       - run: yarn install --frozen-lockfile
 
+      # The scripts and next.config.mts, which `next build` doesn't typecheck.
+      - run: npx tsc -p scripts
+
       # No comment runs past two lines. The script carries the list of paths still
       # to be swept, and that list only ever shrinks.
       - run: yarn test:comment-length

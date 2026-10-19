@@ -7,9 +7,9 @@
     "build": "next build",
     "dev": "next dev --turbo",
     "start": "next start",
-    "test:comment-length": "node scripts/check-comment-length.mjs",
-    "test:webhook-spec": "node scripts/check-webhook-spec.mjs",
-    "test:owl-mark": "node scripts/check-owl-mark.mjs",
+    "test:comment-length": "node scripts/check-comment-length.mts",
+    "test:webhook-spec": "node scripts/check-webhook-spec.mts",
+    "test:owl-mark": "node scripts/check-owl-mark.mts",
     "postinstall": "fumadocs-mdx"
   },
   "dependencies": {

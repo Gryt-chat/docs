@@ -1,3 +1,4 @@
+import type { NextConfig } from 'next';
 import { createMDX } from 'fumadocs-mdx/next';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -6,8 +7,7 @@ const withMDX = createMDX();
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-/** @type {import('next').NextConfig} */
-const config = {
+const config: NextConfig = {
   reactStrictMode: true,
   // Next 16.3 dev otherwise writes AGENTS.md and CLAUDE.md into the repo root.
   agentRules: false,

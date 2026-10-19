@@ -7,10 +7,10 @@ import { join } from "node:path";
 const FINGERPRINT = /74\.5603/i;
 const ROOTS = ["src", "public"];
 const SKIP = new Set(["node_modules", "dist", "build", "out", "coverage", ".git"]);
-const TEXT = /\.(ts|tsx|js|mjs|cjs|jsx|svg|css)$/;
+const TEXT = /\.(ts|tsx|mts|js|mjs|cjs|jsx|svg|css)$/;
 
-function files(dir) {
-  const out = [];
+function files(dir: string): string[] {
+  const out: string[] = [];
   for (const name of readdirSync(dir)) {
     if (SKIP.has(name)) continue;
     const full = join(dir, name);

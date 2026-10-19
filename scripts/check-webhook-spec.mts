@@ -7,19 +7,33 @@ import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { isDeepStrictEqual } from "node:util";
 
+import { PROBLEM_CODES, WARNING_CODES } from "../src/components/webhooks/codes.ts";
+import { WEBHOOK_PRESETS } from "../src/components/webhooks/presets.ts";
+import * as docs from "../src/components/webhooks/validate.ts";
+
+type Problem = { path: string; code: string; limit?: number };
+
+/** What this script uses from the server's webhookSchemas.ts, which is fetched at run time. */
+interface ServerSchemas {
+  WEBHOOK_LIMITS: Record<string, number>;
+  webhookMessageSchema: { safeParse(body: unknown, opts: { reportInput: boolean }): { success: true } | { success: false; error: Error } };
+  unknownKeys(body: unknown): Problem[];
+  problemsFrom(error: Error): Problem[];
+}
+
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const SPEC = "src/components/webhooks/openapi.json";
 const RAW = "https://raw.githubusercontent.com/Gryt-chat/server/main";
 
-async function serverFile(path) {
+async function serverFile(path: string) {
   if (process.env.GRYT_SERVER_DIR) return readFileSync(join(process.env.GRYT_SERVER_DIR, path), "utf8");
   const res = await fetch(`${RAW}/${path}`);
   if (!res.ok) throw new Error(`${RAW}/${path} answered ${res.status}`);
   return res.text();
 }
 
-const failures = [];
-const fail = (msg) => failures.push(msg);
+const failures: string[] = [];
+const fail = (msg: string) => failures.push(msg);
 
 const [specText, schemasTs, limitsTs] = await Promise.all([
   serverFile("openapi/webhooks.json"),
@@ -42,14 +56,11 @@ writeFileSync(
     .replace(/from "zod"/, `from ${JSON.stringify(import.meta.resolve("zod"))}`),
 );
 
-const server = await import(pathToFileURL(join(work, "webhookSchemas.ts")).href);
-const { MESSAGE_MAX_LENGTH } = await import(pathToFileURL(join(work, "messageLimits.ts")).href);
-const docs = await import(pathToFileURL(join(root, "src/components/webhooks/validate.ts")).href);
-const { WEBHOOK_PRESETS } = await import(pathToFileURL(join(root, "src/components/webhooks/presets.ts")).href);
-const { PROBLEM_CODES, WARNING_CODES } = await import(pathToFileURL(join(root, "src/components/webhooks/codes.ts")).href);
+const server: ServerSchemas = await import(pathToFileURL(join(work, "webhookSchemas.ts")).href);
+const { MESSAGE_MAX_LENGTH }: { MESSAGE_MAX_LENGTH: number } = await import(pathToFileURL(join(work, "messageLimits.ts")).href);
 
 const spec = JSON.parse(specText).components.schemas;
-const listed = {
+const listed: Record<string, [string[], Record<string, string>]> = {
   problem: [spec.InvalidPayload.properties.problems.items.properties.code.enum, PROBLEM_CODES],
   warning: [spec.WebhookMessageSent.properties.warnings.items.properties.code.enum, WARNING_CODES],
 };
@@ -65,7 +76,7 @@ if (!isDeepStrictEqual({ ...server.WEBHOOK_LIMITS, text: MESSAGE_MAX_LENGTH }, {
 }
 
 /** The route's answer, as src/routes/webhooks.ts builds it. */
-function serverVerdict(body) {
+function serverVerdict(body: unknown) {
   const parsed = server.webhookMessageSchema.safeParse(body ?? {}, { reportInput: true });
   if (parsed.success) return { ok: true, warnings: server.unknownKeys(body).map(({ path, code }) => ({ path, code })) };
   const problems = server.problemsFrom(parsed.error);
@@ -74,7 +85,7 @@ function serverVerdict(body) {
   return { ok: false, error: "invalid_payload", problems: problems.map(({ path, code, limit }) => ({ path, code, limit })) };
 }
 
-function docsVerdict(body) {
+function docsVerdict(body: unknown) {
   const v = docs.checkWebhookPayload(body);
   if (v.ok) return { ok: true, warnings: v.warnings.map(({ path, code }) => ({ path, code })) };
   if (v.body.error !== "invalid_payload") return { ok: false, error: v.body.error };
@@ -84,7 +95,7 @@ function docsVerdict(body) {
 // Seeded, so a failure names a case that reproduces.
 let seed = 1187;
 const rand = () => ((seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648);
-const pick = (list) => list[Math.floor(rand() * list.length)];
+const pick = <T,>(list: T[]): T => list[Math.floor(rand() * list.length)];
 
 const ODD_VALUES = [
   undefined, null, true, 0, 1.5, -1, 16777215, 16777216, "", " ", "x", "  padded  ", "#3fb27f", "#3FB27G", "red",
@@ -94,7 +105,7 @@ const ODD_VALUES = [
   { name: "n", value: "v" }, { name: " ", value: "v", inline: "yes" }, { text: "footer", icon_url: "nope" },
 ];
 
-function mutate(value, depth = 0) {
+function mutate(value: unknown, depth = 0): unknown {
   if (Array.isArray(value)) {
     const copy = value.map((v) => (rand() < 0.3 ? mutate(v, depth + 1) : v));
     if (rand() < 0.15) copy.push(copy.length ? structuredClone(pick(copy)) : pick(ODD_VALUES));
@@ -103,7 +114,7 @@ function mutate(value, depth = 0) {
     return copy;
   }
   if (value && typeof value === "object") {
-    const copy = { ...value };
+    const copy: Record<string, unknown> = { ...value };
     for (const key of Object.keys(copy)) {
       const r = rand();
       if (r < 0.1) delete copy[key];
@@ -116,7 +127,7 @@ function mutate(value, depth = 0) {
   return rand() < 0.3 ? pick(ODD_VALUES) : value;
 }
 
-const cases = [
+const cases: unknown[] = [
   ...WEBHOOK_PRESETS.map((p) => p.payload),
   {}, [], { text: "   " }, { text: "c".repeat(4001) }, { text: "c".repeat(4001), cards: [{}] },
   { cards: [] }, { cards: Array.from({ length: 11 }, () => ({ title: "t" })) },
