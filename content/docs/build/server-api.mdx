@@ -277,6 +277,8 @@ signing file links. It's the same shape as `fileKey` above.
 | `user:blocked`, `user:unblocked`, `user:blocks` | server → client | |
 | `contact:prefs:get`, `contact:prefs:set` | client → server | Who may message or call you, `everyone`, `friends` or `nobody` |
 | `contact:prefs` | server → client | Answer to both |
+| `contact:reachable` | client → server | Up to 500 member ids. Asks which of them a new DM or group add would reach |
+| `contact:reachable` | server → client | The ones that would, plus anyone you already have a conversation with. Never yourself |
 
 ### Direct messages
 
