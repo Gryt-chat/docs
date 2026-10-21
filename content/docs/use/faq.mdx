@@ -127,13 +127,11 @@ Yes. You can enable push-to-talk in **Settings → Hotkeys** and bind it to any 
 
 ### Why don't link previews show a picture?
 
-When you paste a link, your Gryt server fetches the page and sends the preview text to everyone. The picture and the site's icon would load straight from the linked site instead, on each person's device.
+On an up-to-date server they do. The server fetches the picture and the site's icon itself and hands them to the app, so the linked site only ever sees the server.
 
-Loading those is off by default. Anyone can post a link to a site they run. If every client loaded its picture on its own, that site would get the IP address of everyone who saw the message, without anyone clicking anything.
+On a server that hasn't been updated yet, the picture and icon would load straight from the linked site, on each person's device. Loading them that way is off by default. Anyone can post a link to a site they run. If every client loaded its picture on its own, that site would get the IP address of everyone who saw the message, without anyone clicking anything.
 
-To turn it on, open **Settings → Chat & notifications → Chat** and switch on **Load link embeds automatically**. It's per device. It also loads YouTube, Spotify and Twitch players, and linked pictures and videos, without asking.
-
-If you only trust a few sites, leave it off and press **Load** on a player instead. You can pick **Always load from** that site, and its previews show pictures from then on.
+Players from YouTube, Spotify and Twitch, and pictures or videos linked straight from another site, still load from that site, since their scripts and files come from there. They wait for you to press **Load**. To load them without asking, open **Settings → Chat & notifications → Chat** and switch on **Load link embeds automatically**. It's per device. On a player you can also pick **Always load from** that site.
 
 ### What happens when the server restarts?
 
