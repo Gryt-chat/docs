@@ -85,6 +85,10 @@ Map hostnames to localhost origins:
 - `api.gryt.example.com` → `http://127.0.0.1:5000` (WebSocket upgrade required)
 - `sfu.example.com` → `http://127.0.0.1:5005` (WebSocket upgrade required)
 
+The SFU needs **its own hostname**. If `SFU_PUBLIC_HOST` points at the same hostname as the
+Gryt server, apps look for voice on the server and calls drop. Don't send it to port `9092`
+either. That's the SFU's private registration port.
+
 Cloudflare Tunnel terminates TLS at the edge, so your public endpoints are `https://...` / `wss://...` even if the services on the host are plain HTTP.
 
 Example `cloudflared` `config.yml`:

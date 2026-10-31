@@ -55,7 +55,11 @@ Set `SFU_PUBLIC_HOST` to the address clients will use. Something like
 `203.0.113.10:5005`, or `wss://sfu.example.com` if you're terminating TLS in front of it.
 
 Leave it empty and chat works fine but voice doesn't. That's the usual reason a server
-ends up half-working.
+ends up half-working. Behind a tunnel, give the SFU its own hostname. It can't share
+the Gryt server's.
+
+If the log says `This SFU takes registration on port 9092`, leave `SFU_PORT` alone. It's
+a note about the server's private connection to the SFU, and voice isn't affected.
 </Step>
 
 <Step>

@@ -96,11 +96,15 @@ rather than ones that carry across other Gryt servers.
 Two variables, and they're usually different values for the same thing.
 
 ```bash
-SFU_WS_HOST="ws://sfu:5005"
+SFU_WS_HOST="ws://sfu:9092"
 SFU_PUBLIC_HOST="wss://sfu.example.com"
 ```
 
-`SFU_WS_HOST` is how the server reaches the SFU, on the internal Docker network.
+`SFU_WS_HOST` is how the server reaches the SFU, on the internal Docker network. It
+uses the SFU's private registration port, `9092`. Apps use `5005`, so don't publish
+`9092` or put it on a tunnel. If `SFU_WS_HOST` still says `5005`, the server moves to
+the right port by itself and logs a warning asking you to update it. Voice still works.
+
 `SFU_PUBLIC_HOST` is what the server hands to clients. A browser can't resolve
 `sfu`, so getting these the same way round is the difference between voice
 working and voice sitting on "connecting".
