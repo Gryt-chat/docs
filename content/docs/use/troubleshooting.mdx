@@ -4,6 +4,9 @@ description: Common issues and solutions for Gryt
 icon: Bug
 ---
 
+Using Gryt rather than running a server? [gryt.chat/support](https://gryt.chat/support)
+has a short page for each common problem. This page has the technical detail.
+
 ## Check whether it is you
 
 [status.gryt.chat](https://status.gryt.chat) reports on the parts of Gryt that
@@ -21,31 +24,8 @@ network between you and it.
 
 ## Installation warnings
 
-### Windows SmartScreen blocks the installer
-
-Windows SmartScreen may show **"Windows protected your PC"** when running the installer. This happens because the app isn't yet signed with an EV code signing certificate. Click **More info → Run anyway**.
-
-If the option doesn't appear, your organization may have a Group Policy blocking unsigned apps. In that case, [build from source](/docs/about/build-the-client) instead.
-
-### macOS says the app can't be checked
-
-Released macOS builds are code-signed and notarized, so this shouldn't happen.
-If it does, you're most likely running a build you compiled yourself, or one
-that didn't come from the [releases page](https://github.com/Gryt-chat/gryt/releases).
-
-For a local build, right-click the app → **Open** → confirm **Open**, which is
-remembered for future launches. For something you downloaded as a release,
-please report it rather than clicking through: a notarized app failing this
-check is worth knowing about.
-
-### Linux AppImage won't launch
-
-The AppImage may not have the execute permission set after download:
-
-```bash
-chmod +x Gryt-Chat-*.AppImage
-./Gryt-Chat-*.AppImage
-```
+See [The app won't install or open](https://gryt.chat/support/install). It covers Windows
+SmartScreen, macOS warnings and Linux AppImages.
 
 ## Update issues
 
@@ -233,61 +213,14 @@ yours has been cut down to a single provider, add another.
 
 ## Invite issues
 
-### "This server has no address anyone else can reach"
-
-You get this when you copy an invite from a server hosted in the desktop app
-and the app can't find an address other people could use.
-
-Add your public IP or hostname under **Settings → My servers → Public IPs or
-hostnames**, then copy the invite again.
-
-### My friend opens the invite but can't connect
-
-Look at the address in the link. If it starts with `192.168.`, `10.` or
-`172.16.` to `172.31.`, it's a local address and only works on your network.
-For a friend somewhere else, add your public IP as described above and send a
-new link.
-
-If the address is right, the server probably can't be reached from where your
-friend is. There's no relay to fall back on, so one of these has to be true:
-
-- You're on the same network, and your firewall allows the server's ports.
-- You've forwarded the ports on your router. **Settings → My servers → Open
-  these ports** lists the ones your server uses. See
-  [Ports to open](/docs/host/from-the-app#ports-to-open).
-- You're connected some other way, like [Tailscale](/docs/host/tailscale).
-
-Testing from your own machine doesn't prove much. Try it on mobile data with
-Wi-Fi off, or ask your friend what they see.
-
-### The invite is refused
-
-| Message | What to do |
-|---------|------------|
-| Invalid invite code. | Check the code was copied in full, or make a new one. |
-| That invite code has expired. | Make a new one. |
-| That invite code has been revoked. | Make a new one. |
-| No uses remaining. | Make a new one with more uses. |
-| Invite required to join this server. | The link has no code in it. Ask for one with a code. |
-| Too many incorrect invite attempts. Please wait. | Wait, then try a new code. Eight refused attempts in five minutes locks you out for a minute by default, and repeat lockouts last longer, up to an hour. Twenty from one IP address does the same. |
-| This invite has been used too many times recently. Try again later. | One invite takes 60 joins an hour by default. Wait, or use another invite. |
-| This server requires a Gryt account. | Sign in from the menu at the bottom left, then try again. |
-
-Whoever runs the server can see which invites are still live under **Server
-settings → Invites**.
-
-### I can't find Invites in server settings
-
-Your role doesn't allow it. Making invites needs the **Create invites**
-permission, so ask the server owner for it, or ask them to send the invite.
+See [I can't invite a friend](https://gryt.chat/support/invite-a-friend). It covers local
+addresses, opening ports, refused codes and missing permissions.
 
 ## Audio issues
 
 ### Microphone not working
 
-- Check browser permissions (`chrome://settings/content/microphone`)
-- WebRTC requires HTTPS in production
-- Try a different browser or audio device
+See [My mic doesn't work](https://gryt.chat/support/microphone).
 
 ### Poor quality / echo
 
