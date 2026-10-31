@@ -31,13 +31,7 @@ SmartScreen, macOS warnings and Linux AppImages.
 
 ### Profile resets on every launch or update
 
-If you have to set up your profile every time you launch or update Gryt, the likely cause is a stale installation from before version **1.0.122**. In that release the Electron package name was changed from `client` to `gryt-chat`, which moved the install directory from `C:\Users\<user>\AppData\Local\Programs\client` to `C:\Users\<user>\AppData\Local\Programs\gryt-chat`. The old installation still exists at the previous path and conflicts with the new one, so profile and settings data doesn't persist between launches.
-
-To fix this:
-
-1. Fully **uninstall** the Gryt client (Settings → Apps → Gryt Chat → Uninstall).
-2. Delete any leftover `C:\Users\<user>\AppData\Local\Programs\client` folder if it still exists.
-3. **Download and install** the latest version from [gryt.chat](https://gryt.chat).
+See [The app won't update or forgets my profile](https://gryt.chat/support/app-updates).
 
 ## Connection issues
 
@@ -109,7 +103,7 @@ docker compose logs server | grep "identity key"
 # ✔ Server identity key ready (85lc28xWNMb-UkGlcc_kDowxgGHaeLKSYI0jVaKyTq4)
 ```
 
-Compare that to the fingerprint under **Settings → You → Server identities**. If it
+Compare that to the fingerprint under **Settings → Server identities**. If it
 matches, unblock the server there and reconnect.
 
 If it doesn't match, something else is answering at that address. Don't unblock it.
@@ -224,21 +218,11 @@ See [My mic doesn't work](https://gryt.chat/support/microphone).
 
 ### Poor quality / echo
 
-- Use headphones to avoid feedback loops
-- Adjust the noise gate threshold in audio settings
-- Ensure `echoCancellation` and `noiseSuppression` are enabled (default)
+See [Voice sounds bad](https://gryt.chat/support/sound-problems).
 
 ### Others hear themselves when I screen share with audio
 
-On the **desktop app** (Windows/macOS), Gryt automatically excludes its own audio from the screen share capture using OS-native APIs. If this isn't working:
-
-- **Windows**: Requires Windows 10 build 20348 or later. Check with `winver`.
-- **macOS**: Requires macOS 13.0 (Ventura) or later.
-- If the native binary is missing, the feature is silently unavailable. Rebuild with `npm run build:native` or reinstall the app.
-
-On the **web client** and **Linux desktop app**, there's no OS-level API to separate Gryt audio from other system audio. Your options:
-- Use headphones so Gryt voice audio isn't picked up by the screen capture.
-- Route Gryt to a separate audio output device (virtual audio cable) and share only your main output.
+See [People hear themselves when I share my screen](https://gryt.chat/support/screen-share-echo).
 
 ### Audio cutting out
 
