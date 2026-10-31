@@ -231,6 +231,56 @@ The server decides which STUN servers clients use, through `STUN_SERVERS`. The
 default spans two providers, so one of them being filtered is not fatal. If
 yours has been cut down to a single provider, add another.
 
+## Invite issues
+
+### "This server has no address anyone else can reach"
+
+You get this when you copy an invite from a server hosted in the desktop app
+and the app can't find an address other people could use.
+
+Add your public IP or hostname under **Settings → My servers → Public IPs or
+hostnames**, then copy the invite again.
+
+### My friend opens the invite but can't connect
+
+Look at the address in the link. If it starts with `192.168.`, `10.` or
+`172.16.` to `172.31.`, it's a local address and only works on your network.
+For a friend somewhere else, add your public IP as described above and send a
+new link.
+
+If the address is right, the server probably can't be reached from where your
+friend is. There's no relay to fall back on, so one of these has to be true:
+
+- You're on the same network, and your firewall allows the server's ports.
+- You've forwarded the ports on your router. **Settings → My servers → Open
+  these ports** lists the ones your server uses. See
+  [Ports to open](/docs/host/from-the-app#ports-to-open).
+- You're connected some other way, like [Tailscale](/docs/host/tailscale).
+
+Testing from your own machine doesn't prove much. Try it on mobile data with
+Wi-Fi off, or ask your friend what they see.
+
+### The invite is refused
+
+| Message | What to do |
+|---------|------------|
+| Invalid invite code. | Check the code was copied in full, or make a new one. |
+| That invite code has expired. | Make a new one. |
+| That invite code has been revoked. | Make a new one. |
+| No uses remaining. | Make a new one with more uses. |
+| Invite required to join this server. | The link has no code in it. Ask for one with a code. |
+| Too many incorrect invite attempts. Please wait. | Wait, then try a new code. Eight refused attempts in five minutes locks you out for a minute by default, and repeat lockouts last longer, up to an hour. Twenty from one IP address does the same. |
+| This invite has been used too many times recently. Try again later. | One invite takes 60 joins an hour by default. Wait, or use another invite. |
+| This server requires a Gryt account. | Sign in from the menu at the bottom left, then try again. |
+
+Whoever runs the server can see which invites are still live under **Server
+settings → Invites**.
+
+### I can't find Invites in server settings
+
+Your role doesn't allow it. Making invites needs the **Create invites**
+permission, so ask the server owner for it, or ask them to send the invite.
+
 ## Audio issues
 
 ### Microphone not working
