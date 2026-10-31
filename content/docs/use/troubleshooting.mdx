@@ -151,6 +151,8 @@ somebody on a different connection or on mobile data with Wi-Fi off.
 wscat -c ws://localhost:5005
 ```
 
+- Check `SFU_PUBLIC_HOST` is the SFU and not the Gryt server. `curl https://your-sfu-address/health` should say `"service":"sfu"`. If it says `signaling-server`, the address is wrong
+- `This SFU takes registration on port 9092` in the server log isn't why voice fails. The server fixes that itself. Set `SFU_WS_HOST` to that port to quiet it, and leave `SFU_PORT` alone
 - Verify STUN servers are reachable: `dig stun.l.google.com`
 - Ensure `ICE_UDP_MUX_PORT` is open as **UDP**. All media shares that one port
 - Check the SFU actually started. It binds the mux port at boot and exits if
