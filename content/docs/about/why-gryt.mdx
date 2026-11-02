@@ -67,7 +67,9 @@ No. Gryt uses [challenge-response authentication](/docs/about/security). Your Ke
 
 ### Can a server admin read my messages?
 
-If the server stores messages, the server operator can access them. This is the same trade-off as any self-hosted chat system. Gryt's point is that you can run the server yourself, or choose a server operator you trust.
+In a channel, yes. The server stores channel messages as they are, so whoever runs it can read them. Gryt's point is that you can run the server yourself, or choose someone you trust to run it.
+
+Direct messages and group chats are encrypted on your device, files included, so the server can't read them. It can still see who you talk to and when. A message can go out unencrypted if someone hasn't got a usable key yet, and the app marks it with a red dot. Older messages from before encryption may still be readable too. [Security](/docs/about/security#direct-messages-are-encrypted) has the details.
 
 ### Can the SFU listen to voice?
 
