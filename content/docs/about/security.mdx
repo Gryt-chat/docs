@@ -84,7 +84,8 @@ If everything checks out, the server issues a **server-scoped access token** (a 
 | Messages you send in a channel | Yes — that's how server-hosted chat works |
 | Direct messages | **No**, once both of you have a device that supports it — MLS, or the DM key before it |
 | Who you send them to, and when | Yes — it delivers them |
-| Uploads, including in a direct message | Yes — attachments aren't encrypted yet |
+| Uploads in a channel | Yes |
+| Files in an encrypted direct message | **No** — it sees that one was sent, its encrypted size, and when |
 
 ## Direct messages are encrypted
 
