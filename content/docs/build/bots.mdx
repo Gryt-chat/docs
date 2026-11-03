@@ -49,14 +49,16 @@ It knocks.
 
 Nothing to configure on the server, no invite, and no restart.
 
-<Callout type="warn" title="What a bot asks for is fixed">
-The first declaration is the only one. A later run asking for more gets the
-answer to the question the first one asked, and the server won't record the
-new list at all — a bot can't even change its own name after approval.
+<Callout type="warn" title="Asking for more is a question, not a grant">
+A bot that's already in can declare more than it first asked for. It keeps
+working with what it has, and the new ones wait in **Server settings → Bots** as
+"wants new permissions", with what it already holds shown ticked. An admin
+approves some, all or none, and anything turned down isn't asked again. A bot
+can't change its own name after approval.
 
 That isn't about you. It's about the run that isn't yours, after a published
-image has been taken over. If a bot genuinely needs more, an admin makes a new
-registration.
+image has been taken over. It can ask as often as it likes, and it keeps exactly
+what an admin agreed to until one says yes.
 </Callout>
 
 ### Setting one up in advance
