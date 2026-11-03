@@ -125,6 +125,13 @@ typing(conversationId: string, threadId?: string): void
 ```
 
 Shows "typing…" in a channel, or in a thread's composer, for about 8 seconds. Call again to keep it up.
+#### `stopTyping()`
+
+```ts
+stopTyping(conversationId: string, threadId?: string): void
+```
+
+Takes "typing…" down now rather than when the server's 8 seconds run out.
 #### `setActivity()`
 
 ```ts
