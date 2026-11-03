@@ -4,7 +4,7 @@ description: What's shipped, what's in progress, and what's coming next
 icon: Map
 ---
 
-This page tracks every major feature across Gryt. Use it to see what's already available, what's actively being worked on, and what's planned for the future. It was last checked against the [changelog](https://gryt.chat/changelog) on 31 October 2026.
+This page tracks every major feature across Gryt. Use it to see what's already available, what's actively being worked on, and what's planned for the future. It was last checked against the [changelog](https://gryt.chat/changelog) on 3 November 2026.
 
 | Emoji | Meaning |
 |-------|---------|
@@ -38,6 +38,7 @@ Have a feature you'd like to see? Check the [feature requests](/docs/about/featu
 - ✅ Doctor, which places a real call and tells you which hop is broken
 - ✅ Audio cues for state changes (join, leave, connect, disconnect)
 - ✅ Connect / disconnect sounds (configurable, custom sound files)
+- ✅ Calls that ring (ringtone, taskbar flash, and a notification when Gryt is in the background)
 - ✅ Per-channel voice settings (required push-to-talk, bitrate presets, eSports mode, disable RNNoise)
 - 📋 Soundboard (play audio clips into voice)
 
@@ -131,6 +132,7 @@ Have a feature you'd like to see? Check the [feature requests](/docs/about/featu
 - ✅ LAN server discovery (mDNS, desktop app only)
 - ✅ LAN open join (skip invite codes for LAN clients — ideal for LAN parties)
 - ✅ Embedded server (host a server directly from the desktop app — one-click create, auto-start, LAN party mode)
+- ✅ A server saved by its LAN address offers its public one when you're away from home
 - ✅ Webhooks
 - ✅ Folders in the sidebar, with their own permissions
 - ✅ Per-channel permissions by role, with templates
@@ -187,7 +189,8 @@ same as any channel. Server owners can turn direct messages off entirely.
 ## Notifications
 
 - ✅ Toast notifications
-- ✅ Sound notifications
+- ✅ Sound notifications, with a ringtone and message sound you pick or your own file
+- ✅ Thread replies notify the people who wrote in that thread
 - ✅ Unread badges
 - ✅ Push notifications on the phone, with message previews only your phone can read
 - ✅ Per-channel notification levels (all messages, mentions, nothing), with a default the server sets
@@ -250,6 +253,7 @@ same as any channel. Server owners can turn direct messages off entirely.
 - ✅ Multi-network support (LAN + WAN)
 - ✅ Health check endpoints
 - ✅ Prometheus metrics + optional Grafana monitoring
+- ✅ Diagnostics for owners (who's in voice, their latency, the voice server's numbers), which a bot can read for an AI to help debug
 - ✅ Isolated image processing worker (sharp runs in a separate service, crashes don't affect the server)
 - ✅ Terminal manager (`gryt`) — creates, runs and configures servers from a keyboard-driven app
 - ✅ One-line install script (`curl -fsSL https://get.gryt.chat | sh`)
@@ -262,7 +266,7 @@ same as any channel. Server owners can turn direct messages off entirely.
 - ✅ REST API
 - ✅ WebSocket API (Socket.IO)
 - ✅ Open source (AGPL-3.0)
-- ✅ Bot / integration API (`@gryt/bot`, with per-bot approval in Server Settings > Bots)
+- ✅ Bot / integration API (`@gryt/bot`, with per-bot approval in Server Settings > Bots, and a second approval when a bot asks for more)
 - 📋 Slash commands
 - ✅ Plugin system (server plugins, and sandboxed add-ons in the app)
 - 📋 Rich Presence SDK, so games can talk to Gryt directly
