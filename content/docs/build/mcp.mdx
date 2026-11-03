@@ -38,6 +38,8 @@ in. It asks for:
 | `view_diagnostics` | Voice rooms, latency and the SFU's numbers |
 | `send_messages` | Posting and starting threads |
 | `delete_own_messages` | Taking back its own post |
+| `set_activity` | "Reading #general" under its name while it works |
+| `upload_avatar_image` | Setting its own picture with `--avatar` |
 
 You can grant it different things on different servers. Reading only on a big
 community server and everything on the one you sit in with friends is a fine
@@ -47,6 +49,11 @@ setup.
 
 Reading: `list_servers`, `list_channels`, `read_channel`, `read_thread`,
 `search`, `list_members` and `server_status`.
+
+`show_typing` puts "typing…" in a channel or thread while the AI works out a
+reply. It stays up until the bot posts there, or 90 seconds. While any tool is
+working in a channel, the line under the bot's name says so, like "Reading
+#general", and it clears after two quiet minutes.
 
 Writing: `send_message` (also as a reply or into a thread), `start_thread` and
 `delete_own_message`. Its posts carry the BOT tag like any bot's.
@@ -74,7 +81,8 @@ post. Allow the read tools so they stop asking, and leave the write tools alone:
       "mcp__gryt__read_thread",
       "mcp__gryt__search",
       "mcp__gryt__list_members",
-      "mcp__gryt__server_status"
+      "mcp__gryt__server_status",
+      "mcp__gryt__show_typing"
     ]
   }
 }
@@ -96,3 +104,6 @@ you. The same key is approved separately on every server you list. If the
 computer or the file is lost, remove the bot in **Server settings → Bots** on
 each server. Pass `--identity <path>` to keep it somewhere else, and
 `--nickname` if you'd rather it wasn't called Gryt.
+
+`--avatar <file>` sets its picture on every server that lets it, the same
+upload a person's app does. It only uploads again when the file changes.

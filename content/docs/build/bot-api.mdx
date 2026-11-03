@@ -118,6 +118,27 @@ diagnostics(): Promise<Record<string, unknown>>
 ```
 
 Voice rooms, latency and SFU numbers. Needs `view_diagnostics`, which owners hold.
+#### `typing()`
+
+```ts
+typing(conversationId: string, threadId?: string): void
+```
+
+Shows "typing…" in a channel, or in a thread's composer, for about 8 seconds. Call again to keep it up.
+#### `setActivity()`
+
+```ts
+setActivity(text: string | null): void
+```
+
+The line under the bot's name in the member list. Null clears it.
+#### `setAvatar()`
+
+```ts
+setAvatar(image: Uint8Array, filename: string, mime: string): Promise<string>
+```
+
+Upload a picture as this bot's avatar, the way a person sets theirs. Resolves with its file id.
 #### `fetch()`
 
 ```ts
