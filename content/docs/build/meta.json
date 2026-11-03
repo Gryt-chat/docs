@@ -12,6 +12,7 @@
     "---Bots and webhooks---",
     "bots",
     "bot-api",
+    "mcp",
     "webhooks",
     "---The server's own API---",
     "server-api",

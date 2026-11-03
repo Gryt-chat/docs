@@ -117,6 +117,18 @@ LAN and over the internet at the same time:
 SFU_PUBLIC_HOST="ws://192.168.1.50:5005,wss://sfu.example.com"
 ```
 
+### The SFU's numbers
+
+```bash
+SFU_METRICS_URL="http://sfu:9091/metrics"
+```
+
+Optional. With it set, the server reads the SFU's live numbers (rooms, peers,
+tracks, refused tracks, ping timeouts) and shows them to owners, and to
+[an AI you've let in](/docs/build/mcp) with `view_diagnostics`. It's the same
+metrics port Prometheus scrapes, on the internal network, so keep it unpublished.
+The self-hosted bundle sets it for you.
+
 ### The media port
 
 Signalling is a WebSocket and goes wherever your other traffic goes. Media is
