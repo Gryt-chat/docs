@@ -64,7 +64,7 @@ Leave, and stop reconnecting.
 #### `send()`
 
 ```ts
-send(conversationId: string, text: string): Promise<void>
+send(conversationId: string, text: string, opts: { replyTo?: string; threadId?: string } = {}): Promise<Message>
 ```
 
 Post in a channel. Throws before sending if the bot lacks `send_messages`, naming the
@@ -83,6 +83,41 @@ delete(conversationId: string, messageId: string, opts: { own?: boolean } = {}):
 
 Delete a message. Its own is `delete_own_messages`; anybody else's is `manage_messages`,
 and the caller says which, because the bot may not know who sent it.
+#### `history()`
+
+```ts
+history(conversationId: string, opts: { limit?: number; before?: string } = {}): Promise<{ messages: Message[]; threads: ThreadSummary[]; hasMore: boolean }>
+```
+
+A page of a channel, oldest first. `before` is a message's ISO timestamp.
+#### `thread()`
+
+```ts
+thread(conversationId: string, threadId: string, opts: { limit?: number; before?: string } = {}): Promise<{ thread: ThreadSummary | null; root: Message | null; replies: Message[]; hasMore: boolean }>
+```
+
+A thread's root and replies, oldest first.
+#### `search()`
+
+```ts
+search(opts: { query?: string; conversationId?: string; senderServerUserId?: string; before?: string; after?: string; limit?: number; }): Promise<{ hits: SearchHit[]; total: number }>
+```
+
+Text channels this bot can read. Something has to narrow it, or the server returns nothing.
+#### `startThread()`
+
+```ts
+startThread(conversationId: string, rootMessageId: string, title?: string): Promise<ThreadSummary>
+```
+
+Start a thread on a message. Starting one that exists returns that one.
+#### `diagnostics()`
+
+```ts
+diagnostics(): Promise<Record<string, unknown>>
+```
+
+Voice rooms, latency and SFU numbers. Needs `view_diagnostics`, which owners hold.
 #### `fetch()`
 
 ```ts
@@ -240,6 +275,7 @@ too, because this SDK reached for that name first and the mistake read as a cras
 | `createdAt` | `Date` |  |
 | `editedAt` | `Date \| null` |  |
 | `replyToMessageId` | `string \| null` |  |
+| `threadId` | `string \| null` | Set for a reply inside a thread. |
 | `isSystem` | `boolean` | True for the "X joined the server" kind of message, which has no sender. |
 | `isOwn` | `boolean` | True when this bot sent it. Handlers are not called for these. |
 
@@ -250,6 +286,18 @@ A permission id. The server owns the list; see `GrytBot.permissions`.
 ```ts
 export type Permission = string;
 ```
+### `SearchHit`
+
+| Field | Type | What it is |
+| --- | --- | --- |
+| `conversationId` | `string` |  |
+| `messageId` | `string` |  |
+| `threadId` | `string \| null` |  |
+| `senderServerUserId` | `string` |  |
+| `senderNickname` | `string \| null` |  |
+| `createdAt` | `Date` |  |
+| `snippet` | `string` |  |
+
 ### `ServerInfo`
 
 | Field | Type | What it is |
@@ -259,5 +307,17 @@ export type Permission = string;
 | `description` | `string` |  |
 | `permissions` | `Permission[]` | What this bot may do here. Empty until the server has said. |
 | `role` | `string` | The role this bot holds. |
+
+### `ThreadSummary`
+
+| Field | Type | What it is |
+| --- | --- | --- |
+| `threadId` | `string` |  |
+| `conversationId` | `string` |  |
+| `rootMessageId` | `string` |  |
+| `title` | `string \| null` |  |
+| `replyCount` | `number` |  |
+| `status` | `string` |  |
+| `lastMessageAt` | `Date` |  |
 
 
