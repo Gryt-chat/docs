@@ -309,9 +309,9 @@ is absent or blank.
 id becomes part of a path, so it's kept to something that can be one.
 
 **`main ... must stay inside the plugin folder`** — the entry point has a `..` in
-it or starts with a slash. A path that only leaves the folder once it's
-resolved, through a symlink say, is skipped as `main resolves outside the
-plugin folder`.
+it or starts with a slash. `main resolves outside the plugin folder` is a
+second check on the joined path. A manifest that passes the first one doesn't
+reach it, and it doesn't follow symlinks.
 
 **`id automod is already used by a-copy`** — two folders claim the same id.
 The first one alphabetically wins and the second is skipped.
