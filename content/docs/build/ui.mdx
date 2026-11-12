@@ -24,7 +24,7 @@ Your app provides `react` and `react-dom`. Base UI, the Phosphor icons and the c
 npm install @gryt/ui-native
 ```
 
-Your app provides `react` and `react-native`. See [React Native](/docs/build/ui-react-native), which is where the differences live.
+Your app provides `react`, `react-native` and a few native libraries (Reanimated, Gesture Handler, Bottom Sheet, SVG, Safe Area Context and Phosphor), listed in the package's peer dependencies. See [React Native](/docs/build/ui-react-native), which is where the differences live.
 
 ## Using the web library
 
@@ -57,10 +57,10 @@ This section doesn't repeat it. What is here is the part that spans both package
 
 ## Themes
 
-A theme is a couple of dozen hex values. The generator on [ui.gryt.chat/theme/generator](https://ui.gryt.chat/theme/generator) produces one and gives you a link, and the Gryt client takes that link directly in **Settings → How Gryt looks → Theme**.
+A theme is a couple of dozen hex values. The generator on [ui.gryt.chat/theme/generator](https://ui.gryt.chat/theme/generator) produces one and gives you a link, and the Gryt client takes that link directly in **Settings → Appearance → Theme**.
 
-Underneath, the ramps are built by `neutralScale`, `hueScale` and `alphaScale`, exported from `@gryt/ui` and from its `./theme` entry. Each step is specified in OKLCh, as a lightness, a chroma and a hue, and converted to hex through the published OKLab matrices. There's no colour dependency; the conversion is in the package. Both renderers call the same functions, so a curve tuned for the web moves to the phone with it.
+Underneath, the ramps are built by `neutralScale`, `hueScale` and `alphaScale`, exported from `@gryt/ui` and from its `./theme` entry. Each step is specified in OKLCh, as a lightness, a chroma and a hue, and converted to hex through the published OKLab matrices. There's no colour dependency; the conversion lives in `@gryt/theme`, which `@gryt/ui` re-exports. Both renderers call the same functions, so a curve tuned for the web moves to the phone with it.
 
 ## Where the code is
 
-The two packages live in one repository, [Gryt-chat/ui](https://github.com/Gryt-chat/ui), which is the only Gryt repository that isn't AGPL.
+The two packages live in one repository, [Gryt-chat/ui](https://github.com/Gryt-chat/ui), which is the only Gryt repository that isn't AGPL. It also holds `@gryt/theme`, the tokens and colour scales both renderers share, and `@gryt/owl`, the avatar generator.

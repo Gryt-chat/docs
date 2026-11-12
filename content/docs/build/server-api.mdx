@@ -18,6 +18,8 @@ the socket. See [Identity](/docs/host/identity).
 
 Default port 5000. Endpoints marked **Bearer** want `Authorization: Bearer <accessToken>`.
 
+Prometheus metrics are at `/metrics`, but on their own port (`METRICS_PORT`, 9091 by default, `0` to turn it off) rather than this one.
+
 ### Public
 
 | Method | Path | Returns |
@@ -25,7 +27,6 @@ Default port 5000. Endpoints marked **Bearer** want `Authorization: Bearer <acce
 | GET | `/health` | `{ status, service, serverName, timestamp }` |
 | GET | `/info` | The join preview. See below |
 | GET | `/icon` | The server icon. 404 when none is set |
-| GET | `/metrics` | Prometheus, `text/plain` |
 
 ### What `/info` returns
 
@@ -37,7 +38,8 @@ Default port 5000. Endpoints marked **Bearer** want `Authorization: Bearer <acce
   "members": "12",
   "lanOpen": false,
   "identityTiers": ["account"],
-  "joinPolicy": "invite"
+  "joinPolicy": "invite",
+  "linkHistory": true
 }
 ```
 
@@ -127,13 +129,13 @@ GIF, AVIF and SVG are accepted; SVG is sanitised before it's stored.
 | Method | Path | Auth | Notes |
 |--------|------|------|-------|
 | GET | `/api/emojis` | — | `[{ name, file_id }]` |
-| GET | `/api/emojis/all` | — | Including staged |
 | GET | `/api/emojis/img/:name` | — | Image bytes, cached |
-| POST | `/api/emojis` | Bearer | Admin or owner. `file` + `name`, or `files` + a `names` JSON array |
-| PATCH | `/api/emojis/:name` | Bearer | Rename. Body `{ name }` |
-| DELETE | `/api/emojis/:name` | Bearer | |
-| GET | `/api/emojis/queue` | Bearer | The processing queue |
-| POST | `/api/emojis/stage` | Bearer | Stage emojis before committing them |
+| POST | `/api/emojis` | Bearer | Needs Manage emojis. `file` + `name`, or `files` + a `names` JSON array |
+| PATCH | `/api/emojis/:name` | Bearer | Needs Manage emojis. Rename. Body `{ name }` |
+| DELETE | `/api/emojis/:name` | Bearer | Needs Manage emojis |
+| DELETE | `/api/emojis/all` | Bearer | Needs Manage emojis. Deletes every emoji |
+| GET | `/api/emojis/queue` | Bearer | Needs Manage emojis. The processing queue |
+| POST | `/api/emojis/stage` | Bearer | Needs Manage emojis. Stage emojis before committing them |
 
 ### Importing emojis
 
@@ -144,7 +146,7 @@ From BetterTTV:
 | GET | `/api/emojis/bttv/user/:userId` | — |
 | GET | `/api/emojis/bttv/emote/:emoteId` | — |
 | GET | `/api/emojis/bttv/file/:emoteId` | — |
-| POST | `/api/emojis/bttv/import` | Bearer, admin or owner, 200 per request |
+| POST | `/api/emojis/bttv/import` | Bearer, needs Manage emojis |
 
 From emoji.gg:
 
@@ -163,7 +165,7 @@ browser isn't the thing talking to BetterTTV or emoji.gg.
 | Method | Path | Auth | Notes |
 |--------|------|------|-------|
 | GET | `/api/link-preview?url=` | Bearer | Open Graph metadata |
-| GET | `/api/oembed?url=` | Bearer | X, SoundCloud, Spotify, TikTok |
+| GET | `/api/oembed?url=` | Bearer | X, SoundCloud, Spotify, TikTok, Reddit, Bluesky |
 | GET | `/api/media/metadata?url=` | Bearer | Dimensions and MIME type |
 
 ### Webhooks
@@ -188,7 +190,7 @@ server's owner.
 
 | Method | Path | Returns |
 |--------|------|---------|
-| GET | `/management/settings` | `joinPolicy`, `discoverable`, `lanOpen`, `profanityMode` |
+| GET | `/management/settings` | The settings, among them `joinPolicy`, `discoverable`, `lanOpen` and `profanityMode` |
 | PATCH | `/management/settings` | The same, updated. Send only the keys you're changing |
 | GET | `/management/health` | `{ ok: true }` |
 
@@ -296,7 +298,7 @@ server lists every conversation you're in and leaves the drawing to the client.
 | `dm:group:add` | client → server | `{ accessToken, conversationId, targetServerUserId }` |
 | `dm:group:update` | client → server | `{ accessToken, conversationId, name?, iconFileId? }` — null clears |
 | `dm:group:leave` | client → server | `{ accessToken, conversationId }` |
-| `dm:key:publish` | client → server | `{ binding? }` — the key binding others need to write to you |
+| `dm:key:publish` | client → server | `{ binding?, replace?, handover?, deviceName? }` — the key binding others need to write to you. Answers through the acknowledgement with `{ ok, changed? }` or `{ ok: false, error, message }` |
 | `dm:opened` | server → client | The conversation, whether it was new or already there |
 | `dm:left` | server → client | |
 | `dm:error` | server → client | |
@@ -323,7 +325,7 @@ last resort included, and the replies below that could run longer are paged.
 | Event | Direction | Notes |
 |-------|-----------|-------|
 | `mls:person:publish` | client → server | `{ binding }`. Your person key binding, or `null` to take it back. Send `dm:key:publish` first |
-| `mls:keypackages:publish` | client → server | `{ deviceId, keyPackages, lastResort? }`. The first publish registers the device. Five devices per member. See [KeyPackages](#keypackages) for what gets refused |
+| `mls:keypackages:publish` | client → server | `{ deviceId, keyPackages, lastResort? }`. The first publish registers the device. A hundred devices per member. See [KeyPackages](#keypackages) for what gets refused |
 | `mls:keypackages:claim` | client → server | `{ conversationId, deviceId, devices? }`. One KeyPackage for each device, and each is handed out once. Expired ones never are. Nine devices a reply at most, and `more` lists the rest to name in `devices` next time |
 | `mls:devices` | client → server | `{ conversationId? }`. Your own devices, or everybody's in the conversation |
 | `mls:device:remove` | client → server | `{ deviceId }`, one of your own. That id can't come back: see [Removed devices](#removed-devices) |
@@ -343,8 +345,8 @@ The server keeps the log for 30 days, or fewer if whoever runs it sets
 A person key binding has to be signed by the same identity key, for the same
 scope, as the DM key binding you published. That's the key people have already
 pinned for you. Anything else gets `wrong_identity`. If there's no DM key
-binding yet you get `no_dm_key`, and since `dm:key:publish` has no
-acknowledgement, the person key can occasionally land first. Retry once.
+binding yet you get `no_dm_key`. The person key can occasionally land first if you don't wait for
+the `dm:key:publish` acknowledgement. Retry once.
 
 Once it's stored, the binding shows up as `personKeyBinding` on your row in
 `members:list`, next to `dmKeyBinding`. It's `null` for anybody who hasn't
@@ -402,7 +404,7 @@ an application message can have them, and `placeholder: false` doesn't matter.
 They're checked the way a sealed DM's attachments are:
 
 - the sender needs `attach_files` here (`forbidden`)
-- ten at most (`too_many_attachments`)
+- fifty at most (`too_many_attachments`)
 - each one a file the sender can already read (`attachment_not_found`)
 - each one under the server's upload cap (`attachment_too_large`)
 

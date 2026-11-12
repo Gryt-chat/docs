@@ -10,7 +10,7 @@ icon: Smartphone
 npm install @gryt/ui-native
 ```
 
-Your app provides `react` and `react-native`. `@gryt/ui` is installed alongside it, for the colour maths below, and nothing from its main entry is loaded.
+Your app provides `react`, `react-native` and a few native libraries (Reanimated, Gesture Handler, Bottom Sheet, SVG, Safe Area Context and Phosphor), listed in the package's peer dependencies. `@gryt/theme` comes with it, for the colour maths below.
 
 ## Theming
 
@@ -32,11 +32,11 @@ export function App() {
 
 A component rendered outside a provider gets the dark theme rather than nothing, which matches `@gryt/ui` shipping its dark tokens on `:root`.
 
-`createNativeTheme` builds its ramps by calling `neutralScale`, `hueScale` and `alphaScale` from `@gryt/ui/theme`. What it doesn't use is `createGrytTheme`, which returns a map of CSS custom properties that React Native has nowhere to put.
+`createNativeTheme` builds its ramps by calling `neutralScale`, `hueScale` and `alphaScale` from `@gryt/theme`. What it doesn't use is `createGrytTheme`, which returns a map of CSS custom properties that React Native has nowhere to put.
 
 ## What is here
 
-Thirty-three components, against 42 in `@gryt/ui`. Missing: Autocomplete, Combobox, Composer, ContextMenu, ConversationItem, Form, IconButton, MessageBubble, NavigationMenu and PreviewCard. Most of those are Gryt-specific and want a screen to design against rather than a web component to copy.
+Thirty-five components, against 49 in `@gryt/ui`. Missing: Autocomplete, Combobox, Composer, ContextMenu, ConversationItem, EmojiPicker, Form, IconButton, MemberCard, MessageBubble, NavigationMenu, OwlDesigner, PreviewCard, ThemeEditor, Thumb and VideoPlayer. Most of those are Gryt-specific and want a screen to design against rather than a web component to copy.
 
 ## Where a phone forces a different answer
 
