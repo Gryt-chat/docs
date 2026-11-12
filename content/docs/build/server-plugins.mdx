@@ -83,7 +83,7 @@ Three events so far:
 | Event | When | Needs |
 | --- | --- | --- |
 | `message:created` | Somebody sends a message in a channel | `messages:read` |
-| `member:joined` | Somebody joins for the first time, or comes back after a kick | `members:read` |
+| `member:joined` | Somebody joins for the first time, or comes back after leaving or a kick | `members:read` |
 | `member:left` | Somebody leaves, is kicked, or is banned | `members:read` |
 
 And one thing it can do, covered below:
@@ -142,15 +142,17 @@ It's deliberately not "anybody below rank 40" or similar. Ranks are yours to
 arrange, and a rule written against the numbers would mean reordering your roles
 quietly changed who a plugin could ban.
 
-### It can only do twenty of these a minute
+### It can only do a few of these at a time
 
-Per plugin. That's not there to stop a plugin that means harm — one that does
-has the whole Node runtime and doesn't need this API. It's there for the plugin
-with a bug that bans everybody who speaks, which is a much more likely Tuesday.
+Per plugin, across kick, ban and delete. That's not there to stop a plugin that
+means harm — one that does has the whole Node runtime and doesn't need this API.
+It's there for the plugin with a bug that bans everybody who speaks, which is a
+much more likely Tuesday.
 
-Twenty is far more than a real automod does on a normal day and far fewer than a
-loop gets through before somebody notices. Past that, calls come back
-`{ ok: false }` and the server log says so loudly.
+A plugin gets a burst of five, then roughly one more every ten seconds, and
+never more than twenty in a minute. That's far more than a real automod does on
+a normal day and far fewer than a loop gets through before somebody notices.
+Past that, calls come back `{ ok: false }` and the server log says so loudly.
 
 ### You'll be able to tell it wasn't a person
 
@@ -306,8 +308,10 @@ is absent or blank.
 **`id ... must be lower case letters, digits, dot, dash or underscore`** — the
 id becomes part of a path, so it's kept to something that can be one.
 
-**`main resolves outside the plugin folder`** — the entry point points somewhere
-else on disk.
+**`main ... must stay inside the plugin folder`** — the entry point has a `..` in
+it or starts with a slash. `main resolves outside the plugin folder` is a
+second check on the joined path. A manifest that passes the first one doesn't
+reach it, and it doesn't follow symlinks.
 
 **`id automod is already used by a-copy`** — two folders claim the same id.
 The first one alphabetically wins and the second is skipped.
@@ -350,8 +354,8 @@ an attacker would otherwise have to ask.
 are shown it as a link, so a `javascript:` URL in a manifest would be a link
 injection into their clients.
 
-They read it in the server menu, under **What this server runs** — the same menu
-that has Leave in it, one row above. That's not an accident of ordering.
+They read it in the server menu, under **Plugins** — the same menu that has
+Leave server in it, two rows below. That's not an accident of ordering.
 
 The capabilities are written out there, not shown as `messages:read`: "Reads
 every message you send in a channel", "Can kick you, ban you, and delete your
