@@ -7,8 +7,8 @@ icon: AudioWaveform
 import { Callout } from 'fumadocs-ui/components/callout';
 
 Capture runs at 48 kHz through a chain of Web Audio nodes. Every stage after the
-volume control is optional, and each one can be turned off on its own from
-**Settings → Audio**.
+volume control except the limiter is optional, and each one can be turned off on
+its own from **Settings → Audio**.
 
 ```mermaid
 graph LR
@@ -16,7 +16,8 @@ graph LR
   Vol --> RNN["RNNoise"]
   RNN --> AGC["AGC"]
   AGC --> Comp["Compressor"]
-  Comp --> Gate["Noise gate"]
+  Comp --> Lim["Limiter"]
+  Lim --> Gate["Noise gate"]
   Gate --> Mute["Mute"]
   Mute --> Out["To the SFU"]
 ```
@@ -56,7 +57,15 @@ A `DynamicsCompressorNode`, controlled by a single **Amount** slider from 0 to
 | 50 | -25 dB | 22.5 | 10.5:1 |
 | 100 | -40 dB | 5 | 20:1 |
 
-Attack stays at 3 ms and release at 250 ms throughout.
+Attack stays at 3 ms and release at 250 ms throughout. Anything above 0 adds
+3 dB of makeup gain.
+
+## Limiter
+
+A fixed limiter and soft clipper sit after the compressor and run whenever any
+processing is on, so a loud word can't go over 0 dBFS. There's no setting for
+them. eSports mode, or having RNNoise, auto gain and the compressor all off,
+leaves them out of the chain.
 
 ## Noise gate
 

@@ -56,12 +56,14 @@ Go to **Settings → Apps → Gryt Chat → Uninstall**, or run the uninstaller 
 
 ### Download
 
-Two files are published, both Apple Silicon:
+Each chip gets a `.dmg` and a `.zip`, `arm64` for Apple Silicon and `x64` for Intel:
 
 | File | What it is |
 |------|------------|
 | `Gryt-Chat-x.x.x-mac-arm64.dmg` | The usual way in |
 | `Gryt-Chat-x.x.x-mac-arm64.zip` | The same app, and what the updater uses |
+
+The Intel builds are the same names with `x64` in place of `arm64`.
 
 Get either from the [releases page](https://github.com/Gryt-chat/gryt/releases).
 
@@ -108,6 +110,14 @@ sudo dpkg -i Gryt-Chat-*-linux-amd64.deb
 
 Launch from your application menu or run `gryt-chat` from the terminal.
 
+### .rpm package (Fedora / openSUSE)
+
+Download **Gryt-Chat-x.x.x-linux-x86_64.rpm** from the [releases page](https://github.com/Gryt-chat/gryt/releases/latest).
+
+```bash
+sudo dnf install ./Gryt-Chat-*-linux-x86_64.rpm
+```
+
 ### AppImage (all distros)
 
 Download **Gryt-Chat-x.x.x-linux-x86_64.AppImage** from the [releases page](https://github.com/Gryt-chat/gryt/releases/latest).
@@ -146,12 +156,12 @@ rm Gryt-Chat-*.AppImage
 1. Open the Gryt desktop app
 2. Click the **+** in the server rail and choose **Join with an invite**
 3. Enter the invite or server address (e.g. `gryt.example.com` or `192.168.1.100:5000`)
-4. Sign in with your Gryt account
+4. Sign in with your Gryt account, or join as a guest if the server shows **No account needed**
 
 Servers on your local network are discovered automatically via mDNS and will appear in the server list without manual entry.
 
 <Callout type="info">
-The first user to join a brand-new server becomes the owner/admin. After that, the server is invite-only. Ask the server owner for an invite link, or if you're on the same LAN and the owner has enabled **LAN open join**, you can join without an invite.
+The first user to join a brand-new server becomes the owner/admin. After that, the server is invite-only unless the owner has changed **Who can join**. Ask the server owner for an invite link, or if you're on the same LAN and the owner has turned on **LAN access**, you can join without an invite.
 </Callout>
 
 ## Web client

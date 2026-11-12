@@ -13,7 +13,7 @@ The Gryt client is built on `@gryt/ui`, Gryt's own component library, with Tailw
 | `@gryt/ui` | Gryt's own component library, shared with the mobile app |
 | Tailwind CSS 4 | Utility styling |
 | Motion | Layout animations and transitions |
-| React Icons | Material Design icons, via `react-icons/md` |
+| Phosphor Icons | Icons, via `@phosphor-icons/react` |
 
 ## Theming
 
@@ -41,9 +41,7 @@ Preferences persist per user.
 
 ```css
 :root {
-  --default-font-family: "Atkinson Hyperlegible Next", sans-serif;
-  --code-font-family: "Atkinson Hyperlegible Mono", monospace;
-  --scaling: 1.15;
+  --code-font-family: var(--gryt-font-mono, "Atkinson Hyperlegible Mono", monospace);
 }
 
 .dark {
@@ -65,10 +63,10 @@ Both fonts ship as variable WOFF2 files supporting weights 200–900.
 
 ## Invites and membership
 
-Gryt servers are **invite-only**.
+Gryt servers are **invite-only** by default.
 
-- The **first user** to join a brand-new server automatically becomes **owner/admin**.
-- After that, new users must join via an **invite link**.
+- The **first user** to join a brand-new server automatically becomes the **owner**.
+- After that, new users must join via an **invite link**, unless the owner changes **Who can join** in **Server settings > Overview** to **After you let them in** (join requests) or **Anyone, no invite**.
 - Existing members can rejoin without an invite.
 
 Admins can manage invites in **Server settings > Invites**:
@@ -90,7 +88,7 @@ Type `:smile:` or any other standard shortcode in the chat input and it will be 
 
 ### Custom server emoji
 
-Server admins can upload custom emojis (PNG, JPEG, WebP, GIF, or SVG). Animated GIFs are preserved as GIFs; all other formats are resized to 128px height and converted to PNG. Multiple images can be selected at once, and `.zip` archives containing images are automatically extracted. Shortcodes are derived from filenames and deduplicated against existing server emojis. Custom emojis are used with the same `:shortcode:` syntax and render as inline images in messages.
+Server admins can upload custom emojis (PNG, JPEG, WebP, GIF or AVIF; SVG is refused). Every image is resized to 128px height. Animated ones are stored as animated WebP and still ones as AVIF. See [Custom emojis](/docs/use/emojis). Multiple images can be selected at once, and `.zip` archives containing images are automatically extracted. Shortcodes are derived from filenames and deduplicated against existing server emojis. Custom emojis are used with the same `:shortcode:` syntax and render as inline images in messages.
 
 Each emoji shows an individual upload progress bar during upload, which is especially useful for larger GIF files. After uploading, admins can rename any emoji by clicking the edit icon in the emoji list.
 

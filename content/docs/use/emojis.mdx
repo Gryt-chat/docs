@@ -20,7 +20,7 @@ Everything is resized to **128 pixels tall**, keeping the aspect ratio and never
 
 **SVG isn't accepted.** An SVG is a document rather than a picture. It can carry a `<script>`, and a browser asked to open one from your server's own origin will run it. Uploading one gets "SVG images are not accepted".
 
-The size limit per image is a per-server setting, `emojiMaxBytes`. It defaults to **100 MB** and can be set anywhere from 64 KB to 200 MB. Anything bigger is refused.
+The size limit per image is a per-server setting, `emojiMaxBytes`. It defaults to **2 MB** and can be set anywhere from 64 KB to 200 MB. Anything bigger is refused.
 
 ## Naming rules
 
@@ -34,7 +34,7 @@ Examples: `:pepehappy:`, `:cat_jam:`, `:lol2:`
 
 ## Uploading emojis
 
-Go to **Server Settings > Emojis** (requires admin or owner role).
+Go to **Server Settings > Emojis** (requires the *manage emojis* permission, which Admin and Owner have).
 
 ### Single or multi-file upload
 
@@ -83,7 +83,7 @@ A large emoji.gg profile is read a fixed number of pages deep. When that happens
 
 Type `:` followed by the shortcode to trigger the autocomplete picker. You can also open the emoji picker from the chat input toolbar.
 
-Custom emojis appear alongside standard Unicode emojis in the picker, in a dedicated **Custom** category.
+Custom emojis appear alongside standard Unicode emojis in the picker, in a dedicated **This server** category.
 
 ```
 :pepehappy:     → shows the custom emoji
