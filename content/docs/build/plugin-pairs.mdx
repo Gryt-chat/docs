@@ -132,7 +132,7 @@ between the two halves rather than on the doorstep.
 ### People are told when they're missing your half
 
 Anybody on a server running your server half, without your client half
-installed, is told so — in the server menu, under **What this server runs**:
+installed, is told so — in the server menu, under **Plugins**:
 
 > **One of these has a part you do not have.** Everything here works without
 > them. You will just not see whatever they add.
@@ -240,25 +240,23 @@ In your addons folder, `presence/manifest.json`:
 And `presence/index.js`:
 
 ```js
-export function activate() {
-  gryt.messaging.on("everyone", ({ host, data }) => {
-    // `data` came from your own server half, which built it from other
-    // people's messages. Still worth checking.
-    if (!Array.isArray(data)) return;
-    for (const entry of data) {
-      gryt.log.info(`[${host}] ${entry.who} is playing ${entry.game}`);
-    }
-  });
+gryt.messaging.on("everyone", ({ host, data }) => {
+  // `data` came from your own server half, which built it from other
+  // people's messages. Still worth checking.
+  if (!Array.isArray(data)) return;
+  for (const entry of data) {
+    gryt.log.info(`[${host}] ${entry.who} is playing ${entry.game}`);
+  }
+});
 
-  // Tell the servers that are listening.
-  const say = async (game) => {
-    for (const host of await gryt.messaging.servers()) {
-      await gryt.messaging.send("playing", { game }, host);
-    }
-  };
+// Tell the servers that are listening.
+const say = async (game) => {
+  for (const host of await gryt.messaging.servers()) {
+    await gryt.messaging.send("playing", { game }, host);
+  }
+};
 
-  say("Factorio");
-}
+say("Factorio");
 ```
 
 </Step>
@@ -283,11 +281,11 @@ and that it reads who joins and leaves.
 </Steps>
 
 The client half in that example asks the person nothing — it says Factorio and
-means it. Reading what you're actually running isn't possible yet; a plugin
-can't see your processes, and [the client addons
-page](/docs/build/addons) says why. Until that changes, a real one would ask
-you to type it, or read it from a game that publishes it somewhere a web page
-can reach.
+means it. Reading what you're actually running is narrow: the `processes`
+permission only reports programs you've listed in the desktop app, and [the
+client addons page](/docs/build/addons) has the rest. Otherwise a real one
+would ask you to type it, or read it from a game that publishes it somewhere a
+web page can reach.
 
 ## Versions
 
@@ -307,7 +305,7 @@ That's between your two halves, which is where it belongs.
 
 **`gryt.messaging.servers()` is empty.** No server you're on is running the other half, or
 you're on a server old enough not to say. Check the server log says your plugin
-started — and check the server menu, under **What this server runs**, which
+started — and check the server menu, under **Plugins**, which
 lists what that server admits to.
 
 **Messages send and nothing comes back.** The server drops a message for a

@@ -10,8 +10,8 @@ import { Steps, Step } from 'fumadocs-ui/components/steps';
 An addon is a folder Gryt reads at startup. A **theme** is CSS. A **plugin** is
 JavaScript.
 
-Open Settings, then Addons, then **Open folder** to see where they go. Drop a
-folder in and Gryt picks it up without a restart.
+In the desktop app, open Settings, then Addons, then **Open Addons Folder** to see
+where they go. Drop a folder in and Gryt picks it up without a restart.
 
 Every folder needs a `manifest.json`:
 
@@ -85,15 +85,11 @@ do is add a button, change how a message looks, or put an element on the page,
 because it isn't on the page. [A panel of your own](#a-panel-of-your-own) below
 is the whole of what drawing means here.
 
-**Anything that needs the operating system doesn't.** Watching which game
-you're running means reading the process list, which is Node's job, not the
-page's. Gryt would have to expose that from its main process first. That hands
-a plugin a list of every program you have open, and lets it put one of their
-names in front of everybody on your servers, so it needs a permission of its
-own rather than riding on `status`.
-
-It's on the list. Until it lands, a game plugin has to ask you what you're
-playing rather than work it out.
+**Most of the operating system is out of reach.** A plugin can't read your
+process list or run anything. Two permissions open a narrow slice in the desktop
+app. `processes` tells it which of the programs *you listed* are running, and
+`media` tells it what your media controls say is playing. Nothing else you have
+open.
 
 ## A panel of your own
 
@@ -167,12 +163,16 @@ A plugin says what it needs in its manifest:
 Whoever runs it turns that on in Settings, under the addon. Until they do,
 `setActivity` throws.
 
-Two of them:
+There are six:
 
 | Capability | What it lets a plugin do |
 | --- | --- |
 | `status` | Set what you are doing, on every server you are on |
 | `messaging` | Exchange its own messages with the servers you are on |
+| `display` | Show its own panel beside the member list |
+| `processes` | See which of your listed programs are running |
+| `media` | See what your computer's media controls say is playing |
+| `activity` | Put a card on your profile, like "Listening to", on every server you are on |
 
 The second is how a plugin talks to a copy of itself running on a server, so
 what it knows reaches other people — see [plugin
@@ -216,7 +216,7 @@ does is look wrong.
 <Step>
 ### Make the folder
 
-Settings, Addons, **Open folder**, then a new folder inside it called
+Settings, Addons, **Open Addons Folder**, then a new folder inside it called
 `nowplaying`.
 
 </Step>
@@ -299,12 +299,12 @@ that's a bug worth reporting.
 Your addons are yours. The plugins on a server you've joined are somebody
 else's, and they see what goes through that server.
 
-Every Gryt server names all of them. Open the server menu and pick **What this
-server runs**: what each one is, who wrote it, and what it's allowed to do, in
-words rather than in jargon. If one of them has a half that belongs in your Gryt
-and you don't have it, that says so too.
+Every Gryt server names all of them. Open the server menu and pick **Plugins**:
+what each one is, who wrote it, and what it's allowed to do, in words rather
+than in jargon. If one of them has a half that belongs in your Gryt and you
+don't have it, that says so too.
 
-Leave is the next row down.
+**Remove from sidebar** and **Leave server** are the next two rows down.
 
 ## Removing one
 
