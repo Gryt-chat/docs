@@ -25,7 +25,7 @@ Install dependencies and start everything with the dev script:
 ops/start_dev.sh
 ```
 
-The script installs dependencies for the client and server and starts the SFU, the client and two servers in development mode, in a tmux session.
+The script installs dependencies for the client and server and starts the SFU, the client and two servers in development mode, in a tmux session. It also starts a local identity service. Set `DEV_WITH_AUTH=0` in `ops/.env` to use the production one instead.
 
 ## Workflow
 
@@ -84,8 +84,9 @@ cd packages/sfu && go test ./...
 cd packages/cli && go test ./...
 ```
 
-The client has no single test command. It has `yarn typecheck`, `yarn lint` and
-a long list of targeted checks named `yarn test:*` in its `package.json`. Run
+The client has no single test command. It has `yarn typecheck`, `yarn lint`, a
+Playwright suite under `yarn e2e`, and a long list of targeted checks named
+`yarn test:*` in its `package.json`. Run
 the first two before opening a pull request, and any `test:*` check for the area
 you changed.
 

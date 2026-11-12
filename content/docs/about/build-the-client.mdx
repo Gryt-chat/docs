@@ -70,7 +70,7 @@ The native audio capture binary enables Gryt to exclude its own voice audio from
 By default `electron:build` targets the platform you're running on. To explicitly target one platform:
 
 ```bash
-# Linux (AppImage + deb)
+# Linux (AppImage, deb, rpm, snap)
 npx cross-env ELECTRON=1 vite build && npx electron-builder --linux --publish never
 
 # macOS (dmg + zip, arm64 and x64)
@@ -90,7 +90,7 @@ Built artifacts are written to `packages/client/release/`:
 
 | Platform | Artifacts |
 |----------|-----------|
-| Linux    | `.AppImage`, `.deb` |
+| Linux    | `.AppImage`, `.deb`, `.rpm`, `.snap` |
 | macOS    | `.dmg`, `.zip` |
 | Windows  | NSIS installer (`.exe`), portable (`.exe`) |
 
