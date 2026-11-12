@@ -35,7 +35,7 @@ tags:
 | Field | Required | Description |
 |-------|----------|-------------|
 | `title` | Yes | Displayed as the post heading |
-| `description` | No | Shown on the blog index card and in the page header |
+| `description` | No | Shown in the page header and used in meta tags |
 | `author` | Yes | Author name displayed in post metadata |
 | `date` | Yes | Publication date (`YYYY-MM-DD`), used for sorting (newest first) |
 | `image` | No | Hero image URL shown at the top of the post and on the card |
@@ -49,7 +49,7 @@ Place images in `public/` and reference them with absolute paths:
 ![Alt text describing the image](/my-image.png)
 ```
 
-All images in blog posts automatically get **lightbox** behavior — clicking an image opens it in a fullscreen overlay with the alt text as a caption. The lightbox uses Radix Dialog and supports closing via the X button or the Escape key.
+All images in blog posts automatically get **lightbox** behavior — clicking an image opens it in a fullscreen overlay with the alt text as a caption. The lightbox steps through every picture in the post.
 
 Write descriptive alt text — it doubles as the lightbox caption.
 
@@ -87,7 +87,7 @@ Internal links (starting with `/`) are automatically handled by React Router —
 
 ## Post ordering
 
-Posts are sorted by `date` in descending order (newest first) on the blog index. To control the order of same-day posts, use different dates.
+Posts are sorted by `date` in descending order (newest first) on the blog index. Posts with the same date are ordered by slug.
 
 ## Development
 
@@ -95,7 +95,7 @@ Run the site dev server to preview posts with hot reload:
 
 ```bash
 cd packages/site
-npm run dev
+yarn dev
 ```
 
 Changes to `.mdx` files are picked up automatically by Vite's HMR.

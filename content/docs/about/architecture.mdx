@@ -72,7 +72,7 @@ Express for HTTP, Socket.IO for everything interactive, SQLite through
 
 Almost nothing goes over REST. Uploads and downloads do, because they want plain
 HTTP caching, and so does the join preview. Chat, presence, voice signalling,
-moderation and settings are all socket events: fifty-eight handlers, listed in
+moderation and settings are all socket events: well over a hundred handlers, listed in
 the [API reference](/docs/build/server-api).
 
 ### Two room identifiers
@@ -130,16 +130,26 @@ memory-safety bugs, and this is the one place strangers' files get opened.
 ```
 image-worker/
 ├── src/
-│   ├── index.ts         # polling loop, health server
-│   ├── processImage.ts  # compression and AVIF thumbnails
+│   ├── index.ts         # polling loop, health server, job routing
+│   ├── reencode.ts      # what each kind of upload is written out as
+│   ├── jailedReencode.ts # decodes pictures in the jail
+│   ├── transcode.ts     # video, through ffmpeg
+│   ├── videoPoster.ts   # the poster frame
+│   ├── processImage.ts  # compression and AVIF thumbnails outside quarantine
 │   ├── storage.ts       # reads and writes uploads
 │   └── db.ts            # the job queue
+├── jail/                # the jail program and its entrypoint
 └── Dockerfile
 ```
 
-It polls `image_jobs` for queued rows. Each job reads the raw upload out of the
-server's uploads folder, compresses it to AVIF when it's over the size limit, makes a
-320 px thumbnail, writes both back, and updates the file record.
+It polls `image_jobs` for queued rows. An upload waits under a `quarantine/` key
+until the worker has decoded it in a jail and written it out again at the size
+its use needs (avatar, banner, emoji or chat upload), with a thumbnail where
+that use has one. The original is never served, and it's deleted once the file
+record points at the new file. Quarantined video goes through ffmpeg the same
+way and gets a JPEG poster. Pictures outside quarantine still take the older
+path: compress to AVIF when they're over the size limit, make a 320 px
+thumbnail. Video outside quarantine only gets a poster.
 
 One worker runs per server rather than one per machine, because it reads that
 server's own SQLite database rather than being handed jobs over a network.
