@@ -29,7 +29,8 @@ client behind a proxy arrives with the proxy's address and shares one bucket.
 Each action adds `scorePerAction`. Before that, the score is reduced by one point
 for every `scoreDecayMs` that have passed since it was last touched, floored at
 zero. When the result is over `maxScore` the action is refused and the caller is
-told to wait `currentScore * scoreDecayMs`.
+told to wait until enough has decayed for the next action to fit, which is a
+whole number of `scoreDecayMs` steps. The refused action still counts.
 
 Waiting longer than you need to costs nothing, since the score keeps decaying.
 
@@ -79,14 +80,14 @@ is a thing a human does once.
 {
   error: "rate_limited",
   retryAfterMs: number,
-  currentScore?: number,
-  maxScore?: number
+  message: string
 }
 ```
 
-`currentScore` and `maxScore` are only present when it was the score that
-refused, not the window. The message the client shows is built from
-`retryAfterMs` rounded up to whole seconds.
+The chat handlers send this on their error events. The `message` reads "Too fast.
+Wait 3s." with `retryAfterMs` rounded up to whole seconds. The score and window
+details stay on the server. HTTP routes answer 429 with a `Retry-After` header in
+whole seconds.
 
 ## Invites are separate
 
@@ -97,10 +98,10 @@ variable rather than in code, with cooldowns that escalate:
 |----------|---------|
 | `SERVER_INVITE_MAX_RETRIES` | `8` |
 | `SERVER_INVITE_RETRY_WINDOW_MS` | `300000` |
-| `SERVER_INVITE_RETRY_COOLDOWN_MS` | — |
-| `SERVER_INVITE_MAX_COOLDOWN_MS` | — |
-| `SERVER_INVITE_IP_MAX_RETRIES` | — |
-| `GRYT_INVITE_MAX_JOINS_PER_HOUR` | — |
+| `SERVER_INVITE_RETRY_COOLDOWN_MS` | `60000` |
+| `SERVER_INVITE_MAX_COOLDOWN_MS` | `3600000` |
+| `SERVER_INVITE_IP_MAX_RETRIES` | `20` |
+| `GRYT_INVITE_MAX_JOINS_PER_HOUR` | `60` |
 
 <Callout type="warn" title="Counters live in memory">
 The limiter is a process-local map. Restarting the server clears every score,
@@ -112,11 +113,14 @@ or go five minutes untouched.
 
 ## Debugging
 
-Bans are logged as they're applied, with the key, the score and the ban length:
+Bans are logged as they're applied, with the event, the user, a hashed label for
+the address, the score and the ban length:
 
 ```
-🚫 Rate limit ban applied (score-based) { key: 'chat:send:user123:203.0.113.10', score: 11, maxScore: 10, banMs: 30000 }
+🚫 Rate limit ban applied (score-based) { event: 'chat:send', user: 'user123', address: 'ip_3f9a1c2e', score: 11, maxScore: 10, banMs: 30000 }
 ```
 
-A key that reads `…:anonymous:unknown` means neither a user ID nor an address
-reached the limiter, and everybody in that state shares one bucket.
+The label is salted per process, so it tells two callers apart without writing
+an address down, and it changes when the server restarts. A line that reads
+`user: 'anonymous'` with `address: 'ip_unknown'` means neither a user ID nor an
+address reached the limiter, and everybody in that state shares one bucket.

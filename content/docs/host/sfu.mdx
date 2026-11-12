@@ -56,7 +56,7 @@ NVENC, Quick Sync, AMF. AV1 is there for hardware new enough to want it.
 
 ## Configuration
 
-Every variable the SFU reads. There are no others.
+Every variable the SFU reads.
 
 | Variable | Default | What it does |
 |----------|---------|--------------|
@@ -67,13 +67,16 @@ Every variable the SFU reads. There are no others.
 | `SFU_METRICS_HOST` | every address | The address `SFU_METRICS_PORT` listens on. Has to be an IP |
 | `ICE_UDP_MUX_PORT` | `3478` | The one UDP port all media flows over |
 | `STUN_SERVERS` | `stun:stun.l.google.com:19302` | Comma-separated, used both for ICE and for the startup readiness probe |
-| `DISABLE_STUN` | `false` | Stop discovering server-reflexive candidates |
-| `ICE_ADVERTISE_IP` | — | Comma-separated IPs to advertise as host candidates instead of the ones found on the interfaces |
+| `DISABLE_STUN` | `false`, or `true` when `ICE_ADVERTISE_IP` is set | Stop discovering server-reflexive candidates. Set `false` to keep STUN on next to `ICE_ADVERTISE_IP` |
+| `ICE_ADVERTISE_IP` | — | Comma-separated IPs to advertise as host candidates instead of the ones found on the interfaces. Any candidate with an address that isn't in the list is dropped |
 | `MAX_PEERS` | `200` | How many peers may be connected at once, across all rooms |
 | `SFU_REQUIRE_CLIENT_TOKEN` | `true` | Refuse joins without a signed token. `false` still lets a client in with the old shared server password |
 | `SFU_PING_INTERVAL` | `30` | Seconds between pings on a quiet connection. `0` turns liveness checks off |
 | `SFU_PONG_TIMEOUT` | `90` | Seconds a peer can stay silent before it's dropped. Raised to two ping intervals if set lower |
 | `SFU_CALL_ALONE_TIMEOUT` | `120` | Seconds one person can be alone in a call before the SFU ends it. `0` turns it off |
+| `SFU_MAX_INGEST_KBPS` | `0` | The most one peer should send, in kbps. It's told to clients in `room_joined`, which keep their upload under it. The SFU doesn't enforce it. `0` is no cap |
+| `AUDIO_TRANSPORT_PORT` | `4433` | UDP port of Gryt's own voice transport. It only starts when `ICE_ADVERTISE_IP` is set. `0` turns it off |
+| `AUDIO_UDP_PORT` | — | UDP port for the native voice engine in the phone and desktop apps. Off unless set, and it rides on the transport above |
 | `DEBUG` | `true` | Room, connection and signaling logging. On unless explicitly set to `false` |
 | `VERBOSE_LOG` | `false` | Per-packet RTP forwarding detail |
 
@@ -143,10 +146,11 @@ anyway, with a warning in the log.
 
 ### Metrics
 
-Four gauges, resynced from real state every fifteen seconds:
-`gryt_sfu_rooms_active`, `gryt_sfu_peers_active`,
-`gryt_sfu_websocket_connections_active`, `gryt_sfu_tracks_active`. Standard Go
-runtime metrics come along with them.
+Four gauges: `gryt_sfu_rooms_active`, `gryt_sfu_peers_active`,
+`gryt_sfu_websocket_connections_active`, `gryt_sfu_tracks_active`. Rooms and
+peers are resynced from real state every fifteen seconds. Two counters,
+`gryt_sfu_tracks_refused_total` and `gryt_sfu_websocket_ping_timeouts_total`,
+and the standard Go runtime metrics come along with them.
 
 ## The WebSocket protocol
 
@@ -185,7 +189,7 @@ closed with "Expected client_join event".
 | Event | Direction | Payload |
 |-------|-----------|---------|
 | `client_join` | client → SFU | `{ room_id, server_id, server_password, user_token, user_id }` |
-| `room_joined` | SFU → client | — |
+| `room_joined` | SFU → client | `{ message, call_alone_timeout_seconds, … }` |
 | `room_error` | SFU → client | The reason, as a string |
 | `offer` | SFU → client | SDP |
 | `answer` | client → SFU | SDP |
@@ -209,9 +213,9 @@ Descriptor extension.
 5. Each track the client publishes gets a `LayerForwarder`: one goroutine
    reading RTP, parsing the Dependency Descriptor if present, and writing to one
    local track per receiver.
-6. Each forwarder sends the sender a PLI every two seconds, and relays any PLI
-   or FIR from a receiver as a PLI to the sender. FIR is translated to PLI
-   rather than passed through.
+6. Each forwarder relays any PLI or FIR from a receiver as a PLI to the sender.
+   FIR is translated to PLI rather than passed through. It also asks the sender
+   for a keyframe when a viewer's `video_demand` brings a hidden stream back.
 7. On leave, tracks, forwarders and the peer connection are torn down, and the
    server is told with `peer_left`.
 
@@ -233,7 +237,7 @@ sfu/
     ├── track/          # track lifecycle
     ├── webrtc/         # peer connection management
     ├── websocket/      # the two connection kinds and their handlers
-    └── metrics/        # the four gauges
+    └── metrics/        # the gauges and counters
 ```
 
 ## Running it

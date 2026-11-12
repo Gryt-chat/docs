@@ -67,7 +67,7 @@ candidate says 57599 because that's what the outside world actually saw. When
 those differ, external peers need the second one, and they only get it if STUN
 is on.
 
-So: keep `DISABLE_STUN=false`, which is the default. Turning STUN off is only
+So: keep `DISABLE_STUN=false`. It's the default, unless `ICE_ADVERTISE_IP` is set, which turns STUN off until you say `DISABLE_STUN=false`. Turning STUN off is only
 safe when the SFU has a direct, port-preserving path out — host networking, bare
 metal, or a 1:1 NAT. Docker and most cloud networking are neither.
 
@@ -79,7 +79,9 @@ ICE_ADVERTISE_IP=203.0.113.10
 ```
 
 Comma-separate it for a machine that should be reachable over both a LAN and the
-internet. Clients are given every candidate and use whichever answers first.
+internet. Clients are given every candidate and use whichever answers first. The
+SFU drops any candidate whose address isn't in the list, so a `srflx` candidate
+with a different IP never reaches the client.
 
 ## Reading the logs
 
@@ -113,8 +115,10 @@ in the latency panel. It only fills in while you're connected to voice:
 | ICE remote | The address media is really going to |
 | ICE local | Your side of the pair |
 | Candidate type | `host` on a LAN, `srflx` through NAT |
-| Round-trip time | Yours, next to the other participants' |
+| RTT | Yours, next to the other participants' |
 | Jitter buffer | Highlighted above 80 ms |
+
+The addresses are hidden until you click **Show addresses**.
 
 If you're on the same network as the SFU and ICE remote shows a `192.168.x.x`
 address at near-zero latency, the LAN path won. A public address at 20 ms means

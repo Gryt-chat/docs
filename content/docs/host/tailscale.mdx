@@ -63,8 +63,8 @@ you ever join.
 <Step>
 ### Have your friend add it
 
-In their Gryt: **+** &rarr; **Join a server**, and type your Tailscale address
-and port together:
+In their Gryt: **+** &rarr; **Join with an invite**, and type your Tailscale
+address and port together:
 
 ```
 100.101.102.103:5001
@@ -86,39 +86,24 @@ That's chat working. Voice needs one more thing.
 
 ## Voice needs the SFU address to be right
 
-Your server tells joining clients where to find the media server. It fills that
-in when the server is created, using the address it thinks people will reach you
-on. On a laptop that's also on a home network, it picks the home
-address: something like `192.168.1.20`. Your friend on Tailscale can't reach
-that, so they join fine, chat fine, and hear nothing.
+Your server tells joining clients where to find the media server. The app fills
+that in from the network addresses of the machine, and it leaves out Tailscale
+and other `100.64.0.0/10` addresses. On a laptop that's also on a home network,
+it picks the home address: something like `192.168.1.20`. Your friend on
+Tailscale can't reach that, so they join fine, chat fine, and hear nothing.
 
-The fix is to list both. Open the server's config:
+The fix is to add your Tailscale address. In **Settings &rarr; My servers**, open
+the server's card and find **Advertised addresses**. Type your Tailscale address
+into **Public IPs or hostnames** and click **Save**. Stop the server first, since
+the field is locked while it runs.
 
-```
-<userData>/gryt-servers/<server-id>/config.env
-```
-
-`<userData>` is `~/Library/Application Support/gryt-chat` on macOS,
-`%APPDATA%/gryt-chat` on Windows, `~/.config/gryt-chat` on Linux.
-
-Find `SFU_PUBLIC_HOST` and put your Tailscale address after the existing one,
-separated by a comma:
-
-```bash
-SFU_PUBLIC_HOST=192.168.1.20:5005,100.101.102.103:5005
-```
-
-Both use the SFU port from the same file (`SFU_PORT`), not the server port.
-Restart the server from **Settings &rarr; My servers** and voice works from
-either network: people at home use the first address, people on Tailscale use
-the second.
+Start it again and voice works from either network: people at home use the home
+address, people on Tailscale use the one you added.
 
 <Callout type="warn">
-  **Keep the home address first.** Gryt corrects a stored SFU address that looks
-  wrong for the current network, and it treats a Tailscale address in that slot
-  as one to correct. Leaving the home address at the front means it sees nothing
-  to fix and leaves the line alone. Put Tailscale first and the next start
-  overwrites it.
+  **Don't edit `SFU_PUBLIC_HOST` in `config.env` by hand.** The app rewrites it,
+  and `ICE_ADVERTISE_IP`, from the detected addresses plus that field each time
+  it loads the server. A hand edit that isn't in the field is overwritten.
 </Callout>
 
 ## What doesn't carry over
