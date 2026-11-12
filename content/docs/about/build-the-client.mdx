@@ -73,7 +73,7 @@ By default `electron:build` targets the platform you're running on. To explicitl
 # Linux (AppImage + deb)
 npx cross-env ELECTRON=1 vite build && npx electron-builder --linux --publish never
 
-# macOS (zip)
+# macOS (dmg + zip, arm64 and x64)
 npx cross-env ELECTRON=1 vite build && npx electron-builder --mac --publish never
 
 # Windows (NSIS installer + portable exe)
@@ -91,7 +91,7 @@ Built artifacts are written to `packages/client/release/`:
 | Platform | Artifacts |
 |----------|-----------|
 | Linux    | `.AppImage`, `.deb` |
-| macOS    | `.zip` |
+| macOS    | `.dmg`, `.zip` |
 | Windows  | NSIS installer (`.exe`), portable (`.exe`) |
 
 ## Verify the build
@@ -153,7 +153,7 @@ The Electron Builder config includes metadata that helps establish trust with op
 
 - **Copyright and publisher** — embedded in the executable's file properties
 - **`requestedExecutionLevel: asInvoker`** — declares the app doesn't require admin privileges
-- **macOS entitlements** — declares only the permissions the app actually needs (microphone, network)
+- **macOS entitlements** — declares microphone and camera access, plus the JIT and library-validation exceptions Electron needs
 - **NSIS display names** — proper app name in Add/Remove Programs and Start Menu
 
 If you're building from source, these are all configured in `electron-builder.yml` and applied automatically during the build.

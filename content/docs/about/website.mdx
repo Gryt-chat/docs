@@ -11,8 +11,7 @@ The Gryt site (`packages/site`) is the public-facing website at [gryt.chat](http
 - **Vite** for bundling and dev server
 - **React 19** with React Router for SPA routing
 - **MDX** for blog posts (via `@mdx-js/rollup` with remark plugins)
-- **Radix UI** for accessible primitives (Dialog, Navigation Menu, Tooltip)
-- **CSS Modules** for scoped styling with CSS custom properties
+- **Tailwind** and **CSS Modules** for styling, with CSS custom properties
 
 ## Project structure
 
@@ -49,12 +48,14 @@ site/
 | `/auth/callback` | The OIDC redirect target |
 | `*` | Not found |
 
+That's not every route. There are also `/features`, `/download`, `/support/*`, `/developers/*` and a few more, all in `src/App.tsx`.
+
 ## Getting started
 
 ```bash
 cd packages/site
-npm install
-npm run dev
+yarn install
+yarn dev
 ```
 
 Open [http://localhost:5173](http://localhost:5173).
@@ -62,12 +63,13 @@ Open [http://localhost:5173](http://localhost:5173).
 ## Build
 
 ```bash
-npm run build     # production bundle → dist/
-npm run preview   # preview the production build locally
+yarn build     # production bundle → dist/
+yarn preview   # preview the production build locally
 ```
 
-`build` is more than a bundle. In order it typechecks with `tsc -b`, optimises
-images, runs the Vite build, prerenders the blog and changelog so each post has
-real HTML for crawlers and link unfurls, and finishes with `check-meta`, which
+`build` is more than a bundle. In order it fetches GitHub stats and releases,
+checks the changelog lines, typechecks with `tsc -b`, optimises images, runs the
+Vite build and a server-side build, and prerenders every page so each one has
+real HTML for crawlers and link unfurls. It finishes with `check-meta`, which
 fails the build if any page is missing a title suffix, an `og:image` or a
-consistent canonical.
+consistent canonical, and `check-sitemap`.

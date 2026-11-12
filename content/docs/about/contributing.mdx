@@ -9,7 +9,7 @@ icon: Heart
 - **Node.js** 22.13 or newer, and **yarn**. Not npm: `packages/client` and
   `packages/server` ship a `yarn.lock`, and `npm install` resolves a different
   tree and writes a competing lockfile.
-- **Go** 1.24 or newer for the SFU, 1.25 for the CLI
+- **Go** 1.26 or newer for the SFU, 1.25 for the CLI
 - **Docker**, if you want to run anything in a container
 
 ## Setup
@@ -25,7 +25,7 @@ Install dependencies and start everything with the dev script:
 ops/start_dev.sh
 ```
 
-The script installs dependencies for all packages and starts the client, server, and SFU in development mode.
+The script installs dependencies for the client and server and starts the SFU, the client and two servers in development mode, in a tmux session.
 
 ## Workflow
 
@@ -84,9 +84,10 @@ cd packages/sfu && go test ./...
 cd packages/cli && go test ./...
 ```
 
-The client has no general test suite yet. What it has is `yarn typecheck` and
-`yarn lint`, and one targeted check, `yarn test:updater-bridge`. Run the first
-two before opening a pull request.
+The client has no single test command. It has `yarn typecheck`, `yarn lint` and
+a long list of targeted checks named `yarn test:*` in its `package.json`. Run
+the first two before opening a pull request, and any `test:*` check for the area
+you changed.
 
 ## Blog and site content
 
@@ -96,7 +97,7 @@ Quick steps to add a blog post:
 
 1. Create `packages/site/content/blog/my-post.mdx` with frontmatter (`title`, `author`, `date`)
 2. Place images in `packages/site/public/` and reference them as `![alt](/filename.png)`
-3. Run `npm run dev` in `packages/site` to preview
+3. Run `yarn dev` in `packages/site` to preview
 
 ## AI-assisted contributions
 
