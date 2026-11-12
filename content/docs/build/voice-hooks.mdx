@@ -28,7 +28,7 @@ const {
 
 `connectionState` is a `SFUConnectionState`: `disconnected`, `requesting_access`, `connecting`, `connected`, `reconnecting` or `failed`.
 
-`connectionError` says why a connection ended when the engine has something to say. `"reconnect-failed"` means it retried and gave up. Null covers everything else, including an ordinary hang-up. Without it, `disconnected` alone can't tell a dropped call from somebody pressing leave, which left embedders guessing.
+`connectionError` says why a connection ended when the engine has something to say. `"reconnect-failed"` means it retried and gave up, and a refused room gives the `reason` it was refused with. Null covers everything else, including an ordinary hang-up. Without it, `disconnected` alone can't tell a dropped call from somebody pressing leave, which left embedders guessing.
 
 `streams` is keyed by id and carries `{ stream, isLocal, kind }`. `streamSources` gives you the Web Audio nodes per remote stream, a gain and an analyser, which is what a speaking indicator or a per-person volume slider reads. `videoStreams` is the plain map of camera and screen streams.
 
@@ -120,24 +120,15 @@ maxHeight?, bitrate?, codec?)` drives the hardware encoder, `encodedCodec` repor
 frames so they can be forwarded without a decode and re-encode. It returns its own
 unsubscribe function.
 
-<Callout type="warn" title="Two exported types share these names">
-`NativeAudioCapture` and `NativeScreenCapture` each name two different interfaces
-in this package: the shapes above, and the host-side APIs in `host/`. The host
-ones win at the package root, so `import type { NativeAudioCapture } from "@gryt/voice"`
-gives you the host interface rather than the hook's return. Until that's sorted
-out, let the hook's return type be inferred instead of annotating it.
-</Callout>
+The hooks' return types are exported as `NativeAudioCaptureState` and `NativeScreenCaptureState`. `NativeAudioCapture` and `NativeScreenCapture` are the host-side interfaces from `VoiceHost`.
 
 ## The lower level
 
 `useSFUStreams` is the stream bookkeeping `useSFU` uses internally: it takes the
 stream maps and their setters and keeps them in step as tracks arrive and leave.
-`usePipelineControls` is the same idea for audio, taking the microphone buffer,
-the audio context and every setting the chain reads, and pushing changes into the
-running graph.
-
-Neither is needed to make a call. They're exported for an embedder rebuilding
-`useSFU` or the microphone pipeline rather than using them.
+It's exported for an embedder rebuilding `useSFU` rather than using it, and
+isn't needed to make a call. The microphone's equivalent, `usePipelineControls`,
+is internal and not exported.
 
 ## Smaller pieces
 

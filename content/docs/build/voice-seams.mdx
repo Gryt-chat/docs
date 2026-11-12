@@ -28,6 +28,7 @@ interface VoiceConfig {
     autoGain: { enabled: boolean; targetDb: number };
     compressorEnabled: boolean;
     compressorAmount: number;
+    bitrateKbps?: number;
   };
   camera: {
     deviceId?: string;
@@ -46,6 +47,8 @@ interface VoiceConfig {
     stunHosts: string[];
     eSportsMode: boolean;
     maxBitrate?: number | null;
+    audioTransportWasm?: () => Promise<ArrayBuffer>;
+    nativeAudio?: boolean;
   };
 }
 ```
@@ -72,7 +75,7 @@ feeds is declared `minValue: 0, maxValue: 100`. `noiseSuppression` is off on nat
 </VoiceConfigProvider>
 ```
 
-`callbacks` is the other direction: things the engine finds out and the app might want to store. There's one so far, `onCameraDeviceChanged`, which fires when the camera that opened isn't the one that was configured, usually because it has been unplugged. These are deliberately not setters. The engine says what it observed and the app writes it down, or doesn't.
+`callbacks` is the other direction: things the engine finds out and the app might want to store. There are two. `onCameraDeviceChanged` fires when the camera that opened isn't the one that was configured, usually because it has been unplugged. `onAudioDeviceChanged` fires when the stored microphone wouldn't open and the engine fell back to the platform default. These are deliberately not setters. The engine says what it observed and the app writes it down, or doesn't.
 
 ## VoiceTarget and RoomCoordinator
 
@@ -121,7 +124,7 @@ interface RoomAccess {
 
 `sfuUrls` is a list of candidates rather than a single answer. The engine probes them and picks, which is what `selectBestSfuUrl` is for. Handing over one chosen URL would either throw that away or push it into every embedder. `cacheKey` is what the chosen URL is cached against so a reconnect can skip the probing, and it's opaque to the engine. The Gryt client passes the server's host, which is exactly the sort of thing the engine isn't supposed to know it has.
 
-`reason` and `retryAfterMs` are populated when access is refused, so the caller can say why instead of "failed".
+`reason` and `retryAfterMs` are populated when access is refused, so the caller can say why instead of "failed". A refusal without `retryAfterMs` ends the call at once with `reason` as `connectionError`.
 
 ## VoiceHost
 
@@ -155,7 +158,7 @@ interface SfuTransport {
 }
 ```
 
-Outbound events are `client_join`, `offer`, `answer`, `candidate`, `renegotiate` and `keep_alive`. Inbound are `room_joined`, `offer`, `answer` and `candidate`. Every one carries a string `data`.
+Outbound events are `client_join`, `offer`, `answer`, `candidate`, `renegotiate`, `keep_alive` and `still_here`. Inbound are `room_joined`, `offer`, `answer` and `candidate`. Every one carries a string `data`.
 
 ## VoicePlatform
 
@@ -163,16 +166,18 @@ Capture, playback and peer construction, which differ per platform.
 
 ```typescript
 interface VoicePlatform {
+  readonly name: string;
   createPeerConnection(config: RTCConfiguration): RTCPeerConnection;
   getMicrophone(deviceId?: string): Promise<MediaStream>;
   getCamera(constraints: CameraConstraints): Promise<MediaStream>;
   getScreen?(constraints: ScreenConstraints): Promise<MediaStream>;
-  listDevices(): Promise<VoiceDevice[]>;
-  createAudioPipeline(options: AudioPipelineOptions): AudioPipeline;
+  createNoiseSuppressor?(): NoiseSuppressor;
+  createAudioPipeline?(options: AudioPipelineOptions): AudioPipeline;
+  startNativeAudio?(offer: AudioUDPOffer, effects: VoiceEffectSettings): Promise<NativeAudioSession | null>;
 }
 ```
 
-`getScreen` is optional because some platforms have no such concept, which is phones. `createAudioPipeline` is the audio graph: on the web it's built from `AudioContext` and `AudioWorklet`, and a native implementation would use its own audio API and skip noise suppression, since the phone already does it.
+`getScreen` is optional because some platforms have no such concept, which is phones. `createAudioPipeline` is optional too. The web platform leaves it out and the engine builds its Web Audio graph, because that graph hands out `AudioNode`s the app's meters read directly. The React Native platform supplies a passthrough pipeline and no `createNoiseSuppressor`, since the phone already does noise suppression. `startNativeAudio` starts the phone's native voice engine and returns null if it won't start.
 
 The interface is deliberately narrow. Everything that isn't capture or playback is shared, so anything you want to add here is worth re-examining first.
 
