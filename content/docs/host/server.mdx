@@ -45,7 +45,7 @@ live in the database and are covered further down.
 | `CORS_ORIGIN` | — | Comma-separated origins allowed to connect |
 | `SFU_WS_HOST` | — | Where the server reaches the SFU, internally |
 | `SFU_PUBLIC_HOST` | — | Where clients should reach the SFU. Usually different |
-| `STUN_SERVERS` | Google's | Passed through to clients |
+| `STUN_SERVERS` | — | Passed through to clients. None are sent when it's unset |
 
 <Callout type="warn" title="HOST defaults to loopback">
 A server left on `127.0.0.1` still advertises itself over mDNS, so clients on
@@ -59,7 +59,7 @@ startup. Set `HOST=0.0.0.0` for a server other machines should reach.
 |----------|---------|--------------|
 | `MAX_MEMBERS` | `100` | How many members the server accepts |
 | `VOICE_MAX_USERS` | `0` | Voice seats. `0` is no limit |
-| `GRYT_INVITE_MAX_JOINS_PER_HOUR` | — | Per-invite join rate |
+| `GRYT_INVITE_MAX_JOINS_PER_HOUR` | `60` | Per-invite join rate |
 | `GRYT_SERVER_ICON_MAX_MB` | `25` | Server icon upload ceiling. `SERVER_ICON_MAX_MB` also works |
 | `MESSAGE_CACHE_TTL_MS` | `30000` | How long a message page stays cached |
 | `REFRESH_TOKEN_TTL_DAYS` | `7` | Refresh token lifetime |
@@ -140,9 +140,9 @@ other limit the server applies, and what it does when somebody hits one.
 |----------|---------|
 | `SERVER_INVITE_MAX_RETRIES` | `8` |
 | `SERVER_INVITE_RETRY_WINDOW_MS` | `300000` |
-| `SERVER_INVITE_IP_MAX_RETRIES` | — |
-| `SERVER_INVITE_RETRY_COOLDOWN_MS` | — |
-| `SERVER_INVITE_MAX_COOLDOWN_MS` | — |
+| `SERVER_INVITE_IP_MAX_RETRIES` | `20` |
+| `SERVER_INVITE_RETRY_COOLDOWN_MS` | `60000` |
+| `SERVER_INVITE_MAX_COOLDOWN_MS` | `3600000` |
 
 ### The rest
 
@@ -159,7 +159,7 @@ write a row:
 
 | Setting | Values |
 |---------|--------|
-| `joinPolicy` | `invite`, `open` |
+| `joinPolicy` | `invite`, `open`, `request` |
 | `discoverable` | on, off |
 | `lanOpen` | on, off |
 | `profanityMode` | `off`, `flag`, `censor`, `block` |
@@ -185,7 +185,7 @@ administer. So there's a second, tiny listener for exactly that.
 
 | Endpoint | What it does |
 |----------|--------------|
-| `GET /management/settings` | The four settings above |
+| `GET /management/settings` | The server's settings, including the four above |
 | `PATCH /management/settings` | Change some of them. Send only the keys you're changing |
 | `GET /management/health` | `{"ok":true}` |
 
@@ -217,6 +217,6 @@ at all, and the `gryt` CLI says so.
 | `GET /health` | `{ status, service, serverName, timestamp }` |
 | `GET /info` | The public join preview |
 | `GET /icon` | The server icon, 404 when none is set |
-| `GET /metrics` | Prometheus |
+| `GET /metrics` | Prometheus, on `METRICS_PORT` (default `9091`) rather than the main port. `0` stops serving it |
 
 The full REST and Socket.IO surface is in the [API reference](/docs/build/server-api).

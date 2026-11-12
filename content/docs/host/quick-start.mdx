@@ -42,11 +42,11 @@ This is the least fiddly path for a machine you administer. Full details on the
 No separate software at all. Good for a LAN party or a few people.
 
 1. Install the [desktop app](https://github.com/Gryt-chat/gryt/releases)
-2. **Add Server**, then **Host a server**
-3. Name it, **Create server**
+2. **Add a server**, then **Create my own**
+3. Name it, **Create**
 
 It starts and connects you. Others on the same network find it over mDNS
-without being given an address, which **Discoverable on LAN** controls. **Start
+without being given an address, which **Let others on my network find it** controls. **Start
 automatically with app** brings it back on every launch.
 
 For anything internet-facing, use Compose or the CLI instead.
@@ -162,9 +162,10 @@ cp ops/deploy/host/.env.example ops/deploy/host/.env
 docker compose -f ops/deploy/host/compose.yml up -d --build
 ```
 
-Put your tunnel token in the `.env` first. The tunnel carries HTTP and
-WebSockets, so it handles signalling; the media port still has to be exposed
-directly. See the [Cloudflare Tunnel guide](/docs/host/cloudflare-tunnel).
+Set `JWT_SECRET`, `SFU_PUBLIC_HOST` and `CORS_ORIGIN` in the `.env` first. The
+compose file doesn't start the tunnel, so run `cloudflared` yourself. It carries
+HTTP and WebSockets, so it handles signalling; the media port still has to be
+exposed directly. See the [Cloudflare Tunnel guide](/docs/host/cloudflare-tunnel).
 
 ## Kubernetes
 

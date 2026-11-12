@@ -10,7 +10,7 @@ Every service takes its settings from the environment. The full variable lists
 live with the service they belong to:
 
 - [Server](/docs/host/server) — the largest set, plus the four settings that live in its database
-- [SFU](/docs/host/sfu) — nine variables, most of which you'll never touch
+- [SFU](/docs/host/sfu) — most of its variables are ones you'll never touch
 - [CLI](/docs/host/cli) — writes all of this for you, if you would rather not
 
 This page covers the client, and the settings that only make sense across
@@ -25,10 +25,10 @@ are runtime settings in the UI, and capture is fixed at 48 kHz.
 | Setting | Default |
 |---------|---------|
 | `GRYT_OIDC_ISSUER` | `https://auth.gryt.chat/realms/gryt` |
-| `GRYT_OIDC_REALM` | `gryt`, or derived from the issuer |
+| `GRYT_OIDC_REALM` | `gryt` |
 | `GRYT_OIDC_CLIENT_ID` | `gryt-web` |
 | `GRYT_IDENTITY_URL` | `https://id.gryt.chat` |
-| `GRYT_AUTH_API` | `https://auth.gryt.chat`, or derived from the issuer |
+| `GRYT_AUTH_API` | `https://auth.gryt.chat` |
 | `GRYT_AUTH_CALLBACK_URL` | `https://gryt.chat/auth/callback` |
 
 ### Three places these come from
@@ -62,12 +62,15 @@ which describes what happened and not why: the token was genuine, it was just
 signed by the wrong Keycloak.
 </Callout>
 
-### Realm and auth API are usually derived
+### Realm and auth API
 
-Set `GRYT_OIDC_ISSUER` to something like
-`https://keycloak.example.com/realms/mycommunity` and the realm and the auth API
-base are pulled out of it. You only set those two by hand for a layout that does
-not follow the `/realms/<name>` convention.
+The environment doesn't derive anything. Point `GRYT_OIDC_ISSUER` at
+`https://keycloak.example.com/realms/mycommunity` and you still need to set
+`GRYT_OIDC_REALM` and `GRYT_AUTH_API` yourself, because the container fills in
+the defaults above for whatever you leave out.
+
+An issuer a user types into the account settings screen is different: there the
+client pulls the realm and the auth API base out of it.
 
 `GRYT_IDENTITY_URL` is never derived, because there's nothing in an issuer URL
 to derive it from. It's a different service on a different host: `id.gryt.chat`
@@ -229,7 +232,7 @@ Turning discovery off has to withdraw the mDNS advertisement.
 
 | Setting | Values |
 |---------|--------|
-| `joinPolicy` | `invite`, `open` |
+| `joinPolicy` | `invite`, `open`, `request` |
 | `discoverable` | on, off |
 | `lanOpen` | on, off |
 | `profanityMode` | `off`, `flag`, `censor`, `block` |
@@ -292,15 +295,18 @@ them.
 
 ## Administrative commands
 
-Run inside the server container, or beside a built server:
+Run from a built checkout of the server:
 
 ```bash
-yarn admin:set-owner
+yarn admin:set-owner --grytUserId <user id>
 yarn admin:rotate-identity
 ```
 
 The first hands ownership to a different member, which is how you recover a
 server whose owner is gone. The second replaces the server's identity keypair.
+
+The Docker image carries only the first, as `node admin-setOwner.js --grytUserId
+<user id>`. See [Changing the server owner](/docs/host/docker-compose#changing-the-server-owner-cli).
 
 ## Health checks
 
