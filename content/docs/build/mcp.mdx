@@ -63,8 +63,9 @@ It can't read DMs. A bot can't open one, and none of the tools ask.
 `server_status` needs `view_diagnostics`, which only the owner holds by default.
 It shows who's in which voice channel, whether they're muted, their latency
 and jitter, and the SFU's live numbers: rooms, peers, tracks, refused tracks and
-ping timeouts. The SFU numbers need [`SFU_METRICS_URL`](/docs/host/configuration#the-sfus-numbers)
-on the server. Without it you get everything else.
+ping timeouts. The SFU numbers come from [`SFU_METRICS_URL`](/docs/host/configuration#the-sfus-numbers)
+on the server, or from port 9091 on the SFU's host if you don't set it. If
+neither answers, you get everything else.
 
 ## Keeping it on a leash
 
