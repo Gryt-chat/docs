@@ -204,8 +204,9 @@ a candidate, but gathering never finishes, and that is where most of the
 fifteen seconds go.
 
 The server decides which STUN servers clients use, through `STUN_SERVERS`. The
-default spans two providers, so one of them being filtered is not fatal. If
-yours has been cut down to a single provider, add another.
+Docker Compose files default to Cloudflare and Google, so one of them being
+filtered is not fatal. The server's `example.env` and the CLI only list two
+Google servers. If yours has a single provider, add another.
 
 ## Invite issues
 
@@ -296,20 +297,12 @@ kubectl get services -l app.kubernetes.io/name=gryt
 kubectl get ingress
 ```
 
-## Debug logging
-
-```bash
-DEBUG=gryt:* npm run dev          # all components
-DEBUG=gryt:audio:* npm run dev    # audio only
-DEBUG=gryt:websocket:* npm run dev
-```
-
 ## Health and metrics endpoints
 
 | Endpoint | Service | Description |
 |----------|---------|-------------|
-| `GET /health` | server, SFU | Health check |
-| `GET /metrics` | server, SFU | Prometheus metrics |
+| `GET /health` | server, SFU | Health check, on the service's own port |
+| `GET /metrics` | server, SFU | Prometheus metrics, on a separate port: 9091 by default, set with `METRICS_PORT` on the server and `SFU_METRICS_PORT` on the SFU |
 
 ## Reporting issues
 
