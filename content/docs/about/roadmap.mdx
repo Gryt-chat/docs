@@ -172,8 +172,11 @@ person on another server starts a separate conversation with its own history,
 and neither server can tell the two are the same people. That is deliberate:
 carrying a conversation between servers would mean either storing everyone's
 private messages centrally or letting servers tell each other which servers you
-are on. Your messages sit on that server, so whoever runs it can read them, the
-same as any channel. Server owners can turn direct messages off entirely.
+are on. A one-to-one conversation is encrypted, so the server only holds what it can't
+read. Group conversations are sealed to every member too, with the older
+per-member keys rather than MLS. If one member has no key, or their key changed,
+that group's messages go unsealed until it's sorted, and then the server can read
+them like any channel. Server owners can turn direct messages off entirely.
 
 ## User profiles and presence
 
