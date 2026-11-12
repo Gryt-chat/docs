@@ -149,7 +149,7 @@ All settings are in `config.env`. Key options:
 | `METRICS_PORT` | `0` | The server's own metrics port. `0` turns them off |
 | `DATA_DIR` | `./data` | Where SQLite database and file uploads are stored |
 | `STORAGE_BACKEND` | `filesystem` | File storage mode (`filesystem` for self-hosted) |
-| `JWT_SECRET` | *(auto-generated)* | Session token secret — set a strong value for production |
+| `JWT_SECRET` | *(unset)* | Session token secret. Unset, the server signs with a placeholder everybody knows, so set a strong value |
 
 ### Using this SFU from another machine
 

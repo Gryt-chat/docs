@@ -37,7 +37,7 @@ GRYT_IDENTITY_TIERS=local
 
 Anything unrecognised in the list is ignored, and an empty or unparseable value falls back to `account`. A server never becomes easier to get into because of a typo.
 
-Clients read this before joining. The Add Server dialog shows **"No account needed"** or **"Gryt account required"** as soon as it has fetched the server's `/info`, so nobody discovers your policy by being turned away.
+Clients read this before joining. The Add Server dialog shows **"No account needed"** or **"Account required"** as soon as it has fetched the server's `/info`, so nobody discovers your policy by being turned away.
 
 <Callout type="warn">
   **Accepting local identities means bans are soft.** A ban is keyed on the
@@ -56,8 +56,9 @@ If bans that stick matter more to you than an easy front door, keep `account` an
 
 Which identities you accept is a separate question from how hard it's to get in with one. That's the **join policy**, set in **Server settings → Overview → Who can join**:
 
-- **Invite** (default) — everybody who isn't already a member needs an invite code, or a private IP if `lan_open` is set
-- **Open** — anyone the server accepts can join without an invite
+- **With an invite** (default) — everybody who isn't already a member needs an invite code, or a private IP if `lan_open` is set
+- **After you let them in** — people ask to join, show up under **Requests**, and get in once somebody there approves them
+- **Anyone, no invite** — anyone the server accepts can join without an invite
 
 The two settings compose, which is deliberate. "Accounts walk in, guests need an invite" isn't a special case, it is `GRYT_IDENTITY_TIERS=account,local` with the join policy left at invite — the account holder and the guest both need a code, and neither needs the other's tier.
 
@@ -84,7 +85,7 @@ The fingerprint is specific to your server. The same person shows a different fi
 
 A local identity lives in the browser's storage on one device. Clearing site data deletes it, and with it every server that identity was known on — roles, and any server it owns.
 
-**Settings → You → Security → Show my identity backup** gives you 24 words. That's your identity, on every server you join without an account, including ones you haven't joined yet. Save it in your password manager.
+**Settings → Account & security → Security → View recovery key** gives you 24 words. That's your identity, on every server you join without an account, including ones you haven't joined yet. Save it in your password manager.
 
 The words are checked when you type them back, so a mistyped or swapped word is rejected rather than quietly making you somebody else. You never have to get them right from memory — copy and paste.
 
@@ -99,9 +100,9 @@ There's no recovery without them. A server owner can move a member to a new iden
 
 No account, and you want to be the same person on another device? Three steps:
 
-1. On the device you already use: **Settings → You → Security → Show my identity backup**, and copy the 24 words.
-2. On the new device: **Settings → You → Security → I already have one**.
-3. Paste the words.
+1. On the device you already use: **Settings → Account & security → Security → View recovery key**, and copy the 24 words.
+2. On the new device: **Settings → Account & security → Security → Restore identity**.
+3. Paste the words and choose **Use recovery key**.
 
 That's it. You're the same member on every server, with the same roles and the same history — and it keeps working for servers you join afterwards, because both devices work out the same keys from the same backup. Nothing needs re-exporting when you join somewhere new.
 
@@ -109,21 +110,7 @@ The field you paste into is a normal password field, so a password manager will 
 
 ### Or a file, if you would rather
 
-**Save a backup file** writes the same thing out as a password-protected file. It's useful if your password manager takes attachments more happily than notes, and it's what the option below reads.
-
-### Authorising a device instead of moving your identity to it
-
-On a machine you don't fully control, pasting your words is the wrong move — that device is then permanently you.
-
-**Settings → You → Security → Authorise this device** takes the backup file and does something different with it. Your key stays in the file. It signs a certificate naming *this* device's own key, and the server accepts that certificate as you.
-
-- Your key is never written to the second device
-- The authorisation expires by itself after 30 days
-- Renewing it means picking the file again
-
-Nothing has to be trusted for this to be safe. The identity is derived from the key that did the signing, so a certificate can only ever name the identity of whoever held the file — there's no list of authorised devices to keep, and no decision to get wrong.
-
-Prefer the **words** on a machine that's yours, and **Authorise** on one that isn't.
+**Save as file** next to the words writes them into a plain text file. Keep it as private as the words themselves. Older password-protected backup files still import, under **Restore identity → Import backup file**.
 
 ## Servers that move
 

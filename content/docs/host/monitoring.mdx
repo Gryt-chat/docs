@@ -151,16 +151,20 @@ add the Gryt targets to your existing `prometheus.yml`:
 scrape_configs:
   - job_name: gryt-server
     static_configs:
-      - targets: ["your-gryt-host:5000"]
+      - targets: ["your-server-host:9091"]
 
   - job_name: gryt-sfu
     static_configs:
-      - targets: ["your-gryt-host:5005"]
+      - targets: ["your-sfu-host:9091"]
 ```
 
+Both default to 9091. If the server and the SFU share a host outside Compose,
+they can't both bind it, so give one of them another port with `METRICS_PORT`
+or `SFU_METRICS_PORT` and use that in its target.
+
 Both endpoints are unauthenticated, which is why they are not on the port the
-world talks to. Anything that can reach port 9091 can read them, so keep it
-inside the Compose network.
+world talks to. Anything that can reach them can read them, so only open them
+to your Prometheus.
 
 ## Disabling monitoring
 
