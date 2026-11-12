@@ -200,9 +200,9 @@ SERVER_DESCRIPTION=Testing Gryt 1.2.3-beta.4
 | `SERVER_INVITE_RETRY_COOLDOWN_MS` | `60000` | Base cooldown after lockout (1 min) |
 | `SERVER_INVITE_MAX_COOLDOWN_MS` | `3600000` | Cooldown escalation cap (1 hour) |
 | `SERVER_INVITE_IP_MAX_RETRIES` | `20` | Per-IP invalid invite attempts before lockout |
-| `VOICE_MAX_USERS` | *(auto)* | Optional voice seat limit override |
+| `VOICE_MAX_USERS` | *(no limit)* | Optional voice seat limit |
 | `REFRESH_TOKEN_TTL_DAYS` | `7` | Refresh token lifetime (days) |
-| `JWT_SECRET` | `change-me-in-production` | Session token secret |
+| `JWT_SECRET` | *(required)* | Session token secret. `.env.example` ships `change-me-in-production`, which you need to replace |
 | `CORS_ORIGIN` | see below | Allowed origins (comma-separated). Always include `http://127.0.0.1:15738` (desktop app). Include `https://app.gryt.chat` if you want users to connect via the hosted web client. |
 
 If you set `SERVER_PASSWORD`, keep it stable. Changing it may require restarting the SFU, because the SFU caches the password per server ID.
@@ -232,7 +232,7 @@ docker compose exec server node admin-setOwner.js --grytUserId <keycloak_sub>
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `STUN_SERVERS` | Google STUN | Comma-separated STUN URIs |
+| `STUN_SERVERS` | Cloudflare and Google STUN | Comma-separated STUN URIs |
 | `SFU_PUBLIC_HOST` | `ws://localhost:5005` | Public SFU URL(s) for browsers (comma-separated for multi-network) |
 | `ICE_ADVERTISE_IP` | *(auto)* | Public IP(s) to advertise in ICE candidates (comma-separated for multi-network) |
 
@@ -266,29 +266,26 @@ services:
   caddy:
     image: caddy:latest
     container_name: gryt-caddy
-    ports:
-      - "80:80"
-      - "443:443"
+    network_mode: host
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy-data:/data
-    networks:
-      - gryt
     restart: unless-stopped
 
 volumes:
   caddy-data:
 ```
 
-And create a `Caddyfile`:
+The server uses host networking, so Caddy does too, and it reaches both services
+on `127.0.0.1`. Create a `Caddyfile`:
 
 ```
 api.example.com {
-    reverse_proxy server:5000
+    reverse_proxy 127.0.0.1:5000
 }
 
 sfu.example.com {
-    reverse_proxy sfu:5005
+    reverse_proxy 127.0.0.1:5005
 }
 ```
 
@@ -398,7 +395,7 @@ curl http://localhost:5000/health   # server
 curl http://localhost:5005/health   # sfu
 ```
 
-The media worker's health endpoint (`GET /` on port 8080) is internal-only — it's used by Docker's built-in healthcheck and isn't exposed to the host.
+The media worker's health endpoint (`GET /` on port 8080) is published on the host's loopback only, at `127.0.0.1:8081` (`IMAGE_WORKER_HEALTH_PORT`).
 
 Or use `docker compose ps` to see the health status of all containers.
 
@@ -411,7 +408,7 @@ optional monitoring stack (Prometheus + Grafana) with:
 docker compose --profile monitoring up -d
 ```
 
-Grafana is available at [http://localhost:3000](http://localhost:3000) (default login: `admin` / `admin`).
+Grafana is available at [http://localhost:3001](http://localhost:3001), or whatever `GRAFANA_PORT` is set to (default login: `admin` / `admin`).
 
 See the full [Monitoring guide](/docs/host/monitoring) for configuration, available metrics, and recommended dashboards.
 
