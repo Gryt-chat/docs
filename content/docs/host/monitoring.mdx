@@ -151,11 +151,11 @@ add the Gryt targets to your existing `prometheus.yml`:
 scrape_configs:
   - job_name: gryt-server
     static_configs:
-      - targets: ["your-gryt-host:5000"]
+      - targets: ["your-gryt-host:9091"]
 
   - job_name: gryt-sfu
     static_configs:
-      - targets: ["your-gryt-host:5005"]
+      - targets: ["your-gryt-host:9091"]
 ```
 
 Both endpoints are unauthenticated, which is why they are not on the port the
