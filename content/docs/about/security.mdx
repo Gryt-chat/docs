@@ -139,8 +139,9 @@ needs a copy before it can read anything encrypted for you.
 There are two ways to get it there. The usual one is linking: the new device shows
 a QR code and a short code, and a device you're already signed in on scans or
 types it, checks that both screens show the same four pictures, and approves
-within a minute. The seed and your message history travel sealed between the two
-devices, and the relay on `id.gryt.chat` only forwards blobs it can't open. The
+within a minute. The seed travels sealed through the relay on `id.gryt.chat`,
+which only forwards blobs it can't open. Your message history goes the same way
+in sealed chunks, stored for the new device on one of your own Gryt servers. The
 other way is typing the 24 words in on the new device, for when the old one isn't
 with you.
 
@@ -364,7 +365,7 @@ would let anyone who read that ID over mDNS take its place.
 If a different key answers at an address you have joined before, Gryt refuses the
 connection and records it. Nothing is sent to that server. You'll see
 **"Server identity not recognised"**, and the server appears under
-**Settings → Servers → Server identities**, showing the key that was expected and the one
+**Settings → Your servers → Server identities**, showing the key that was expected and the one
 that answered.
 
 This is deliberately a refusal rather than a warning you can click through. A dismissable
@@ -457,7 +458,7 @@ and it works.
 | Safe recovery when a server moves | Pins are filed under the key, not the address |
 | Direct messages the server can't read | A key per message, wrapped once per member; private keys never leave the device |
 | Old messages stay unreadable after a compromise | New DMs run on MLS: each message's key is deleted once it's used |
-| Nothing on your account unlocks your messages | The password-locked copy is cleared, and devices link to each other directly |
+| Nothing on your account unlocks your messages | The password-locked copy is cleared, and linking a device sends everything sealed |
 | No central party learns where you are | Your DM key and person key are published per server and signed by the identity that joined it |
 | A swapped key is caught | Peers are pinned on first sight; a change is refused and shown |
 | The first exchange can be checked | A sixty-digit code, compared somewhere the server isn't |
