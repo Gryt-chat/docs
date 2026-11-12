@@ -131,7 +131,7 @@ cloudflared tunnel --protocol http2 run
 
 ## WebSocket connection stability
 
-Cloudflare Tunnel may occasionally reset long-lived WebSocket connections during edge server rotation or tunnel reconnection. Gryt handles this automatically: the signaling server preserves voice state for up to 15 seconds during transient disconnects. From app version 1.11.34 (voice#65), the client recovers without tearing down the SFU media connection if it's still alive. On older versions the SFU socket doesn't survive the reset. Users may briefly see a "Reconnecting" toast but voice/screenshare should continue uninterrupted on 1.11.34+.
+Cloudflare Tunnel may occasionally reset long-lived WebSocket connections during edge server rotation or tunnel reconnection. Gryt handles this automatically: the signaling server preserves voice state for up to 45 seconds during transient disconnects. From app version 1.11.34 (voice#65), the client recovers without tearing down the SFU media connection if it's still alive. On older versions the SFU socket doesn't survive the reset. Users may briefly see a "Reconnecting" toast but voice/screenshare should continue uninterrupted on 1.11.34+.
 
 The `originRequest` settings above help reduce spurious disconnects:
 
@@ -172,7 +172,7 @@ If you need to support file uploads larger than 100 MB, consider using a differe
 - **[Traefik](https://traefik.io/)** — cloud-native reverse proxy with automatic TLS. No default body size limit.
 - **[Caddy](https://caddyserver.com/)** — simple reverse proxy with automatic HTTPS (see the [Docker Compose guide](/docs/host/docker-compose#tls-with-caddy-recommended)). No default body size limit.
 
-All three options handle TLS termination and have no inherent upload size restrictions, so the only limit will be what you configure on the Gryt server itself (default: 200 MB).
+All three options handle TLS termination and have no inherent upload size restrictions, so the only limit will be what you configure on the Gryt server itself (default: 25 MB per file).
 
 ## Firewall / port forwarding (critical)
 

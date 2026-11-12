@@ -17,15 +17,15 @@ There is **no state sync** between servers. Each server is fully independent —
 ### Manual
 
 1. Click the **+** button in the server sidebar
-2. Enter the server address (e.g. `my-server.example.com:5000`)
-3. Click **Connect** — the client fetches the server info via HTTP
-4. Click **Join** to complete the handshake
+2. Pick **Join with an invite**. The web app skips this step
+3. Enter the server address (e.g. `my-server.example.com:5000`) or paste an invite link. The client fetches the server info via HTTP
+4. Click **Join**. It reads **Ask to join** if the server approves requests, and **Sign in to join** if you're signed out
 
 ### LAN discovery (desktop app only)
 
 The desktop app automatically discovers Gryt servers on your local network using **mDNS** (multicast DNS). Servers advertise themselves as `_gryt._tcp` services, and the client listens for these announcements.
 
-When a server is found on the LAN, it appears in the **Local Servers** section of the Add Server dialog. Click **Connect** to fetch its info and join — no need to type an IP address.
+When a server is found on the LAN, it appears under **Servers on your network**, which opens from the broadcast icon below the **+** in the sidebar. A badge counts the new ones. Click **Join** to fetch its info and join. There's no need to type an IP address.
 
 <Callout type="info">
 LAN discovery only works in the desktop (Electron) app. Browsers can't perform mDNS queries, so the web app always requires manual entry.
@@ -67,7 +67,7 @@ To enable it, go to **Server Settings → Overview** and toggle **Allow anyone o
 When enabled, the server checks the connecting client's address. The ranges it treats as local are `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `127.0.0.0/8` and `169.254.0.0/16`, plus IPv6 link-local and unique-local. Anything else still needs an invite.
 
 <Callout type="info">
-LAN open join works with both manual connections and mDNS discovery. When a LAN-discovered server has this setting enabled, the desktop app skips the invite code prompt entirely — users just click **Connect** and **Join**.
+LAN open join works with both manual connections and mDNS discovery. When a LAN-discovered server has this setting enabled, the desktop app skips the invite code prompt entirely — users just click **Join**.
 </Callout>
 
 <Callout type="warn" title="Behind a proxy this needs configuring">
@@ -89,4 +89,4 @@ proxies in front of it and the feature works as intended. See
 
 ## Removing a server
 
-Right-click a server in the sidebar and select **Remove**, or go to **Settings → Servers** and remove it from there. This closes the connection and removes it from your saved server list.
+Right-click a server in the sidebar and select **Remove from sidebar**. This closes the connection and removes it from your saved server list, and you stay a member. **Leave server** in the same menu also ends your membership.
