@@ -299,6 +299,10 @@ server lists every conversation you're in and leaves the drawing to the client.
 | `dm:group:update` | client → server | `{ accessToken, conversationId, name?, iconFileId? }` — null clears |
 | `dm:group:leave` | client → server | `{ accessToken, conversationId }` |
 | `dm:key:publish` | client → server | `{ binding?, replace?, handover?, deviceName? }` — the key binding others need to write to you. Answers through the acknowledgement with `{ ok, changed? }` or `{ ok: false, error, message }` |
+| `device:approve:ask` | client → server | `{ ticket }`. A device waiting for approval asks your other devices. The ticket is signed by the identity service |
+| `device:approve:asked` | server → client | `{ askId, ticket }`, sent to the other devices on the same account. Check the ticket before showing anything |
+| `device:approve:deny` | client → server | `{ askId }`. "Not me" from one of your devices. Only passed on within the same account |
+| `device:approve:denied` | server → client | Sent to the device that asked, after one of your devices said no |
 | `dm:opened` | server → client | The conversation, whether it was new or already there |
 | `dm:left` | server → client | |
 | `dm:error` | server → client | |
