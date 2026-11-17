@@ -303,6 +303,8 @@ server lists every conversation you're in and leaves the drawing to the client.
 | `device:approve:asked` | server → client | `{ askId, ticket }`, sent to the other devices on the same account. Check the ticket before showing anything |
 | `device:approve:deny` | client → server | `{ askId }`. "Not me" from one of your devices. Only passed on within the same account |
 | `device:approve:denied` | server → client | Sent to the device that asked, after one of your devices said no |
+| `device:approve:pending` | client → server | Answers through the acknowledgement with `[{ askId, ticket }]`: the asks on your account still waiting, while the asking device is connected and its ticket hasn't expired (10 minutes). For a device that wasn't connected when an ask came |
+| `device:approve:closed` | server → client | `{ askId }`, sent to your devices once an ask is answered: a "Not me", or the asking device publishing its key after it was approved |
 | `dm:opened` | server → client | The conversation, whether it was new or already there |
 | `dm:left` | server → client | |
 | `dm:error` | server → client | |
