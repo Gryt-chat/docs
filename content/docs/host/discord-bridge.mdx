@@ -20,7 +20,7 @@ Only the server's owner can set it up, because the bridge writes messages in oth
 4. Copy the application ID and the bot token into the Discord tab and press **Connect**. Gryt checks the token with Discord before it saves it. The token stays on your server and never reaches anyone's app.
 
    Use a new app for each Gryt server. Gryt adds a short `(gryt:…)` tag to the app's description, and a second Gryt server won't connect to an app that already has one.
-5. Press **Open invite link** and add the bot to your Discord server. You need Manage Server there. The bot only asks for what it uses: reading and sending messages, threads, webhooks, managing and pinning messages, reactions, files and links. It doesn't ask for Administrator.
+5. Press **Open invite link** and add the bot to your Discord server. You need Manage Server there. The bot only asks for what it uses: reading and sending messages, threads, webhooks, managing and pinning messages, reactions, files and links, and joining and speaking in voice. It doesn't ask for Administrator.
 6. Pick which way it goes. On a server that already has messages, match the Discord channels to yours, too.
 7. Link the people who are on both, and switch off anyone you don't want copied.
 8. Press **Start copying**. On a server that already has messages, you also choose whether to keep your name and icon or take Discord's.
@@ -71,6 +71,17 @@ When the bridge goes both ways or Gryt → Discord, what members post here goes 
 
 Deleting a message removes it on both sides.
 
+## Voice
+
+A Discord voice channel matched to a Gryt voice channel is bridged too, while there are people in both. The bot joins the Discord channel and stays there until one side is empty.
+
+- **Discord people show up in the Gryt channel as themselves**, with their Discord name, picture and the Discord badge. Each one is heard as a separate voice, so you can turn one up or down like anyone else.
+- **On Discord, Gryt is one voice.** A bot can only be one speaker there, so whoever talks on Gryt is played through the bot, one person at a time. Whoever is talking keeps it until they stop.
+- The bot can be in one voice channel per Discord server. With people on both sides of more than one bridged channel, it picks the one with the most people on Gryt.
+- Someone switched off in the Discord tab isn't carried in voice either.
+
+Discord shows the bot in the voice channel like anyone else, so people there can see it's listening. Say so in your Discord server's rules too.
+
 ## When something goes wrong
 
 The Discord tab shows what's wrong and how to fix it:
@@ -93,5 +104,5 @@ The Discord app is yours, so Discord's [Developer Terms](https://support-dev.dis
 
 - **Have a privacy policy** for the app, linked in the Developer Portal. It should say what's copied and how someone can ask for it to be deleted.
 - **Delete on request.** Anyone can run `/forget-me` on the bot to remove everything they wrote from your Gryt server. New messages they post on Discord are still copied while the bridge runs.
-- **Tell your Discord server** that it's being mirrored, for example in its rules channel.
+- **Tell your Discord server** that it's being mirrored, voice included, for example in its rules channel.
 - **Keep the data safe.** Discord asks for data at rest to be encrypted. Gryt doesn't encrypt its database itself, so use disk encryption on the machine.
