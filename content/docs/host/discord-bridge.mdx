@@ -16,10 +16,14 @@ Only the server's owner can set it up, because the bridge writes messages in oth
 
 1. Open **Server settings → Discord**. On a new server with no messages yet, the first channel also offers it.
 2. In the [Discord Developer Portal](https://discord.com/developers/applications), make a new application. Call it what the bot should be called.
-3. Under **Bot**, turn on **Message Content Intent**. Without it the bot can't read messages.
+3. Under **Bot**, turn on **Message Content Intent**, **Server Members Intent** and **Presence Intent**. The first lets the bot read messages. The other two let Gryt list the people on your Discord server and show whether they're online.
 4. Copy the application ID and the bot token into the Discord tab and press **Connect**. Gryt checks the token with Discord before it saves it. The token stays on your server and never reaches anyone's app.
-5. Press **Open invite link** and add the bot to your Discord server. You need Manage Server there. The bot only asks for what it uses: reading and sending messages, threads, webhooks, managing messages, reactions, files and links. It doesn't ask for Administrator.
-6. Pick which way it goes, then press **Start copying**.
+
+   Use a new app for each Gryt server. Gryt adds a short `(gryt:…)` tag to the app's description, and a second Gryt server won't connect to an app that already has one.
+5. Press **Open invite link** and add the bot to your Discord server. You need Manage Server there. The bot only asks for what it uses: reading and sending messages, threads, webhooks, managing and pinning messages, reactions, files and links. It doesn't ask for Administrator.
+6. Pick which way it goes. On a server that already has messages, match the Discord channels to yours, too.
+7. Link the people who are on both, and switch off anyone you don't want copied.
+8. Press **Start copying**. On a server that already has messages, you also choose whether to keep your name and icon or take Discord's.
 
 | Direction | What happens |
 | --- | --- |
@@ -27,7 +31,9 @@ Only the server's owner can set it up, because the bridge writes messages in oth
 | Both ways | Same channels and messages on both sides. What happens on one shows up on the other. |
 | Gryt → Discord | What's said here is posted into Discord, for people who haven't moved yet. |
 
-A big server takes a while. Discord hands a bot 100 messages at a time and slows it down past that. The copy runs on the server, so you can close the app. If it stops partway, starting it again picks up where it left off.
+A big server takes a while. Discord hands a bot 100 messages at a time and slows it down past that. The copy runs on the server, so you can close the app. You can pause it, and if it stops partway, starting it again picks up where it left off.
+
+Once it's live, the Discord tab lets you change the direction and switch off any kind of change: messages, edits, deletes, replies, reactions, custom emoji, pins, threads or files.
 
 ## What comes across
 
@@ -41,14 +47,16 @@ Nothing is ever copied twice. Every copied message keeps its Discord id, so runn
 
 ## When a server already has channels
 
-The tab suggests which Discord channel goes where, matching names loosely, so "💬・general-chat" lands in #general. Check the suggestions and change any that are wrong. Each Discord channel can go to a channel that's already here, to a new one, or nowhere. Messages that are already here stay. Discord's history fits in around them by date.
+The tab suggests which Discord channel goes where, matching names loosely, so "💬・general-chat" lands in #general. Check the suggestions and change any that are wrong. Each Discord channel can go to a channel that's already here, to a new one, or nowhere. A matched channel moves into its Discord folder and order. Messages that are already here stay. Discord's history fits in around them by date.
 
 ## People
 
-Someone who wrote on Discord shows up with their Discord name and picture until they're linked to a member here. There are two ways to link them:
+Someone who wrote on Discord shows up with their Discord name and picture until they're linked to a member here. Their name and picture follow what they have on Discord, and change here when they change there. Everyone on the Discord server who isn't linked shows under **On Discord** in the member list, with their status.
+
+There are two ways to link them:
 
 - **They prove it themselves.** They run `/link` on the bot in Discord and get a code that only they can see. They enter it in Gryt, and their old Discord messages show under their account.
-- **You link them by hand** in the Discord tab.
+- **You link them by hand** in the Discord tab. Each member can be linked to one Discord person.
 
 Both go in the audit log. You can always undo a link: the messages keep their Discord author underneath, so they go back to showing the Discord name.
 
@@ -60,7 +68,6 @@ When the bridge goes both ways or Gryt → Discord, what members post here goes 
 
 - **Replies** start with a link to the message they answer. Discord doesn't let a bot make a real reply under someone else's name.
 - **Reactions** show as one from the bot per emoji, because Discord counts one per account. Custom Gryt emoji aren't sent.
-- **Pictures on profiles** don't come across yet.
 
 Deleting a message removes it on both sides.
 
@@ -76,7 +83,7 @@ While the bridge is down, nothing is lost. Each channel catches up from the last
 
 ## Unlinking
 
-**Unlink** in the Discord tab stops the bridge and logs the bot out. Everything already copied stays on your server, and so do member links. Linking the same Discord server again later picks up where it stopped.
+**Unlink** in the Discord tab stops the bridge, logs the bot out and takes the `(gryt:…)` tag off the app. Everything already copied stays on your server, and so do member links. Linking the same Discord server again later picks up where it stopped.
 
 ## Your duties as the bot's owner
 
