@@ -1,6 +1,6 @@
 import { ImageResponse } from 'next/og';
 import { type NextRequest } from 'next/server';
-import { OG_FONT_FAMILY, OwlGlyph, OwlMark, loadOgFonts } from '@/lib/og';
+import { OG_SIZE, ShareCard, loadOgFonts } from '@/lib/og';
 
 export const runtime = 'nodejs';
 
@@ -8,104 +8,10 @@ export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const title = searchParams.get('title') ?? 'Documentation';
   const description = searchParams.get('description') ?? '';
+  const path = searchParams.get('path') ?? '';
 
   return new ImageResponse(
-    (
-      <div
-        style={{
-          display: 'flex',
-          width: '100%',
-          height: '100%',
-          background:
-            'linear-gradient(135deg, #13151a 0%, #1A1D24 40%, #2B303D 100%)',
-          padding: '60px 80px',
-          flexDirection: 'column',
-          justifyContent: 'space-between',
-          fontFamily: OG_FONT_FAMILY,
-        }}
-      >
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '16px',
-            maxWidth: '900px',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <OwlMark size={52} />
-            <span
-              style={{
-                fontSize: 28,
-                fontWeight: 800,
-                color: '#968FF8',
-              }}
-            >
-              Gryt Docs
-            </span>
-          </div>
-
-          <span
-            style={{
-              fontSize: 56,
-              fontWeight: 800,
-              color: '#ffffff',
-              letterSpacing: '-1.5px',
-              lineHeight: 1.15,
-              marginTop: '24px',
-            }}
-          >
-            {title}
-          </span>
-
-          {description && description !== title && (
-            <span
-              style={{
-                fontSize: 26,
-                fontWeight: 400,
-                color: '#a5a5b0',
-                lineHeight: 1.4,
-                marginTop: '8px',
-              }}
-            >
-              {description.length > 120
-                ? description.slice(0, 120) + '...'
-                : description}
-            </span>
-          )}
-        </div>
-
-        <div style={{ display: 'flex' }}>
-          <span style={{ fontSize: 18, fontWeight: 400, color: '#666' }}>
-            docs.gryt.chat
-          </span>
-        </div>
-
-        <div
-          style={{
-            display: 'flex',
-            position: 'absolute',
-            right: '-140px',
-            bottom: '-160px',
-          }}
-        >
-          <OwlGlyph size={620} ear="#232838" body="#1E222C" eye="#333947" />
-        </div>
-
-        <div
-          style={{
-            display: 'flex',
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            height: '4px',
-            background:
-              'linear-gradient(90deg, #968FF8 0%, #6C63FF 50%, #968FF8 100%)',
-          }}
-        />
-      </div>
-    ),
-    { width: 1200, height: 630, fonts: loadOgFonts() },
+    <ShareCard title={title} sub={description || undefined} metaRight={`docs.gryt.chat${path}`} />,
+    { ...OG_SIZE, fonts: loadOgFonts() },
   );
 }

@@ -3,7 +3,7 @@ import { join } from 'path';
 
 // Bumped whenever the OG card's design changes, so cached embeds (Discord
 // keys its cache by URL) fetch the new image instead of the old one.
-export const OG_IMAGE_VERSION = '3';
+export const OG_IMAGE_VERSION = '4';
 
 // The current mark's own colours, copied from packages/site/public/logo.svg
 // so this can never drift back to the retired periwinkle-circle owl.
@@ -34,45 +34,44 @@ const LEFT_WING_PATH =
 export function OwlMark({ size }: { size: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 1024 1024" fill="none">
-      <rect width="1024" height="1024" rx="512" fill={DISC} />
-      <path d={BODY_PATH} fill={BODY} />
-      <path d={FACE_PATH} fill={FACE} />
-      <path d={RIGHT_EYE_PATH} fill={EYES} />
-      <path d={LEFT_EYE_PATH} fill={EYES} />
-      <path d={BEAK_PATH} fill={EYES} />
-      <path d={RIGHT_WING_PATH} fill={WING} />
-      <path d={LEFT_WING_PATH} fill={WING} />
+      {/* The body runs past the disc, and logo.svg clips it to the circle. */}
+      <defs>
+        <clipPath id="owl-disc">
+          <circle cx="512" cy="512" r="512" />
+        </clipPath>
+      </defs>
+      <g clipPath="url(#owl-disc)">
+        <rect width="1024" height="1024" fill={DISC} />
+        <path d={BODY_PATH} fill={BODY} />
+        <path d={FACE_PATH} fill={FACE} />
+        <path d={RIGHT_EYE_PATH} fill={EYES} />
+        <path d={LEFT_EYE_PATH} fill={EYES} />
+        <path d={BEAK_PATH} fill={EYES} />
+        <path d={RIGHT_WING_PATH} fill={WING} />
+        <path d={LEFT_WING_PATH} fill={WING} />
+      </g>
     </svg>
   );
 }
 
-// The mark without its disc, tone-on-tone as site/scripts/generate-og-image.mjs
-// does it. Wings take `ear`, blob and face take `body`, eyes/beak take `eye`.
-export function OwlGlyph({
-  size,
-  ear,
-  body,
-  eye,
-}: {
-  size: number;
-  ear: string;
-  body: string;
-  eye: string;
-}) {
+// The mark without its disc, recoloured into the card's field as the site's
+// generate-og-image.ts does it (its OWL_TONES).
+function OwlGlyph({ size }: { size: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 1024 1024" fill="none">
-      <path d={BODY_PATH} fill={body} />
-      <path d={FACE_PATH} fill={body} />
-      <path d={RIGHT_EYE_PATH} fill={eye} />
-      <path d={LEFT_EYE_PATH} fill={eye} />
-      <path d={BEAK_PATH} fill={eye} />
-      <path d={RIGHT_WING_PATH} fill={ear} />
-      <path d={LEFT_WING_PATH} fill={ear} />
+      <path d={BODY_PATH} fill="#4f47c0" />
+      <path d={FACE_PATH} fill="#5850cc" />
+      <path d={RIGHT_EYE_PATH} fill="#332c86" />
+      <path d={LEFT_EYE_PATH} fill="#332c86" />
+      <path d={BEAK_PATH} fill="#332c86" />
+      <path d={RIGHT_WING_PATH} fill="#4038a4" />
+      <path d={LEFT_WING_PATH} fill="#4038a4" />
     </svg>
   );
 }
 
 export const OG_FONT_FAMILY = 'Atkinson Hyperlegible Next';
+const OG_MONO_FAMILY = 'Atkinson Hyperlegible Mono';
 
 // Static instances of the variable font used elsewhere in the docs: next/og's
 // ImageResponse only accepts ttf/otf/woff, not woff2 or variable fonts.
@@ -83,8 +82,154 @@ export function loadOgFonts() {
   const bold = readFileSync(
     join(process.cwd(), 'src', 'fonts', 'AtkinsonHyperlegibleNext-og-bold.ttf'),
   );
+  const mono = readFileSync(
+    join(process.cwd(), 'src', 'fonts', 'AtkinsonHyperlegibleMono-og-regular.ttf'),
+  );
+  const monoMedium = readFileSync(
+    join(process.cwd(), 'src', 'fonts', 'AtkinsonHyperlegibleMono-og-medium.ttf'),
+  );
   return [
     { name: OG_FONT_FAMILY, data: regular, weight: 400 as const, style: 'normal' as const },
     { name: OG_FONT_FAMILY, data: bold, weight: 800 as const, style: 'normal' as const },
+    { name: OG_MONO_FAMILY, data: mono, weight: 400 as const, style: 'normal' as const },
+    { name: OG_MONO_FAMILY, data: monoMedium, weight: 500 as const, style: 'normal' as const },
   ];
+}
+
+export const OG_SIZE = { width: 1200, height: 630 };
+
+// The site's share card (packages/site/scripts/generate-og-image.ts), so a docs
+// link previews the same way a gryt.chat one does. No grain: satori has no feTurbulence.
+const FIELD = '#6157d8';
+const PAD_X = 60;
+const PAD_TOP = 58;
+const MARK = 38;
+const META_BASELINE = 630 - 58 - 2;
+const RULE_Y = META_BASELINE - 18 - 20;
+
+// The site steps the title down to fit three lines at 800px; this guesses the
+// wrap from the length, since satori only wraps once the size is chosen.
+function titleSize(title: string) {
+  for (const size of [68, 60, 53, 47]) {
+    const perLine = Math.floor(800 / (size * 0.5));
+    if (Math.ceil(title.length / perLine) <= 3) return size;
+  }
+  return 47;
+}
+
+export function ShareCard({
+  title,
+  sub,
+  metaRight,
+}: {
+  title: string;
+  sub?: string;
+  metaRight: string;
+}) {
+  const size = titleSize(title);
+  const meta = {
+    position: 'absolute' as const,
+    top: META_BASELINE - 15,
+    fontFamily: OG_MONO_FAMILY,
+    fontSize: 18,
+    lineHeight: 1,
+    letterSpacing: '0.4px',
+    color: '#e2dfff',
+  };
+  return (
+    <div
+      style={{
+        display: 'flex',
+        position: 'relative',
+        width: '100%',
+        height: '100%',
+        background: FIELD,
+        overflow: 'hidden',
+        fontFamily: OG_FONT_FAMILY,
+      }}
+    >
+      <div style={{ display: 'flex', position: 'absolute', left: 620, top: 30 }}>
+        <OwlGlyph size={635} />
+      </div>
+
+      <div
+        style={{
+          display: 'flex',
+          position: 'absolute',
+          left: PAD_X,
+          top: PAD_TOP,
+          height: MARK,
+          alignItems: 'center',
+          gap: 14,
+        }}
+      >
+        <OwlMark size={MARK} />
+        <span
+          style={{
+            fontFamily: OG_MONO_FAMILY,
+            fontWeight: 500,
+            fontSize: 19,
+            letterSpacing: '2.8px',
+            color: '#eeecff',
+          }}
+        >
+          GRYT · DOCS
+        </span>
+      </div>
+
+      <div
+        style={{
+          display: 'flex',
+          position: 'absolute',
+          left: PAD_X,
+          top: PAD_TOP + MARK + 30,
+          height: RULE_Y - 30 - (PAD_TOP + MARK + 30),
+          width: 800,
+          flexDirection: 'column',
+          justifyContent: 'center',
+          gap: 20,
+        }}
+      >
+        <span
+          style={{
+            fontSize: size,
+            fontWeight: 800,
+            lineHeight: 1.06,
+            letterSpacing: `${-0.032 * size}px`,
+            color: '#fbfaff',
+          }}
+        >
+          {title}
+        </span>
+        {sub ? (
+          <span
+            style={{
+              display: 'block',
+              width: 700,
+              fontSize: 25,
+              lineHeight: 1.42,
+              color: '#dedaff',
+              lineClamp: 2,
+            }}
+          >
+            {sub}
+          </span>
+        ) : null}
+      </div>
+
+      <div
+        style={{
+          display: 'flex',
+          position: 'absolute',
+          left: PAD_X,
+          right: PAD_X,
+          top: RULE_Y,
+          height: 1,
+          background: '#8079e4',
+        }}
+      />
+      <span style={{ ...meta, left: PAD_X }}>docs.gryt.chat</span>
+      <span style={{ ...meta, right: PAD_X }}>{metaRight}</span>
+    </div>
+  );
 }

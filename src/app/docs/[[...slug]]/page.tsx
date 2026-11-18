@@ -53,6 +53,7 @@ export async function generateMetadata(
   if (page.data.description) {
     ogParams.set('description', page.data.description);
   }
+  ogParams.set('path', page.url);
   // Discord (and others) cache the embed by URL, so a design change needs a
   // version bump here to be seen rather than served from that cache.
   ogParams.set('v', OG_IMAGE_VERSION);
