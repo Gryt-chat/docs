@@ -200,6 +200,17 @@ A PATCH goes through the same apply path as a change made from a client, so it
 withdraws mDNS advertising, drops caches and writes an audit entry rather than
 only updating a row.
 
+Two settings can only be changed here, never from a client. Gryt Cloud uses them
+for a plan's limits:
+
+- `planVideoMax`: `"1080p60"`, `"720p30"` and so on, or `null` for no ceiling.
+- `planMode`: `active`, `read_only` or `paused`. `read_only` refuses sending,
+  editing, reactions, creating things and uploads, but reading, voice and
+  deleting still work. `paused` refuses every socket event except from the
+  owner. A refused chat event answers with `chat:error`, any other with
+  `server:plan_mode`, and both carry `error` set to the mode. Clients read the
+  mode from `server_info.plan_mode`.
+
 ## Socket.IO
 
 ### Joining
@@ -561,6 +572,7 @@ The phone gets a capability from the push relay at `push.gryt.chat` and hands it
 | `server:kicked`, `server:muted`, `server:deafened` | server → client |
 | `server:kick:success`, `server:ban:success`, `server:unban:success`, `server:mute:success`, `server:deafen:success` | server → client |
 | `server:bans` | server → client |
+| `server:plan_mode` | server → client |
 | `reports:list`, `reports:resolve` | client → server |
 | `reports:list`, `reports:resolved`, `report:submitted`, `report:already_reported` | server → client |
 
