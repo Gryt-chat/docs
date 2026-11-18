@@ -152,6 +152,11 @@ peers are resynced from real state every fifteen seconds. Two counters,
 `gryt_sfu_tracks_refused_total` and `gryt_sfu_websocket_ping_timeouts_total`,
 and the standard Go runtime metrics come along with them.
 
+Two more counters say how much media each server moves:
+`gryt_sfu_ingress_bytes_total` and `gryt_sfu_egress_bytes_total`, labelled
+`server_id`. They count the RTP and datagram payloads, without UDP, IP or SRTP
+overhead, so they're a little under what the network carries.
+
 ## The WebSocket protocol
 
 Raw WebSocket, not Socket.IO. Every message is
