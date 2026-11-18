@@ -576,6 +576,20 @@ The phone gets a capability from the push relay at `push.gryt.chat` and hands it
 | `reports:list`, `reports:resolve` | client → server |
 | `reports:list`, `reports:resolved`, `report:submitted`, `report:already_reported` | server → client |
 
+### Storage
+
+For Manage server. A file deleted here loses its bytes and keeps its record,
+so its message shows it as deleted: the attachment comes back with
+`deleted: true`, its name and size, and the file itself answers 410.
+
+| Event | Direction |
+|-------|-----------|
+| `storage:overview` | client → server, answered with `storage:overview`: space used, the plan limit, the biggest channels and files |
+| `storage:files` | client → server, answered with `storage:files`: one page of files, filtered by channel, kind, uploader, name, age or size, sorted by size, date, name or uploader |
+| `storage:delete` | client → server, up to 500 file ids, answered with `storage:deleted` |
+| `storage:purge` | client → server, everything a filter matches. `dryRun: true` only counts. Answered with `storage:purge` |
+| `storage:error` | server → client |
+
 ### Administration
 
 A channel inside a folder follows the folder's permission scope for as long as
