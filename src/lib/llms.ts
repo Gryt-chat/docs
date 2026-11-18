@@ -8,8 +8,8 @@ export const BASE_URL =
 
 /** How Gryt is introduced to a model before it reads anything else. */
 export const SITE_SUMMARY = [
-  'Gryt is an open-source WebRTC voice chat platform. Self-hostable, with a',
-  'desktop client, a signalling server and an SFU for media.',
+  'Gryt is open-source voice, text and video chat you host yourself. It has',
+  'desktop, web and phone apps, and each community runs its own server.',
 ].join('\n');
 
 /** Root-relative links have no origin to resolve against once the text leaves the site. */

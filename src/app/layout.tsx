@@ -20,17 +20,18 @@ export const metadata: Metadata = {
     process.env.NEXT_PUBLIC_SITE_URL ?? 'https://docs.gryt.chat',
   ),
   title: {
-    default: 'Gryt - Modern WebRTC Voice Chat Platform',
+    default: 'Gryt docs',
     template: '%s | Gryt',
   },
   description:
-    'Gryt is a cutting-edge WebRTC-based voice chat platform featuring real-time communication, advanced audio processing, and a beautiful modern interface.',
+    'Docs for Gryt, the open-source voice, text and video chat you host yourself. Using the apps, hosting a server, and building on Gryt.',
   keywords: [
+    'Gryt',
     'voice chat',
-    'WebRTC',
-    'real-time communication',
-    'audio processing',
-    'voice platform',
+    'text chat',
+    'video chat',
+    'self-hosted',
+    'open source',
   ],
   openGraph: {
     type: 'website',
