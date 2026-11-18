@@ -8,8 +8,9 @@ export const BASE_URL =
 
 /** How Gryt is introduced to a model before it reads anything else. */
 export const SITE_SUMMARY = [
-  'Gryt is open-source voice, text and video chat you host yourself. It has',
-  'desktop, web and phone apps, and each community runs its own server.',
+  'Gryt is open-source voice, text and video chat you host yourself, with its',
+  'own voice engine and transport. It has desktop, web and phone apps, and each',
+  'community runs its own server.',
 ].join('\n');
 
 /** Root-relative links have no origin to resolve against once the text leaves the site. */

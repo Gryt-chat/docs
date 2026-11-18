@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     template: '%s | Gryt',
   },
   description:
-    'Docs for Gryt, the open-source voice, text and video chat you host yourself. Using the apps, hosting a server, and building on Gryt.',
+    'Docs for Gryt, the open-source voice, text and video chat you host yourself, with a voice engine we wrote ourselves. Using the apps, hosting a server, and building on Gryt.',
   keywords: [
     'Gryt',
     'voice chat',
