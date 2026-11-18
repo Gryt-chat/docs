@@ -54,18 +54,17 @@ export function OwlMark({ size }: { size: number }) {
   );
 }
 
-// The mark without its disc, recoloured into the card's field as the site's
-// generate-og-image.ts does it (its OWL_TONES).
+// The mark without its disc, toned into the card's dark field a step or two above it.
 function OwlGlyph({ size }: { size: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 1024 1024" fill="none">
-      <path d={BODY_PATH} fill="#4f47c0" />
-      <path d={FACE_PATH} fill="#5850cc" />
-      <path d={RIGHT_EYE_PATH} fill="#332c86" />
-      <path d={LEFT_EYE_PATH} fill="#332c86" />
-      <path d={BEAK_PATH} fill="#332c86" />
-      <path d={RIGHT_WING_PATH} fill="#4038a4" />
-      <path d={LEFT_WING_PATH} fill="#4038a4" />
+      <path d={BODY_PATH} fill={INK.owlBody} />
+      <path d={FACE_PATH} fill={INK.owlFace} />
+      <path d={RIGHT_EYE_PATH} fill={INK.owlEyes} />
+      <path d={LEFT_EYE_PATH} fill={INK.owlEyes} />
+      <path d={BEAK_PATH} fill={INK.owlEyes} />
+      <path d={RIGHT_WING_PATH} fill={INK.owlWings} />
+      <path d={LEFT_WING_PATH} fill={INK.owlWings} />
     </svg>
   );
 }
@@ -98,9 +97,20 @@ export function loadOgFonts() {
 
 export const OG_SIZE = { width: 1200, height: 630 };
 
-// The site's share card (packages/site/scripts/generate-og-image.ts), so a docs
-// link previews the same way a gryt.chat one does. No grain: satori has no feTurbulence.
-const FIELD = '#6157d8';
+// The site's share card layout (packages/site/scripts/generate-og-image.ts), dark so a
+// docs link reads apart from a gryt.chat one. No grain: satori has no feTurbulence.
+const INK = {
+  field: '#17162f',
+  title: '#fbfaff',
+  sub: '#c9c4f2',
+  label: '#d9d5ff',
+  meta: '#bdb8ec',
+  rule: '#34306a',
+  owlWings: '#211e48',
+  owlBody: '#252252',
+  owlFace: '#2a275e',
+  owlEyes: '#1a1838',
+};
 const PAD_X = 60;
 const PAD_TOP = 58;
 const MARK = 38;
@@ -134,7 +144,7 @@ export function ShareCard({
     fontSize: 18,
     lineHeight: 1,
     letterSpacing: '0.4px',
-    color: '#e2dfff',
+    color: INK.meta,
   };
   return (
     <div
@@ -143,7 +153,7 @@ export function ShareCard({
         position: 'relative',
         width: '100%',
         height: '100%',
-        background: FIELD,
+        background: INK.field,
         overflow: 'hidden',
         fontFamily: OG_FONT_FAMILY,
       }}
@@ -170,7 +180,7 @@ export function ShareCard({
             fontWeight: 500,
             fontSize: 19,
             letterSpacing: '2.8px',
-            color: '#eeecff',
+            color: INK.label,
           }}
         >
           GRYT · DOCS
@@ -196,7 +206,7 @@ export function ShareCard({
             fontWeight: 800,
             lineHeight: 1.06,
             letterSpacing: `${-0.032 * size}px`,
-            color: '#fbfaff',
+            color: INK.title,
           }}
         >
           {title}
@@ -208,7 +218,7 @@ export function ShareCard({
               width: 700,
               fontSize: 25,
               lineHeight: 1.42,
-              color: '#dedaff',
+              color: INK.sub,
               lineClamp: 2,
             }}
           >
@@ -225,7 +235,7 @@ export function ShareCard({
           right: PAD_X,
           top: RULE_Y,
           height: 1,
-          background: '#8079e4',
+          background: INK.rule,
         }}
       />
       <span style={{ ...meta, left: PAD_X }}>docs.gryt.chat</span>
