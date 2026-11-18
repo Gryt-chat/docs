@@ -300,13 +300,21 @@ Run from a built checkout of the server:
 ```bash
 yarn admin:set-owner --grytUserId <user id>
 yarn admin:rotate-identity
+yarn admin:reset-dm-key --grytUserId <user id> --yes
 ```
 
 The first hands ownership to a different member, which is how you recover a
 server whose owner is gone. The second replaces the server's identity keypair.
 
-The Docker image carries only the first, as `node admin-setOwner.js --grytUserId
-<user id>`. See [Changing the server owner](/docs/host/docker-compose#changing-the-server-owner-cli).
+The third clears one member's DM key. Use it when none of their devices has the
+key your server has for them, so nothing can approve a new one and they'd
+otherwise wait 30 days for a reset. Their next device to connect sets its key,
+and their contacts get the usual "new key" warning. Without `--yes` it only
+tells you whose key it would clear. `--serverUserId <id>` works too.
+
+The Docker image carries the first and the third, as `node admin-setOwner.js
+--grytUserId <user id>` and `node admin-resetDmKey.js --grytUserId <user id>
+--yes`. See [Changing the server owner](/docs/host/docker-compose#changing-the-server-owner-cli).
 
 ## Health checks
 
