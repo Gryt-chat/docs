@@ -192,9 +192,10 @@ server's owner.
 |--------|------|---------|
 | GET | `/management/settings` | The settings, among them `joinPolicy`, `discoverable`, `lanOpen` and `profanityMode` |
 | PATCH | `/management/settings` | The same, updated. Send only the keys you're changing |
+| GET | `/management/usage` | Counts only: `storageBytes` (`total`, `byKind`, `limit`), `members` (`total`, `active30d`) and `messagesPerDay` over the last 30 days |
 | GET | `/management/health` | `{ ok: true }` |
 
-`Authorization: Bearer <GRYT_ADMIN_TOKEN>` on all three. Requires server 1.5.0.
+`Authorization: Bearer <GRYT_ADMIN_TOKEN>` on all four. Requires server 1.5.0.
 A PATCH goes through the same apply path as a change made from a client, so it
 withdraws mDNS advertising, drops caches and writes an audit entry rather than
 only updating a row.

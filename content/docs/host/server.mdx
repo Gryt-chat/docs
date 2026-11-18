@@ -80,6 +80,7 @@ for what a shorter window costs a device that's been offline.
 |----------|---------|--------------|
 | `S3_BUCKET` | `gryt` | The folder under `DATA_DIR` that uploads go in |
 | `DISABLE_UPLOADS` | — | Turn uploads off entirely. `DISABLE_S3` still works as the old name |
+| `GRYT_PLAN_STORAGE_BYTES` | — | The most the server stores for uploads, in bytes. Once it's used, new uploads are refused with a message saying so. Unset is no limit |
 | `IMAGE_WORKER_URL` | — | Where the media worker listens |
 | `MEDIA_SWEEP_INTERVAL_MS` | `600000` | How often orphaned media is swept |
 | `MEDIA_SWEEP_GRACE_MS` | `1800000` | How long an orphan is left alone first |
@@ -187,9 +188,10 @@ administer. So there's a second, tiny listener for exactly that.
 |----------|--------------|
 | `GET /management/settings` | The server's settings, including the four above |
 | `PATCH /management/settings` | Change some of them. Send only the keys you're changing |
+| `GET /management/usage` | How much it stores, by kind, how many members and how many messages a day. Counts only, never content |
 | `GET /management/health` | `{"ok":true}` |
 
-All three need `Authorization: Bearer <GRYT_ADMIN_TOKEN>`, compared as digests
+All four need `Authorization: Bearer <GRYT_ADMIN_TOKEN>`, compared as digests
 in constant time.
 
 Two separate things protect this listener. The token covers other users and
