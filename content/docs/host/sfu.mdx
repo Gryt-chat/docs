@@ -71,6 +71,7 @@ Every variable the SFU reads.
 | `ICE_ADVERTISE_IP` | — | Comma-separated IPs to advertise as host candidates instead of the ones found on the interfaces. Any candidate with an address that isn't in the list is dropped |
 | `MAX_PEERS` | `200` | How many peers may be connected at once, across all rooms |
 | `SFU_REQUIRE_CLIENT_TOKEN` | `true` | Refuse joins without a signed token. `false` still lets a client in with the old shared server password |
+| `SFU_SERVERS_FILE` | unset | A file of `server_id secret` lines. When set, only those servers can register, each with its own secret. It's read at every registration, so you can add a line without restarting. Unset, any server can register |
 | `SFU_PING_INTERVAL` | `30` | Seconds between pings on a quiet connection. `0` turns liveness checks off |
 | `SFU_PONG_TIMEOUT` | `90` | Seconds a peer can stay silent before it's dropped. Raised to two ping intervals if set lower |
 | `SFU_CALL_ALONE_TIMEOUT` | `120` | Seconds one person can be alone in a call before the SFU ends it. `0` turns it off |
