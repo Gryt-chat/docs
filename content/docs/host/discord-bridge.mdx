@@ -1,0 +1,108 @@
+---
+title: Link a Discord server
+description: Copy a Discord server into Gryt and keep the two in step, with a bot you run yourself
+icon: Link
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+If your community lives on Discord, Gryt can copy it over and keep both sides in step while people move. It copies every channel with its whole history, files, threads, reactions, pins, roles and custom emoji. After that, new messages keep flowing, one way or both.
+
+It's done by a Discord bot that you make yourself, in your own Discord account. It runs inside your Gryt server, so there's nothing extra to host. One Gryt server links to one Discord server.
+
+Only the server's owner can set it up, because the bridge writes messages in other people's names.
+
+## Setting it up
+
+1. Open **Server settings → Discord**. On a new server with no messages yet, the first channel also offers it.
+2. In the [Discord Developer Portal](https://discord.com/developers/applications), make a new application. Call it what the bot should be called.
+3. Under **Bot**, turn on **Message Content Intent**, **Server Members Intent** and **Presence Intent**. The first lets the bot read messages. The other two let Gryt list the people on your Discord server and show whether they're online.
+4. Copy the application ID and the bot token into the Discord tab and press **Connect**. Gryt checks the token with Discord before it saves it. The token stays on your server and never reaches anyone's app.
+
+   Use a new app for each Gryt server. Gryt adds a short `(gryt:…)` tag to the app's description, and a second Gryt server won't connect to an app that already has one.
+5. Press **Open invite link** and add the bot to your Discord server. You need Manage Server there. The bot only asks for what it uses: reading and sending messages, threads, webhooks, managing and pinning messages, reactions, files and links, and joining and speaking in voice. It doesn't ask for Administrator.
+6. Pick which way it goes. On a server that already has messages, match the Discord channels to yours, too.
+7. Link the people who are on both, and switch off anyone you don't want copied.
+8. Press **Start copying**. On a server that already has messages, you also choose whether to keep your name and icon or take Discord's.
+
+| Direction | What happens |
+| --- | --- |
+| Discord → Gryt | Everything is copied here, and new Discord messages keep coming. Discord stays the main place. |
+| Both ways | Same channels and messages on both sides. What happens on one shows up on the other. |
+| Gryt → Discord | What's said here is posted into Discord, for people who haven't moved yet. |
+
+A big server takes a while. Discord hands a bot 100 messages at a time and slows it down past that. The copy runs on the server, so you can close the app. You can pause it, and if it stops partway, starting it again picks up where it left off.
+
+Once it's live, the Discord tab lets you change the direction and switch off any kind of change: messages, edits, deletes, replies, reactions, custom emoji, pins, threads or files.
+
+## What comes across
+
+- **Channels and categories.** Categories become folders. Voice channels come over too, but the voice itself isn't bridged.
+- **Messages**, with replies, edits, reactions, pins and public threads. Forum posts become topics in a forum channel.
+- **Files, pictures and avatars.** They're downloaded while the history is read and stored on your server, so nothing points back to Discord. A file over your server's upload limit is skipped, and its message says so.
+- **Custom emoji**, as long as the name isn't taken here.
+- **Roles**, with their names and colours. They rank between Member and Moderator, so an imported role can't act on your own moderators. Discord's Administrator gets everything except managing roles, the server, identities and bots.
+
+Nothing is ever copied twice. Every copied message keeps its Discord id, so running the copy again, linking again later or using a new bot app only adds what's missing.
+
+## When a server already has channels
+
+The tab suggests which Discord channel goes where, matching names loosely, so "💬・general-chat" lands in #general. Check the suggestions and change any that are wrong. Each Discord channel can go to a channel that's already here, to a new one, or nowhere. A matched channel moves into its Discord folder and order. Messages that are already here stay. Discord's history fits in around them by date.
+
+## People
+
+Someone who wrote on Discord shows up with their Discord name and picture until they're linked to a member here. Their name and picture follow what they have on Discord, and change here when they change there. Everyone on the Discord server who isn't linked shows under **On Discord** in the member list, with their status.
+
+There are two ways to link them:
+
+- **They prove it themselves.** They run `/link` on the bot in Discord and get a code that only they can see. They enter it in Gryt, and their old Discord messages show under their account.
+- **You link them by hand** in the Discord tab. Each member can be linked to one Discord person.
+
+Both go in the audit log. You can always undo a link: the messages keep their Discord author underneath, so they go back to showing the Discord name.
+
+A linked member also gets the roles they hold on Discord.
+
+## Both ways
+
+When the bridge goes both ways or Gryt → Discord, what members post here goes to Discord under their name. A few things come out differently there:
+
+- **Replies** start with a link to the message they answer. Discord doesn't let a bot make a real reply under someone else's name.
+- **Reactions** show as one from the bot per emoji, because Discord counts one per account. Custom Gryt emoji aren't sent.
+
+Deleting a message removes it on both sides.
+
+## Voice
+
+A Discord voice channel matched to a Gryt voice channel is bridged too, while there are people in both. The bot joins the Discord channel and stays there until one side is empty.
+
+- **Discord people show up in the Gryt channel as themselves**, with their Discord name, picture and the Discord badge. Each one is heard as a separate voice, so you can turn one up or down like anyone else.
+- **On Discord, Gryt is one voice.** A bot can only be one speaker there, so whoever talks on Gryt is played through the bot, one person at a time. Whoever is talking keeps it until they stop.
+- The bot can be in one voice channel per Discord server. With people on both sides of more than one bridged channel, it picks the one with the most people on Gryt.
+- Someone switched off in the Discord tab isn't carried in voice either.
+
+Discord shows the bot in the voice channel like anyone else, so people there can see it's listening. Say so in your Discord server's rules too.
+
+## When something goes wrong
+
+The Discord tab shows what's wrong and how to fix it:
+
+- **The token stopped working**, because the app was deleted or the token was reset. Paste a new one.
+- **Message Content Intent is off.** Turn it on in the Developer Portal and press Reconnect.
+- **The bot was removed** from the Discord server. Add it back with the invite link.
+
+While the bridge is down, nothing is lost. Each channel catches up from the last message it copied once the bot is back.
+
+## Unlinking
+
+**Unlink** in the Discord tab stops the bridge, logs the bot out and takes the `(gryt:…)` tag off the app. Everything already copied stays on your server, and so do member links. Linking the same Discord server again later picks up where it stopped.
+
+## Your duties as the bot's owner
+
+<Callout type="warn">
+The Discord app is yours, so Discord's [Developer Terms](https://support-dev.discord.com/hc/en-us/articles/8562894815383-Discord-Developer-Terms-of-Service) and [Developer Policy](https://support-dev.discord.com/hc/en-us/articles/8563934450327-Discord-Developer-Policy) apply to you as its owner.
+</Callout>
+
+- **Have a privacy policy** for the app, linked in the Developer Portal. It should say what's copied and how someone can ask for it to be deleted.
+- **Delete on request.** Anyone can run `/forget-me` on the bot to remove everything they wrote from your Gryt server. New messages they post on Discord are still copied while the bridge runs.
+- **Tell your Discord server** that it's being mirrored, voice included, for example in its rules channel.
+- **Keep the data safe.** Discord asks for data at rest to be encrypted. Gryt doesn't encrypt its database itself, so use disk encryption on the machine.
